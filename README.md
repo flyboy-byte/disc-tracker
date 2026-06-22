@@ -1,8 +1,16 @@
-# Disc Tracker
+<p align="center">
+  <img src="docs/banner.png" alt="Disc Tracker" width="100%">
+</p>
 
-A personal disc golf bag tracker. Log your discs, visualize flight paths, and keep your bag organized — all from a clean web UI running on your own server.
+<h1 align="center">Disc Tracker</h1>
 
-![Disc Tracker screenshot](docs/screenshot.png)
+<p align="center">
+  A personal disc golf bag tracker. Log your discs, visualize flight paths, and keep your bag organized — running on your own server.
+</p>
+
+---
+
+![Screenshot](docs/screenshot.png)
 
 ---
 
@@ -10,9 +18,9 @@ A personal disc golf bag tracker. Log your discs, visualize flight paths, and ke
 
 - **Multi-user** — profile picker on launch, no passwords, each user has their own bag
 - **Disc library** — search 1,660 discs by name or manufacturer, auto-fill flight numbers
-- **Flight path arcs** — top-down RHBH visualization per disc, shaped by speed/glide/turn/fade
-- **Stability filtering** — filter by overstable / stable / understable, or by disc type
-- **Disc colors** — assign a color to each disc with presets or a custom color picker
+- **Flight path arcs** — top-down RHBH visualization per disc, shaped by speed / glide / turn / fade
+- **Stability & type filters** — filter by overstable / stable / understable and disc type
+- **Disc colors** — assign a color per disc with presets or a custom color picker
 - **Drag reorder** — manually sort your bag in custom mode
 - **CSV import / export** — back up or move your collection
 
@@ -22,10 +30,6 @@ A personal disc golf bag tracker. Log your discs, visualize flight paths, and ke
 
 - Python 3.9+
 - Flask
-
-```bash
-pip install flask
-```
 
 ---
 
@@ -44,19 +48,19 @@ cd disc-tracker
 pip install flask
 ```
 
-**3. Run the app**
+**3. Run**
 
 ```bash
 python app.py
 ```
 
-The app starts on `http://localhost:5757`. On first launch it creates the SQLite database automatically.
+Opens on `http://localhost:5757`. The SQLite database and secret key are created automatically in `data/` on first launch.
 
 ---
 
 ## Running as a service (Linux / systemd)
 
-A systemd unit file is included. Edit `disc_tracker.service` to match your paths, then:
+A unit file is included. Edit `disc_tracker.service` to match your paths, then:
 
 ```bash
 cp disc_tracker.service ~/.config/systemd/user/
@@ -67,21 +71,21 @@ systemctl --user start disc_tracker
 
 ---
 
-## Data
-
-User data (the SQLite database and secret key) is stored in `data/` and is excluded from version control. The `data/` folder is created automatically on first run.
-
----
-
 ## Flight path visualization
 
-Each disc card shows a top-down flight path arc based on its flight numbers. The path is split into two phases — the high-speed turn phase and the low-speed fade — colored by stability class.
+Each disc card shows a top-down RHBH flight arc based on its flight numbers, split into two phases — high-speed turn and low-speed fade — colored by stability.
 
 | Stability | Color |
 |-----------|-------|
 | Overstable | Orange |
 | Stable | Blue |
 | Understable | Green |
+
+---
+
+## Data
+
+User data lives in `data/` and is excluded from version control. Nothing leaves your server.
 
 ---
 
