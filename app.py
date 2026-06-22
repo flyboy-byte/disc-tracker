@@ -231,7 +231,7 @@ _master_cache = None
 def get_master():
     global _master_cache
     if _master_cache is None:
-        master_path = os.path.join(DATA_DIR, 'discs_master.json')
+        master_path = os.path.join(os.path.dirname(__file__), 'static', 'discs_master.json')
         with open(master_path) as f:
             _master_cache = f.read()
     return app.response_class(_master_cache, mimetype='application/json')
