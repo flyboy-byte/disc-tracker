@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disc Tracker — Pick User</title>
+<style>
+  :root {
+    --bg: #0b0e1a;
+    --card: #141829;
+    --card-hover: #1a1f36;
+    --border: #252b45;
+    --text: #e8eaf2;
+    --muted: #8b91ad;
+    --accent: #915EFF;
+    --danger: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 40px 16px 60px;
+  }
+  .wrap { max-width: 600px; margin: 0 auto; }
+  .eyebrow { color: var(--accent); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  h1 { font-size: 26px; font-weight: 700; margin-bottom: 28px; }
+  .add-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .add-row input {
+    flex: 1;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 14px; padding: 10px 14px; outline: none;
+  }
+  .add-row input:focus { border-color: var(--accent); }
+  .btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600; padding: 10px 18px; cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:hover { opacity: 0.9; }
+  .error {
+    background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.35);
+    color: var(--danger); border-radius: 10px; padding: 10px 14px;
+    font-size: 13px; margin-bottom: 16px;
+  }
+  .search {
+    width: 100%;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 14px; padding: 10px 14px; outline: none;
+    margin-bottom: 16px; display: block;
+  }
+  .search:focus { border-color: var(--accent); }
+  .divider { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .user-slot { display: flex; flex-direction: column; gap: 6px; }
+  .user-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px 14px; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    text-align: center; font-size: 15px; font-weight: 600;
+    width: 100%;
+  }
+  .user-card:hover { border-color: var(--accent); background: var(--card-hover); }
+  .avatar {
+    width: 44px; height: 44px; border-radius: 999px;
+    background: rgba(145,94,255,0.18); border: 1px solid rgba(145,94,255,0.35);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700; color: var(--accent);
+    margin: 0 auto 10px;
+  }
+  .del-btn {
+    width: 100%; background: transparent; border: 1px solid rgba(248,113,113,0.3);
+    color: var(--danger); border-radius: 8px; font-size: 12px; padding: 6px;
+    cursor: pointer;
+  }
+  .del-btn:hover { background: rgba(248,113,113,0.1); }
+  .empty { color: var(--muted); font-size: 13px; padding: 20px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">The Bag</p>
+  <h1>Who's throwing?</h1>
+
+  <form method="post" action="/add_user" class="add-row">
+    <input type="text" name="username" placeholder="New username…" autocomplete="off" autofocus maxlength="40">
+    <button class="btn" type="submit">Add</button>
+  </form>
+
+  {% if error %}
+  <div class="error">{{ error }}</div>
+  {% endif %}
+
+  {% if users %}
+  <p class="divider">Select your profile</p>
+  <input class="search" type="text" id="search" placeholder="Search profiles…" oninput="filterUsers()" autocomplete="off">
+  <div class="grid" id="grid">
+    {% for u in users %}
+    <div class="user-slot" data-name="{{ u['username'] | lower }}">
+      <form method="post" action="/pick">
+        <input type="hidden" name="user_id" value="{{ u['id'] }}">
+        <button type="submit" class="user-card">
+          <div class="avatar">{{ u['username'][0] | upper }}</div>
+          {{ u['username'] }}
+        </button>
+      </form>
+      <form method="post" action="/delete_user">
+        <input type="hidden" name="user_id" value="{{ u['id'] }}">
+        <button type="button" class="del-btn" onclick="confirmDel(this)">Delete</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="empty" id="noMatch" style="display:none">No profiles match.</p>
+  {% endif %}
+</div>
+
+<script>
+function filterUsers() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const slots = document.querySelectorAll('.user-slot');
+  let shown = 0;
+  slots.forEach(s => {
+    const match = !q || s.dataset.name.includes(q);
+    s.style.display = match ? '' : 'none';
+    if (match) shown++;
+  });
+  document.getElementById('noMatch').style.display = shown === 0 && q ? '' : 'none';
+}
+
+function confirmDel(btn) {
+  if (btn.dataset.confirm) {
+    btn.closest('form').submit();
+  } else {
+    btn.textContent = 'Sure?';
+    btn.dataset.confirm = '1';
+    btn.style.background = 'rgba(248,113,113,0.18)';
+    setTimeout(() => {
+      btn.textContent = 'Delete';
+      btn.style.background = '';
+      delete btn.dataset.confirm;
+    }, 2500);
+  }
+}
+</script>
+</body>
+</html>

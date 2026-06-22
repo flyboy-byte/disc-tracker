@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disc Bag Tracker</title>
+<style>
+  :root {
+    --bg: #0b0e1a;
+    --card: #141829;
+    --card-hover: #1a1f36;
+    --border: #252b45;
+    --text: #e8eaf2;
+    --muted: #8b91ad;
+    --accent: #915EFF;
+    --os: #915EFF;
+    --st: #4ade80;
+    --us: #fbbf24;
+    --danger: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 20px 16px 60px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  header { margin-bottom: 20px; }
+  .eyebrow { color: var(--accent); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  h1 { font-size: 26px; font-weight: 700; }
+  .substat { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .controls { display: flex; gap: 8px; margin: 18px 0 12px; flex-wrap: wrap; }
+  .controls input[type=text] {
+    flex: 1; min-width: 160px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 14px; padding: 10px 14px; outline: none;
+  }
+  .controls input[type=text]:focus { border-color: var(--accent); }
+  .btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600; padding: 10px 16px; cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:hover { opacity: 0.9; }
+  .btn-ghost {
+    background: transparent; color: var(--muted); border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); opacity: 1; }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .pill {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    border-radius: 999px; font-size: 12px; font-weight: 600; padding: 6px 14px; cursor: pointer;
+  }
+  .pill.active { border-color: var(--accent); color: var(--accent); background: rgba(145,94,255,0.1); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .swatch { width: 14px; height: 2px; border-radius: 2px; display: inline-block; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    display: flex; flex-direction: row; align-items: stretch; gap: 12px; position: relative;
+  }
+  .card:hover { border-color: var(--accent); background: var(--card-hover); }
+  .card-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .mfr { font-size: 11px; color: var(--muted); }
+  .mold { font-size: 16px; font-weight: 700; line-height: 1.2; }
+  .stab-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+    border: 1px solid; flex-shrink: 0;
+  }
+  .stab-os { color: var(--os); border-color: rgba(145,94,255,0.4); background: rgba(145,94,255,0.08); }
+  .stab-st { color: var(--st); border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.08); }
+  .stab-us { color: var(--us); border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.08); }
+  .disc-type { font-size: 10px; font-weight: 500; letter-spacing: 0.4px; text-transform: uppercase; color: var(--muted); opacity: 0.7; }
+  .color-row { display:flex; gap:6px; flex-wrap:wrap; padding:4px 0; align-items:center; }
+  .cswatch {
+    width:22px; height:22px; border-radius:50%; border:2px solid transparent;
+    cursor:pointer; flex-shrink:0; transition:box-shadow 0.12s;
+  }
+  .cswatch-none { border:1px dashed var(--border); background:transparent; position:relative; }
+  .cswatch-none::after { content:'×'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--muted); line-height:1; }
+  .cswatch.sel { box-shadow:0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+  .cswatch-custom { background: conic-gradient(red,#ff0,lime,cyan,blue,magenta,red); border:1px solid var(--border); position:relative; overflow:hidden; }
+  .cswatch-custom input[type=color] { opacity:0; position:absolute; inset:0; width:100%; height:100%; cursor:pointer; border:none; padding:0; }
+  .arc { width: 50px; flex-shrink: 0; opacity: 0.92; }
+  .nums { display: flex; gap: 12px; font-family: ui-monospace, monospace; font-size: 12px; }
+  .nums div { display: flex; flex-direction: column; align-items: center; }
+  .nums .lbl { font-size: 9px; color: var(--muted); }
+  .nums .val { font-weight: 600; }
+  .meta { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .meta.unknown { font-style: italic; opacity: 0.6; }
+  .use { font-size: 11px; color: var(--muted); margin-top: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .note {
+    font-size: 11px; color: var(--text); opacity: 0.8; margin-top: 2px;
+    border-top: 1px solid var(--border); padding-top: 6px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .empty { text-align: center; color: var(--muted); padding: 50px 0; font-size: 14px; }
+  .loading { text-align: center; color: var(--muted); padding: 60px 0; font-size: 14px; }
+  /* Modal */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(5,8,22,0.85); z-index: 50;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    padding: 22px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal h2 { font-size: 17px; margin-bottom: 16px; }
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .field input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-size: 14px; padding: 9px 12px; outline: none;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .fn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+  .fn-grid input { text-align: center; }
+  .modal-btns { display: flex; gap: 8px; margin-top: 16px; align-items: center; }
+  .btn-danger {
+    background: transparent; color: var(--danger); border: 1px solid rgba(248,113,113,0.35);
+    border-radius: 8px; font-size: 13px; padding: 8px 12px; cursor: pointer;
+  }
+  .btn-danger:hover { background: rgba(248,113,113,0.1); }
+  .spacer { flex: 1; }
+  .lib-list { max-height: 360px; overflow-y: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 3px; }
+  .lib-item { padding: 9px 12px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; display: flex; align-items: center; gap: 10px; }
+  .lib-item:hover { background: rgba(255,255,255,0.05); border-color: var(--border); }
+  .lib-item-name { font-size: 14px; font-weight: 500; }
+  .lib-item-mfr { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .lib-item-nums { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .lib-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 28px 0; }
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--card); border: 1px solid var(--accent); border-radius: 10px;
+    padding: 10px 18px; font-size: 13px; z-index: 100; opacity: 0; transition: opacity 0.25s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  select.sort {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 14px; padding: 10px 12px; outline: none; cursor: pointer;
+  }
+  select.sort:focus { border-color: var(--accent); }
+  .grip {
+    display: flex; align-items: center; justify-content: center; align-self: stretch;
+    width: 18px; flex-shrink: 0; cursor: grab; touch-action: none;
+    color: var(--muted); font-size: 15px; border-radius: 6px; user-select: none;
+  }
+  .grip:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+  .grip:active { cursor: grabbing; }
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+      <p class="eyebrow">The Bag</p>
+      <form method="post" action="/switch" style="margin:0">
+        <button type="submit" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0">Switch user</button>
+      </form>
+    </div>
+    <h1>{{ username }}'s Bag</h1>
+    <p class="substat" id="substat">Loading…</p>
+  </header>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search mold, manufacturer, plastic…">
+    <select class="sort" id="sortSel">
+      <option value="speed-desc">Speed ↓</option>
+      <option value="speed-asc">Speed ↑</option>
+      <option value="name">Mold A–Z</option>
+      <option value="mfr">Manufacturer</option>
+      <option value="custom">Custom (drag)</option>
+    </select>
+    <button class="btn" id="addBtn">+ Add disc</button>
+    <button class="btn btn-ghost" id="libraryBtn">Disc library</button>
+    <button class="btn btn-ghost" id="importBtn">Import CSV</button>
+    <button class="btn btn-ghost" id="exportBtn">Export CSV</button>
+  </div>
+
+  <div class="pills" id="pills"></div>
+  <div class="pills" id="type-pills"></div>
+
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--os)"></span>Overstable</span>
+    <span><span class="swatch" style="background:var(--st)"></span>Stable</span>
+    <span><span class="swatch" style="background:var(--us)"></span>Understable</span>
+    <span style="margin-left:auto" id="dragHint">arcs = RHBH flight · tap a card to edit</span>
+  </div>
+
+  <div class="grid" id="grid"><div class="loading">Loading your bag…</div></div>
+</div>
+
+<div id="modalRoot"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// Storage: server-side via Flask /api/data
+const SEED = [
+  {id:1,mfr:'Innova',mold:'Leopard3',plastic:'',weight:'',speed:7,glide:5,turn:-2,fade:1,use:'',thr:'Backhand',color:''},
+];
+
+let discs = [];
+let nextId = 100;
+let filter = 'all';
+let typeFilter = 'all';
+let sortMode = 'speed-desc';
+let dragEl = null, dragGhost = null, dragOffX = 0, dragOffY = 0;
+let dirty = false;
+
+function stab(d) {
+  const net = d.turn + d.fade;
+  if (net >= 3) return 'overstable';
+  if (net <= 0) return 'understable';
+  return 'stable';
+}
+const STAB_META = {
+  overstable: { short:'OS', cls:'stab-os', color:'#915EFF' },
+  stable:     { short:'ST', cls:'stab-st', color:'#4ade80' },
+  understable:{ short:'US', cls:'stab-us', color:'#fbbf24' }
+};
+
+function discType(d) {
+  if (d.speed <= 3) return 'putter';
+  if (d.speed <= 5) return 'mid';
+  if (d.speed <= 8) return 'fairway';
+  return 'driver';
+}
+const TYPE_META = {
+  putter:  { short:'P',  label:'Putter',  word:'Putter',          cls:'type-p', color:'#94a3b8' },
+  mid:     { short:'M',  label:'Mid',     word:'Mid-range',        cls:'type-m', color:'#38bdf8' },
+  fairway: { short:'FD', label:'Fairway', word:'Fairway Driver',   cls:'type-f', color:'#2dd4bf' },
+  driver:  { short:'D',  label:'Driver',  word:'Distance Driver',  cls:'type-d', color:'#fb923c' },
+};
+const DISC_COLORS = [
+  { hex:'',        cls:'cswatch-none' },
+  { hex:'#ffffff', label:'White'      },
+  { hex:'#fef08a', label:'Yellow'     },
+  { hex:'#fde047', label:'Gold'       },
+  { hex:'#fb923c', label:'Orange'     },
+  { hex:'#f87171', label:'Red'        },
+  { hex:'#e11d48', label:'Crimson'    },
+  { hex:'#f9a8d4', label:'Pink'       },
+  { hex:'#e879f9', label:'Magenta'    },
+  { hex:'#c084fc', label:'Purple'     },
+  { hex:'#818cf8', label:'Indigo'     },
+  { hex:'#60a5fa', label:'Blue'       },
+  { hex:'#22d3ee', label:'Cyan'       },
+  { hex:'#34d399', label:'Green'      },
+  { hex:'#a3e635', label:'Lime'       },
+  { hex:'#94a3b8', label:'Gray'       },
+  { hex:'#475569', label:'Slate'      },
+  { hex:'#1e293b', label:'Black'      },
+];
+
+async function load() {
+  try {
+    const r = await fetch('/api/data');
+    if (r.status === 404) {
+      // First run — seed the server
+      discs = SEED.map(d => ({...d}));
+      await persist();
+    } else if (r.ok) {
+      const data = await r.json();
+      if (data) {
+        discs = data.discs || [];
+        nextId = data.nextId || 100;
+        if (data.sortMode) sortMode = data.sortMode;
+      } else {
+        discs = SEED.map(d => ({...d}));
+        await persist();
+      }
+    } else {
+      throw new Error(`HTTP ${r.status}`);
+    }
+  } catch (e) {
+    // Server unreachable — run in-memory from seed
+    console.error('load error:', e);
+    discs = SEED.map(d => ({...d}));
+  }
+  document.getElementById('sortSel').value = sortMode;
+  render();
+}
+
+async function persist() {
+  try {
+    const r = await fetch('/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ discs, nextId, sortMode })
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    dirty = false;
+  } catch (e) {
+    toast('Could not save — changes are session-only');
+  }
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function arcSVG(d) {
+  const color = STAB_META[stab(d)].color;
+  const W = 50, H = 80;
+  const cx = 25;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const f = v => +v.toFixed(1);
+
+  // Top-down RHBH view: disc travels bottom (release) to top (landing).
+  // Negative turn swings RIGHT at high speed; positive fade hooks LEFT at low speed.
+  const sx = cx, sy = 74, ey = 6;
+
+  // Net landing position
+  const endX = clamp(cx - (d.turn + d.fade) * 3.4, 5, W - 5);
+
+  // CP1 stays near center-X so early flight is straight (matches real J-hook shape)
+  const cp1x = f(clamp(cx - d.turn * 1.5, 5, W - 5));
+  const cp1y = f(sy - (sy - ey) * 0.35);
+
+  // CP2 is the max lateral excursion — turn drives right, fade drives left
+  const cp2x = f(clamp(cx - d.turn * 7 - d.fade * 2, 5, W - 5));
+  const cp2y = f(ey + (sy - ey) * 0.22);
+
+  // Split at t=0.65: turn phase is ~65% of flight, fade phase is the last 35%
+  const t = 0.65;
+  const q0x = f(sx + t*(cp1x-sx)),       q0y = f(sy + t*(cp1y-sy));
+  const q1x = f(cp1x + t*(cp2x-cp1x)),   q1y = f(cp1y + t*(cp2y-cp1y));
+  const q2x = f(cp2x + t*(endX-cp2x)),   q2y = f(cp2y + t*(ey-cp2y));
+  const r0x = f(q0x + t*(q1x-q0x)),      r0y = f(q0y + t*(q1y-q0y));
+  const r1x = f(q1x + t*(q2x-q1x)),      r1y = f(q1y + t*(q2y-q1y));
+  const mx  = f(r0x + t*(r1x-r0x)),      my  = f(r0y + t*(r1y-r0y));
+
+  // Arrowhead tangent at landing (direction from CP2 to end)
+  const dx = endX - cp2x, dy = ey - cp2y;
+  const len = Math.sqrt(dx*dx + dy*dy) || 1;
+  const nx = dx/len, ny = dy/len;
+  const px = -ny * 3, py = nx * 3;
+
+  return `<svg class="arc" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+    <line x1="${cx}" y1="${sy}" x2="${cx}" y2="${ey}"
+          stroke="rgba(255,255,255,0.1)" stroke-width="0.6" stroke-dasharray="2 3"/>
+    <path d="M ${sx},${sy} C ${q0x},${q0y} ${r0x},${r0y} ${mx},${my}"
+          fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M ${mx},${my} C ${r1x},${r1y} ${q2x},${q2y} ${endX},${ey}"
+          fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="${sx}" cy="${sy}" r="2.8" fill="rgba(255,255,255,0.4)"/>
+    <circle cx="${endX}" cy="${ey}" r="2.2" fill="${color}"/>
+    <polyline points="${f(endX-nx*5+px)},${f(ey-ny*5+py)} ${endX},${ey} ${f(endX-nx*5-px)},${f(ey-ny*5-py)}"
+              fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const stabCounts = { all: discs.length, overstable:0, stable:0, understable:0 };
+  const typeCounts = { all: discs.length, putter:0, mid:0, fairway:0, driver:0 };
+  discs.forEach(d => { stabCounts[stab(d)]++; typeCounts[discType(d)]++; });
+
+  document.getElementById('substat').textContent =
+    `${discs.length} discs · ${typeCounts.driver}D · ${typeCounts.fairway}FD · ${typeCounts.mid}M · ${typeCounts.putter}P`;
+
+  // Stability pills
+  const stabDefs = [['all','All'],['overstable','OS'],['stable','ST'],['understable','US']];
+  document.getElementById('pills').innerHTML = stabDefs.map(([k, lbl]) =>
+    `<button class="pill ${filter===k?'active':''}" onclick="setFilter('${k}')">${lbl}${k!=='all'?` <span style="opacity:0.6">${stabCounts[k]}</span>`:''}</button>`
+  ).join('');
+
+  // Type pills
+  const typeDefs = [['all','All'],['putter','Putter'],['mid','Mid'],['fairway','Fairway'],['driver','Driver']];
+  document.getElementById('type-pills').innerHTML = typeDefs.map(([k, lbl]) =>
+    `<button class="pill ${typeFilter===k?'active':''}" onclick="setTypeFilter('${k}')">${lbl}${k!=='all'?` <span style="opacity:0.6">${typeCounts[k]}</span>`:''}</button>`
+  ).join('');
+
+  // Grid
+  let rows = discs.filter(d => {
+    const matchS = filter === 'all' || stab(d) === filter;
+    const matchT = typeFilter === 'all' || discType(d) === typeFilter;
+    const matchQ = !q || (d.mfr + d.mold + d.plastic + d.use + (d.notes || '')).toLowerCase().includes(q);
+    return matchS && matchT && matchQ;
+  });
+
+  if (sortMode === 'speed-desc')      rows.sort((a,b) => b.speed - a.speed);
+  else if (sortMode === 'speed-asc')  rows.sort((a,b) => a.speed - b.speed);
+  else if (sortMode === 'name')       rows.sort((a,b) => a.mold.localeCompare(b.mold));
+  else if (sortMode === 'mfr')        rows.sort((a,b) => (a.mfr + a.mold).localeCompare(b.mfr + b.mold));
+  // 'custom' = leave in array order
+
+  const dragEnabled = sortMode === 'custom' && filter === 'all' && typeFilter === 'all' && !q;
+  const hint = document.getElementById('dragHint');
+  if (sortMode === 'custom') {
+    hint.textContent = dragEnabled
+      ? 'drag the ⠿ handle to reorder'
+      : 'clear search/filter to drag-reorder';
+  } else {
+    hint.textContent = 'arcs = RHBH flight · tap a card to edit';
+  }
+
+  const grid = document.getElementById('grid');
+  if (!rows.length) {
+    grid.innerHTML = '<div class="empty">No discs match.</div>';
+    return;
+  }
+  grid.innerHTML = rows.map(d => {
+    const s = STAB_META[stab(d)];
+    const t = TYPE_META[discType(d)];
+    const meta = (d.plastic || d.weight)
+      ? `<div class="meta">${[d.plastic, d.weight].filter(Boolean).join(' · ')}</div>`
+      : `<div class="meta unknown">plastic / weight unknown</div>`;
+    const grip = dragEnabled
+      ? `<div class="grip" onpointerdown="startDrag(event, ${d.id})" onclick="event.stopPropagation()">⠿</div>`
+      : '';
+    const colorStyle = d.color ? `border-left:3px solid ${d.color};` : '';
+    return `<div class="card ${dragEnabled ? 'drag-on' : ''}" data-id="${d.id}" onclick="openEdit(${d.id})" style="${colorStyle}">
+      ${grip}
+      <div class="card-main">
+        <div class="card-head">
+          <div style="min-width:0">
+            <div class="mfr">${esc(d.mfr)}</div>
+            <div class="mold">${esc(d.mold)}</div>
+          </div>
+          <span class="stab-badge ${s.cls}">${s.short}</span>
+        </div>
+        <div class="nums">
+          <div><span class="lbl">SPD</span><span class="val">${d.speed}</span></div>
+          <div><span class="lbl">GLI</span><span class="val">${d.glide}</span></div>
+          <div><span class="lbl">TRN</span><span class="val">${d.turn}</span></div>
+          <div><span class="lbl">FDE</span><span class="val">${d.fade}</span></div>
+        </div>
+        ${meta}
+        <div class="use">${esc(d.use)}</div>
+        ${d.notes ? `<div class="note">📝 ${esc(d.notes)}</div>` : ''}
+        <div class="disc-type">${t.word}</div>
+      </div>
+      ${arcSVG(d)}
+    </div>`;
+  }).join('');
+}
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function setFilter(f) { filter = f; render(); }
+function setTypeFilter(t) { typeFilter = t; render(); }
+
+function setSort(mode) { sortMode = mode; persist(); render(); }
+
+// ── Drag-to-reorder (ghost-based pointer drag, works on touch + mouse) ──
+function startDrag(e, id) {
+  if (sortMode !== 'custom') return;
+  e.preventDefault();
+  e.stopPropagation();
+  const el = document.querySelector(`.card[data-id="${id}"]`);
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  dragOffX = e.clientX - rect.left;
+  dragOffY = e.clientY - rect.top;
+  dragGhost = el.cloneNode(true);
+  Object.assign(dragGhost.style, {
+    position: 'fixed', width: rect.width + 'px', height: rect.height + 'px',
+    top: rect.top + 'px', left: rect.left + 'px',
+    opacity: '0.85', pointerEvents: 'none', zIndex: '1000',
+    borderColor: 'var(--accent)', boxShadow: '0 8px 28px rgba(0,0,0,0.5)',
+    transition: 'none', margin: '0'
+  });
+  document.body.appendChild(dragGhost);
+  el.style.opacity = '0.2';
+  dragEl = el;
+  document.addEventListener('pointermove', onDrag);
+  document.addEventListener('pointerup', endDrag, { once: true });
+}
+
+function onDrag(e) {
+  if (!dragGhost || !dragEl) return;
+  // Ghost follows cursor
+  dragGhost.style.top  = (e.clientY - dragOffY) + 'px';
+  dragGhost.style.left = (e.clientX - dragOffX) + 'px';
+  // Live DOM reorder — dimmed card acts as a slot showing the landing position
+  const others = [...document.querySelectorAll('.card')].filter(c => c !== dragEl);
+  let closest = null, best = Infinity;
+  for (const c of others) {
+    const r = c.getBoundingClientRect();
+    const dist = (e.clientX - (r.left + r.width/2)) ** 2 + (e.clientY - (r.top + r.height/2)) ** 2;
+    if (dist < best) { best = dist; closest = c; }
+  }
+  if (closest) {
+    const r = closest.getBoundingClientRect();
+    const after = e.clientY > r.top + r.height / 2;
+    const grid = document.getElementById('grid');
+    if (after) grid.insertBefore(dragEl, closest.nextSibling);
+    else grid.insertBefore(dragEl, closest);
+  }
+}
+
+async function endDrag() {
+  document.removeEventListener('pointermove', onDrag);
+  if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+  if (!dragEl) return;
+  dragEl.style.opacity = '';
+  dragEl = null;
+  const order = [...document.querySelectorAll('.card')].map(c => parseInt(c.dataset.id));
+  discs.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  await persist();
+  toast('Order saved');
+}
+
+function openEdit(id) {
+  const d = discs.find(x => x.id === id);
+  if (d) showModal(d, false);
+}
+// ── Disc library ──────────────────────────────────────────────────────────────
+
+let masterDiscs = null;
+let _libResults = [];
+
+async function loadMaster() {
+  if (masterDiscs) return;
+  const r = await fetch('/api/master');
+  masterDiscs = await r.json();
+}
+
+function openLibrary() {
+  document.getElementById('modalRoot').innerHTML = `
+  <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h2>Disc library</h2>
+      <input id="lib-search" type="text" placeholder="Search by name or manufacturer…"
+             style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px;outline:none;box-sizing:border-box"
+             oninput="renderLibrary(this.value)" autofocus>
+      <div class="lib-list" id="lib-list"><div class="lib-empty">Start typing to search…</div></div>
+      <div class="modal-btns"><span class="spacer"></span>
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>`;
+  loadMaster().then(() => {
+    const inp = document.getElementById('lib-search');
+    if (inp && inp.value) renderLibrary(inp.value);
+  });
+}
+
+function renderLibrary(q) {
+  const list = document.getElementById('lib-list');
+  if (!list) return;
+  if (!masterDiscs) {
+    list.innerHTML = '<div class="lib-empty">Loading…</div>';
+    return;
+  }
+  const s = q.trim().toLowerCase();
+  if (!s) { list.innerHTML = '<div class="lib-empty">Start typing to search…</div>'; return; }
+  _libResults = masterDiscs.filter(d =>
+    d.name.toLowerCase().includes(s) || d.mfr.toLowerCase().includes(s)
+  ).slice(0, 60);
+  if (!_libResults.length) { list.innerHTML = '<div class="lib-empty">No discs found</div>'; return; }
+  list.innerHTML = _libResults.map((d, i) =>
+    `<div class="lib-item" onclick="addFromLibrary(${i})">
+      <div style="flex:1;min-width:0">
+        <div class="lib-item-name">${esc(d.name)}</div>
+        <div class="lib-item-mfr">${esc(d.mfr)}</div>
+      </div>
+      <div class="lib-item-nums">${d.speed} / ${d.glide} / ${d.turn} / ${d.fade}</div>
+    </div>`
+  ).join('');
+}
+
+function addFromLibrary(i) {
+  const d = _libResults[i];
+  closeModal();
+  showModal({ id: nextId++, mfr: d.mfr, mold: d.name, plastic:'', weight:'',
+    speed: d.speed, glide: d.glide, turn: d.turn, fade: d.fade,
+    use:'', thr:'Backhand', notes:'', color:'' }, true);
+}
+
+function openAdd() {
+  showModal({ id: nextId++, mfr:'', mold:'', plastic:'', weight:'', speed:7, glide:4, turn:0, fade:2, use:'', thr:'Backhand', notes:'', color:'' }, true);
+}
+
+function showModal(d, isNew) {
+  document.getElementById('modalRoot').innerHTML = `
+  <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h2>${isNew ? 'Add disc' : 'Edit disc'}</h2>
+      <div class="field"><label>Manufacturer</label><input id="f-mfr" value="${esc(d.mfr)}" placeholder="e.g. Innova"></div>
+      <div class="field"><label>Mold</label><input id="f-mold" value="${esc(d.mold)}" placeholder="e.g. Buzzz"></div>
+      <div class="field"><label>Plastic</label><input id="f-plastic" value="${esc(d.plastic)}" placeholder="e.g. Star, Cosmic Neutron"></div>
+      <div class="field"><label>Weight</label><input id="f-weight" value="${esc(d.weight)}" placeholder="e.g. 173g"></div>
+      <div class="fn-grid">
+        <div class="field"><label>Speed</label><input id="f-speed" type="number" step="0.5" value="${d.speed}"></div>
+        <div class="field"><label>Glide</label><input id="f-glide" type="number" step="0.5" value="${d.glide}"></div>
+        <div class="field"><label>Turn</label><input id="f-turn" type="number" step="0.5" value="${d.turn}"></div>
+        <div class="field"><label>Fade</label><input id="f-fade" type="number" step="0.5" value="${d.fade}"></div>
+      </div>
+      <div class="field"><label>Primary use</label><input id="f-use" value="${esc(d.use)}" placeholder="e.g. Overstable utility"></div>
+      <div class="field"><label>Throw style</label><input id="f-thr" value="${esc(d.thr)}" placeholder="e.g. Backhand"></div>
+      <div class="field"><label>Notes</label><textarea id="f-notes" placeholder="Seasoning, condition, where you got it, flight tweaks…" style="width:100%;min-height:70px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px;outline:none;resize:vertical;font-family:inherit">${esc(d.notes || '')}</textarea></div>
+      <div class="field">
+        <label>Disc color</label>
+        <div class="color-row">
+          ${DISC_COLORS.map(c =>
+            `<button type="button" class="cswatch ${c.cls||''} ${((d.color||'')==c.hex)?'sel':''}" data-hex="${c.hex}"
+                     style="${c.hex?'background:'+c.hex:''}" title="${c.label||'None'}"
+                     onclick="pickColor('${c.hex}')"></button>`
+          ).join('')}
+          <label id="custom-swatch" class="cswatch cswatch-custom" data-hex="${esc(d.color||'')}" title="Custom color">
+            <input type="color" id="f-color-picker" value="${d.color||'#ffffff'}" oninput="pickColorCustom(this.value)">
+          </label>
+        </div>
+        <input type="hidden" id="f-color" value="${esc(d.color||'')}">
+      </div>
+      <div class="modal-btns">
+        ${!isNew ? `<button class="btn-danger" onclick="confirmRemove(this, ${d.id})">Remove</button>` : ''}
+        <span class="spacer"></span>
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn" onclick="saveDisc(${d.id}, ${isNew})">${isNew ? 'Add' : 'Save'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function pickColor(hex) {
+  document.getElementById('f-color').value = hex;
+  const pk = document.getElementById('f-color-picker');
+  if (pk && hex) pk.value = hex;
+  document.querySelectorAll('.cswatch').forEach(b => b.classList.toggle('sel', b.dataset.hex === hex));
+}
+
+function pickColorCustom(hex) {
+  const label = document.getElementById('custom-swatch');
+  if (label) label.dataset.hex = hex;
+  pickColor(hex);
+}
+
+function closeModal() { document.getElementById('modalRoot').innerHTML = ''; }
+
+function gv(id) { return document.getElementById(id).value.trim(); }
+function gn(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+async function saveDisc(id, isNew) {
+  const obj = {
+    id,
+    mfr: gv('f-mfr'), mold: gv('f-mold'), plastic: gv('f-plastic'), weight: gv('f-weight'),
+    speed: gn('f-speed'), glide: gn('f-glide'), turn: gn('f-turn'), fade: gn('f-fade'),
+    use: gv('f-use'), thr: gv('f-thr'), notes: gv('f-notes'), color: gv('f-color')
+  };
+  if (!obj.mold) { toast('Mold name is required'); return; }
+  if (isNew) discs.push(obj);
+  else {
+    const i = discs.findIndex(x => x.id === id);
+    if (i >= 0) discs[i] = obj;
+  }
+  closeModal();
+  render();
+  await persist();
+  toast(isNew ? `${obj.mold} added to the bag` : `${obj.mold} updated`);
+}
+
+function confirmRemove(btn, id) {
+  btn.textContent = 'Confirm remove?';
+  btn.style.background = 'rgba(248,113,113,0.18)';
+  btn.setAttribute('onclick', `deleteDisc(${id})`);
+}
+
+async function deleteDisc(id) {
+  discs = discs.filter(x => x.id !== id);
+  closeModal();
+  render();
+  await persist();
+  toast('Disc removed');
+}
+
+function csvCell(s) {
+  s = String(s ?? '');
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function buildCSV() {
+  const hdr = 'Manufacturer,Mold,Plastic,Weight,Speed,Glide,Turn,Fade,Primary Use,Throw Style,Notes\n';
+  const rows = discs.map(d =>
+    [d.mfr, d.mold, d.plastic || 'Unknown', d.weight || 'Unknown', d.speed, d.glide, d.turn, d.fade, d.use, d.thr, d.notes || '']
+      .map(csvCell).join(',')
+  ).join('\n');
+  return hdr + rows;
+}
+
+function exportCSV() {
+  const csv = buildCSV();
+  window._csvData = csv;
+  document.getElementById('modalRoot').innerHTML = `
+  <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h2>Export CSV</h2>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Tap Copy, or select the text and copy manually. Download works in some browsers.</p>
+      <textarea id="csvOut" readonly style="width:100%;height:200px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:ui-monospace,monospace;font-size:11px;padding:10px;resize:vertical;outline:none">${esc(csv)}</textarea>
+      <div class="modal-btns">
+        <button class="btn btn-ghost" onclick="downloadCSV()">Download</button>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+        <button class="btn" onclick="copyCSV()">Copy</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function copyCSV() {
+  const ta = document.getElementById('csvOut');
+  ta.focus();
+  ta.select();
+  ta.setSelectionRange(0, 999999);
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) {}
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(window._csvData)
+      .then(() => toast('CSV copied'))
+      .catch(() => toast(ok ? 'CSV copied' : 'Select all + copy manually'));
+  } else {
+    toast(ok ? 'CSV copied' : 'Select all + copy manually');
+  }
+}
+
+function downloadCSV() {
+  try {
+    const blob = new Blob([window._csvData], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'disc_collection.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    toast('Download started');
+  } catch (e) {
+    toast('Download blocked here — use Copy');
+  }
+}
+
+// ── CSV Import ───────────────────────────────────────────────────────────────
+
+function importCSV() {
+  document.getElementById('modalRoot').innerHTML = `
+  <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h2>Import CSV</h2>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Upload a .csv file or paste CSV text. Expected columns: Manufacturer, Mold, Plastic, Weight, Speed, Glide, Turn, Fade, Primary Use, Throw Style, Notes.</p>
+      <div class="field">
+        <label>Upload file</label>
+        <input type="file" id="csvFile" accept=".csv,text/csv" style="color:var(--text);font-size:13px;width:100%">
+      </div>
+      <div class="field" style="margin-top:8px">
+        <label>Or paste CSV</label>
+        <textarea id="csvIn" placeholder="Paste CSV here…" style="width:100%;height:130px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:11px;font-family:ui-monospace,monospace;padding:10px;outline:none;resize:vertical"></textarea>
+      </div>
+      <div id="importPreview" style="font-size:12px;color:var(--muted);margin-top:8px;min-height:18px"></div>
+      <div class="modal-btns">
+        <span class="spacer"></span>
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn" id="importConfirmBtn" onclick="doImport()" disabled style="opacity:0.5">Import</button>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('csvFile').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { document.getElementById('csvIn').value = ev.target.result; previewImport(); };
+    reader.readAsText(file);
+  });
+  document.getElementById('csvIn').addEventListener('input', previewImport);
+}
+
+window._importedDiscs = [];
+
+function parseCSV(text) {
+  const splitRow = row => {
+    const cells = []; let cell = '', q = false;
+    for (let i = 0; i < row.length; i++) {
+      const c = row[i];
+      if (q) {
+        if (c === '"' && row[i+1] === '"') { cell += '"'; i++; }
+        else if (c === '"') q = false;
+        else cell += c;
+      } else {
+        if (c === '"') q = true;
+        else if (c === ',') { cells.push(cell); cell = ''; }
+        else cell += c;
+      }
+    }
+    cells.push(cell);
+    return cells;
+  };
+  const rows = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  if (rows.length < 2) return [];
+  const headers = splitRow(rows[0]).map(h => h.trim().toLowerCase());
+  const col = name => headers.indexOf(name);
+  const result = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (!rows[i].trim()) continue;
+    const v = splitRow(rows[i]);
+    const get = name => (v[col(name)] || '').trim();
+    const mold = get('mold');
+    if (!mold) continue;
+    const plastic = get('plastic'), weight = get('weight');
+    result.push({
+      mfr:     get('manufacturer'),
+      mold,
+      plastic: plastic === 'Unknown' ? '' : plastic,
+      weight:  weight  === 'Unknown' ? '' : weight,
+      speed:   parseFloat(get('speed')) || 0,
+      glide:   parseFloat(get('glide')) || 0,
+      turn:    parseFloat(get('turn'))  || 0,
+      fade:    parseFloat(get('fade'))  || 0,
+      use:     get('primary use'),
+      thr:     get('throw style'),
+      notes:   get('notes'),
+    });
+  }
+  return result;
+}
+
+function previewImport() {
+  const parsed = parseCSV(document.getElementById('csvIn').value);
+  window._importedDiscs = parsed;
+  const preview = document.getElementById('importPreview');
+  const btn = document.getElementById('importConfirmBtn');
+  if (!parsed.length) {
+    const hasText = document.getElementById('csvIn').value.trim();
+    preview.textContent = hasText ? 'No valid discs found — check column headers.' : '';
+    preview.style.color = 'var(--muted)';
+    btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = 'Import';
+  } else {
+    preview.textContent = `Found ${parsed.length} disc${parsed.length !== 1 ? 's' : ''} — will append to your bag.`;
+    preview.style.color = 'var(--st)';
+    btn.disabled = false; btn.style.opacity = '1';
+    btn.textContent = `Import ${parsed.length}`;
+  }
+}
+
+async function doImport() {
+  const incoming = window._importedDiscs;
+  if (!incoming.length) return;
+  incoming.forEach(d => { d.id = nextId++; discs.push(d); });
+  closeModal();
+  render();
+  await persist();
+  toast(`${incoming.length} disc${incoming.length !== 1 ? 's' : ''} imported`);
+}
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('addBtn').addEventListener('click', openAdd);
+document.getElementById('libraryBtn').addEventListener('click', openLibrary);
+document.getElementById('importBtn').addEventListener('click', importCSV);
+document.getElementById('exportBtn').addEventListener('click', exportCSV);
+document.getElementById('sortSel').addEventListener('change', e => setSort(e.target.value));
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# User data and secrets — never commit these
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db

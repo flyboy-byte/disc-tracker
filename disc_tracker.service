@@ -1,0 +1,16 @@
+# ~/.config/systemd/user/disc_tracker.service
+# Matches the moomoo-dashboard.service pattern exactly (--user, Restart=always)
+
+[Unit]
+Description=Disc Bag Tracker
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/disc_tracker
+ExecStart=/home/ubuntu/disc_tracker/venv/bin/python app.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
