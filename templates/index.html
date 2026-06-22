@@ -194,7 +194,15 @@
     <span><span class="swatch" style="background:var(--os)"></span>Overstable</span>
     <span><span class="swatch" style="background:var(--st)"></span>Stable</span>
     <span><span class="swatch" style="background:var(--us)"></span>Understable</span>
-    <span style="margin-left:auto" id="dragHint">arcs = RHBH flight · tap a card to edit</span>
+    <span style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+      <select id="arcViewSelect" onchange="arcView=this.value;render()" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
+        <option value="RHBH">RHBH / default</option>
+        <option value="RHFH">RHFH / override</option>
+        <option value="LHBH">LHBH / override</option>
+        <option value="LHFH">LHFH / override</option>
+      </select>
+      <span id="dragHint">tap a card to edit</span>
+    </span>
   </div>
 
   <div class="grid" id="grid"><div class="loading">Loading your bag…</div></div>
@@ -206,7 +214,7 @@
 <script>
 // Storage: server-side via Flask /api/data
 const SEED = [
-  {id:1,mfr:'Innova',mold:'Leopard3',plastic:'',weight:'',speed:7,glide:5,turn:-2,fade:1,use:'',thr:'Backhand',color:''},
+  {id:1,mfr:'Innova',mold:'Leopard3',plastic:'',weight:'',speed:7,glide:5,turn:-2,fade:1,use:'',thr:'RHBH',color:''},
 ];
 
 let discs = [];
@@ -214,6 +222,7 @@ let nextId = 100;
 let filter = 'all';
 let typeFilter = 'all';
 let sortMode = 'speed-desc';
+let arcView = 'RHBH';
 let dragEl = null, dragGhost = null, dragOffX = 0, dragOffY = 0;
 let dirty = false;
 
@@ -319,19 +328,25 @@ function arcSVG(d) {
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const f = v => +v.toFixed(1);
 
-  // Top-down RHBH view: disc travels bottom (release) to top (landing).
-  // Negative turn swings RIGHT at high speed; positive fade hooks LEFT at low speed.
+  // RHFH and LHBH spin opposite to RHBH/LHFH — mirror laterally
+  // arcView is the master override; falls back to per-disc thr
+  const thr = (arcView || d.thr || '').toUpperCase();
+  const m = (thr === 'RHFH' || thr === 'LHBH') ? -1 : 1;
+
+  // Top-down view: disc travels bottom (release) to top (landing).
+  // For RHBH/LHFH: negative turn swings RIGHT, positive fade hooks LEFT.
+  // m = -1 flips this for RHFH/LHBH.
   const sx = cx, sy = 74, ey = 6;
 
   // Net landing position
-  const endX = clamp(cx - (d.turn + d.fade) * 3.4, 5, W - 5);
+  const endX = clamp(cx - m * (d.turn + d.fade) * 3.4, 5, W - 5);
 
-  // CP1 stays near center-X so early flight is straight (matches real J-hook shape)
-  const cp1x = f(clamp(cx - d.turn * 1.5, 5, W - 5));
+  // CP1 stays near center-X so early flight is straight
+  const cp1x = f(clamp(cx - m * d.turn * 1.5, 5, W - 5));
   const cp1y = f(sy - (sy - ey) * 0.35);
 
-  // CP2 is the max lateral excursion — turn drives right, fade drives left
-  const cp2x = f(clamp(cx - d.turn * 7 - d.fade * 2, 5, W - 5));
+  // CP2 is the max lateral excursion
+  const cp2x = f(clamp(cx - m * d.turn * 7 - m * d.fade * 2, 5, W - 5));
   const cp2y = f(ey + (sy - ey) * 0.22);
 
   // Split at t=0.65: turn phase is ~65% of flight, fade phase is the last 35%
@@ -581,11 +596,11 @@ function addFromLibrary(i) {
   closeModal();
   showModal({ id: nextId++, mfr: d.mfr, mold: d.name, plastic:'', weight:'',
     speed: d.speed, glide: d.glide, turn: d.turn, fade: d.fade,
-    use:'', thr:'Backhand', notes:'', color:'' }, true);
+    use:'', thr:'RHBH', notes:'', color:'' }, true);
 }
 
 function openAdd() {
-  showModal({ id: nextId++, mfr:'', mold:'', plastic:'', weight:'', speed:7, glide:4, turn:0, fade:2, use:'', thr:'Backhand', notes:'', color:'' }, true);
+  showModal({ id: nextId++, mfr:'', mold:'', plastic:'', weight:'', speed:7, glide:4, turn:0, fade:2, use:'', thr:'RHBH', notes:'', color:'' }, true);
 }
 
 function showModal(d, isNew) {
@@ -604,7 +619,11 @@ function showModal(d, isNew) {
         <div class="field"><label>Fade</label><input id="f-fade" type="number" step="0.5" value="${d.fade}"></div>
       </div>
       <div class="field"><label>Primary use</label><input id="f-use" value="${esc(d.use)}" placeholder="e.g. Overstable utility"></div>
-      <div class="field"><label>Throw style</label><input id="f-thr" value="${esc(d.thr)}" placeholder="e.g. Backhand"></div>
+      <div class="field"><label>Throw style</label>
+        <select id="f-thr" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px;outline:none;font-family:inherit">
+          ${['RHBH','RHFH','LHBH','LHFH'].map(s => `<option value="${s}" ${(d.thr||'RHBH')===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
       <div class="field"><label>Notes</label><textarea id="f-notes" placeholder="Seasoning, condition, where you got it, flight tweaks…" style="width:100%;min-height:70px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px;outline:none;resize:vertical;font-family:inherit">${esc(d.notes || '')}</textarea></div>
       <div class="field">
         <label>Disc color</label>
