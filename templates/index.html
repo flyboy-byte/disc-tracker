@@ -289,6 +289,7 @@ async function load() {
         discs = data.discs || [];
         nextId = data.nextId || 100;
         if (data.sortMode) sortMode = data.sortMode;
+        if (data.arcView)  { arcView = data.arcView; document.getElementById('arcViewSelect').value = arcView; }
       } else {
         discs = SEED.map(d => ({...d}));
         await persist();
@@ -310,7 +311,7 @@ async function persist() {
     const r = await fetch('/api/data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ discs, nextId, sortMode })
+      body: JSON.stringify({ discs, nextId, sortMode, arcView })
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
   } catch (e) {

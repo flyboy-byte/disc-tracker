@@ -62,7 +62,8 @@ def init_db():
         ''')
         # Migrations for columns added after initial deploy
         for col, ddl in [
-            ('color', "ALTER TABLE discs ADD COLUMN color TEXT DEFAULT ''"),
+            ('color',    "ALTER TABLE discs ADD COLUMN color TEXT DEFAULT ''"),
+            ('arc_view', "ALTER TABLE user_meta ADD COLUMN arc_view TEXT DEFAULT 'RHBH'"),
         ]:
             try:
                 db.execute(ddl)
@@ -180,7 +181,7 @@ def get_data():
     user_id = session['user_id']
     with get_db() as db:
         meta = db.execute(
-            'SELECT next_id, sort_mode FROM user_meta WHERE user_id = ?', (user_id,)
+            'SELECT next_id, sort_mode, arc_view FROM user_meta WHERE user_id = ?', (user_id,)
         ).fetchone()
         if meta is None:
             return jsonify(None), 404
@@ -200,7 +201,8 @@ def get_data():
         }
         for r in rows
     ]
-    return jsonify({'discs': discs, 'nextId': meta['next_id'], 'sortMode': meta['sort_mode']})
+    return jsonify({'discs': discs, 'nextId': meta['next_id'], 'sortMode': meta['sort_mode'],
+                    'arcView': meta['arc_view'] or 'RHBH'})
 
 
 @app.route('/api/data', methods=['POST'])
@@ -213,6 +215,9 @@ def set_data():
     discs     = payload.get('discs', [])
     next_id   = payload.get('nextId', 100)
     sort_mode = payload.get('sortMode', 'speed-desc')
+    arc_view  = payload.get('arcView', 'RHBH')
+    if arc_view not in ('RHBH', 'RHFH', 'LHBH', 'LHFH'):
+        arc_view = 'RHBH'
     with get_db() as db:
         db.execute('DELETE FROM discs WHERE user_id = ?', (user_id,))
         db.executemany(
@@ -230,10 +235,28 @@ def set_data():
             ]
         )
         db.execute(
-            'INSERT INTO user_meta (user_id, next_id, sort_mode) VALUES (?, ?, ?) '
+            'INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view) VALUES (?, ?, ?, ?) '
             'ON CONFLICT(user_id) DO UPDATE SET '
-            'next_id = excluded.next_id, sort_mode = excluded.sort_mode',
-            (user_id, next_id, sort_mode)
+            'next_id = excluded.next_id, sort_mode = excluded.sort_mode, arc_view = excluded.arc_view',
+            (user_id, next_id, sort_mode, arc_view)
+        )
+    return jsonify({'ok': True})
+
+
+@app.route('/api/arcview', methods=['POST'])
+@login_required
+def set_arcview():
+    payload = request.get_json(silent=True)
+    if not payload:
+        abort(400)
+    view = payload.get('arcView', 'RHBH')
+    if view not in ('RHBH', 'RHFH', 'LHBH', 'LHFH'):
+        abort(400)
+    with get_db() as db:
+        db.execute(
+            'INSERT INTO user_meta (user_id, arc_view) VALUES (?, ?) '
+            'ON CONFLICT(user_id) DO UPDATE SET arc_view = excluded.arc_view',
+            (session['user_id'], view)
         )
     return jsonify({'ok': True})
 

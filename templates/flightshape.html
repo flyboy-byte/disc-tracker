@@ -275,7 +275,7 @@
       <div class="tool-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
           <div class="section-label" style="margin-bottom:0">Flight shape</div>
-          <select id="arcViewSelect" onchange="arcView=this.value;updateArc();document.getElementById('arcViewLabel').textContent=arcView"
+          <select id="arcViewSelect" onchange="arcView=this.value;updateArc();document.getElementById('arcViewLabel').textContent=arcView;saveArcView(arcView)"
                   style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
             <option value="RHBH">RHBH</option>
             <option value="RHFH">RHFH</option>
@@ -557,6 +557,11 @@ async function loadBag() {
     } else if (r.ok) {
       const data = await r.json();
       bagDiscs = (data && data.discs) ? data.discs : [];
+      if (data && data.arcView) {
+        arcView = data.arcView;
+        document.getElementById('arcViewSelect').value = arcView;
+        document.getElementById('arcViewLabel').textContent = arcView;
+      }
     } else {
       throw new Error(`HTTP ${r.status}`);
     }
@@ -622,6 +627,14 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function saveArcView(v) {
+  fetch('/api/arcview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ arcView: v }),
+  }).catch(() => {});
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
