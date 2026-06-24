@@ -163,14 +163,13 @@
 <div class="wrap">
   <header>
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
-      <p class="eyebrow">The Bag</p>
-      <div style="display:flex;align-items:baseline;gap:14px">
+      <div style="display:flex;gap:14px;align-items:baseline">
         <a href="/flightshape" style="color:var(--muted);font-size:14px;text-decoration:none">Flight Shape</a>
         <a href="/discsuggestion" style="color:var(--muted);font-size:14px;text-decoration:none">Disc Suggest</a>
-        <form method="post" action="/switch" style="margin:0">
-          <button type="submit" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:0">Switch user</button>
-        </form>
       </div>
+      <form method="post" action="/switch" style="margin:0">
+        <button type="submit" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:0">Switch user</button>
+      </form>
     </div>
     <h1>{{ username }}'s Bag</h1>
     <p class="substat" id="substat">Loading…</p>
