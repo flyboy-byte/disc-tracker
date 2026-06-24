@@ -143,6 +143,25 @@
   .nums-row strong { color: var(--text); }
 
   /* Mobile */
+  .top-nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 14px; margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-links { display: flex; gap: 2px; }
+  .nav-link {
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    text-decoration: none; padding: 5px 10px; border-radius: 7px;
+    white-space: nowrap; transition: color 0.15s, background 0.15s;
+  }
+  .nav-link:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+  .nav-link.active { color: var(--text); font-weight: 600; background: rgba(255,255,255,0.07); }
+  .nav-switch {
+    background: none; border: none; color: var(--muted); font-size: 13px;
+    cursor: pointer; padding: 5px 10px; border-radius: 7px; font-family: inherit;
+    white-space: nowrap; transition: color 0.15s;
+  }
+  .nav-switch:hover { color: var(--text); }
   @media (max-width: 679px) {
     h1 { font-size: 21px; }
     .substat { font-size: 12px; }
@@ -158,16 +177,17 @@
 <body>
 <div class="wrap">
 
-  <header>
-    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
-      <div style="display:flex;gap:14px;align-items:baseline">
-        <a href="/" style="color:var(--muted);font-size:14px;text-decoration:none">← Bag</a>
-        <a href="/discsuggestion" style="color:var(--muted);font-size:14px;text-decoration:none">Disc Suggest</a>
-      </div>
-      <form method="post" action="/switch" style="margin:0">
-        <button type="submit" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:0">Switch user</button>
-      </form>
+  <nav class="top-nav">
+    <div class="nav-links">
+      <a href="/" class="nav-link">The Bag</a>
+      <a href="/flightshape" class="nav-link active">Flight Shape</a>
+      <a href="/discsuggestion" class="nav-link">Disc Suggest</a>
     </div>
+    <form method="post" action="/switch" style="margin:0">
+      <button type="submit" class="nav-switch">Switch user</button>
+    </form>
+  </nav>
+  <header>
     <p class="eyebrow">Flight Shape</p>
     <h1>Flight Shape Calculator</h1>
     <p class="substat">Adjust throw conditions to see how your disc's flight changes</p>
