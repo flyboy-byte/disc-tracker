@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flight Shape — {{ username }}</title>
+<style>
+  :root {
+    --bg: #0b0e1a;
+    --card: #141829;
+    --card-hover: #1a1f36;
+    --border: #252b45;
+    --text: #e8eaf2;
+    --muted: #8b91ad;
+    --accent: #915EFF;
+    --os: #915EFF;
+    --st: #4ade80;
+    --us: #fbbf24;
+    --danger: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 20px 16px 60px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  header { margin-bottom: 20px; }
+  .eyebrow { color: var(--accent); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  h1 { font-size: 26px; font-weight: 700; }
+  .substat { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600; padding: 10px 16px; cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:hover { opacity: 0.9; }
+  .btn-ghost {
+    background: transparent; color: var(--muted); border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); opacity: 1; }
+  .stab-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+    border: 1px solid; flex-shrink: 0;
+  }
+  .stab-os { color: var(--os); border-color: rgba(145,94,255,0.4); background: rgba(145,94,255,0.08); }
+  .stab-st { color: var(--st); border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.08); }
+  .stab-us { color: var(--us); border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.08); }
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .field input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-size: 14px; padding: 9px 12px; outline: none;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .fn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+  .fn-grid input { text-align: center; }
+  .lib-list { overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+  .lib-item {
+    padding: 9px 12px; border-radius: 8px; cursor: pointer;
+    border: 1px solid transparent; display: flex; align-items: center; gap: 10px;
+  }
+  .lib-item:hover { background: rgba(255,255,255,0.05); border-color: var(--border); }
+  .lib-item.selected { background: rgba(145,94,255,0.1); border-color: rgba(145,94,255,0.3); }
+  .lib-item-name { font-size: 14px; font-weight: 500; }
+  .lib-item-mfr { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .lib-item-nums { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--card); border: 1px solid var(--accent); border-radius: 10px;
+    padding: 10px 18px; font-size: 13px; z-index: 100; opacity: 0; transition: opacity 0.25s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* Layout */
+  .fs-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .fs-left  { display: flex; flex-direction: column; gap: 12px; }
+  .fs-right { display: flex; flex-direction: column; gap: 12px; }
+  @media (min-width: 680px) {
+    .fs-layout { grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+    .fs-right   { position: sticky; top: 20px; }
+  }
+
+  /* Tool card */
+  .tool-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px;
+  }
+  .section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 14px;
+  }
+  .mode-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .mode-tab {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    border-radius: 999px; font-size: 12px; font-weight: 600; padding: 6px 16px; cursor: pointer;
+  }
+  .mode-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(145,94,255,0.1); }
+
+  /* Vertical sliders */
+  .slider-bank { display: flex; justify-content: space-around; align-items: flex-start; }
+  .slider-col { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+  .slider-label { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .slider-value { font-size: 12px; font-weight: 700; font-family: ui-monospace, monospace; min-width: 44px; text-align: center; transition: color 0.15s; }
+  .slider-unit { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
+  .slider-track { position: relative; height: 120px; display: flex; align-items: center; justify-content: center; }
+  .slider-tick {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 26px; height: 1px;
+    background: rgba(255,255,255,0.3);
+    pointer-events: none; z-index: 1;
+  }
+  .v-slider {
+    -webkit-appearance: slider-vertical;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    width: 28px;
+    height: 120px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    background: transparent;
+    padding: 0;
+  }
+  .dir-hint {
+    display: flex; justify-content: space-around; padding: 8px 0 0;
+    font-size: 10px; color: rgba(139,145,173,0.45);
+  }
+  .dir-hint span { flex: 1; text-align: center; }
+
+  /* Arc preview */
+  .arc-preview { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .arc-svg { width: 100%; display: block; border-radius: 12px; background: rgba(255,255,255,0.015); border: 1px solid var(--border); }
+  .nums-row { display: flex; gap: 16px; font-family: ui-monospace, monospace; font-size: 13px; flex-wrap: wrap; justify-content: center; }
+  .nums-row span { color: var(--muted); }
+  .nums-row strong { color: var(--text); }
+
+  /* Mobile */
+  @media (max-width: 679px) {
+    h1 { font-size: 21px; }
+    .substat { font-size: 12px; }
+    /* Cap arc width so it doesn't dominate the scroll */
+    .arc-svg { max-width: 260px; margin: 0 auto; }
+    /* Slightly taller slider tracks for easier thumb contact */
+    .slider-track { height: 140px; }
+    .v-slider { height: 140px; }
+    .slider-value { font-size: 11px; min-width: 36px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+      <div style="display:flex;gap:14px;align-items:baseline">
+        <a href="/" style="color:var(--muted);font-size:12px;text-decoration:none">← Bag</a>
+        <a href="/discsuggestion" style="color:var(--muted);font-size:12px;text-decoration:none">Disc Suggest</a>
+      </div>
+      <form method="post" action="/switch" style="margin:0">
+        <button type="submit" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0">Switch user</button>
+      </form>
+    </div>
+    <p class="eyebrow">Flight Shape</p>
+    <h1>Flight Shape Calculator</h1>
+    <p class="substat">Adjust throw conditions to see how your disc's flight changes</p>
+  </header>
+
+  <div class="fs-layout">
+
+    <!-- LEFT: disc picker + sliders -->
+    <div class="fs-left">
+
+      <!-- Disc selection -->
+      <div class="tool-card">
+        <div class="section-label">Disc</div>
+        <div class="mode-tabs">
+          <button class="mode-tab active" id="tab-bag" onclick="setMode('bag')">My Bag</button>
+          <button class="mode-tab" id="tab-manual" onclick="setMode('manual')">Manual</button>
+        </div>
+        <div id="pane-bag">
+          <div id="bag-status" style="color:var(--muted);font-size:13px;padding:4px 0">Loading bag…</div>
+          <div class="lib-list" id="bag-list" style="display:none;max-height:260px"></div>
+        </div>
+        <div id="pane-manual" style="display:none">
+          <div class="fn-grid">
+            <div class="field"><label>Speed</label><input id="m-speed" type="number" step="0.5" value="7" min="1" max="15" oninput="onManualChange()"></div>
+            <div class="field"><label>Glide</label><input id="m-glide" type="number" step="0.5" value="5" min="1" max="7" oninput="onManualChange()"></div>
+            <div class="field"><label>Turn</label><input id="m-turn" type="number" step="0.5" value="0" min="-6" max="3" oninput="onManualChange()"></div>
+            <div class="field"><label>Fade</label><input id="m-fade" type="number" step="0.5" value="2" min="0" max="7" oninput="onManualChange()"></div>
+          </div>
+        </div>
+        <div id="selected-disc" style="display:none;margin-top:12px;padding:8px 12px;background:rgba(145,94,255,0.07);border:1px solid rgba(145,94,255,0.2);border-radius:10px;font-size:13px;align-items:center;gap:10px;flex-wrap:wrap"></div>
+      </div>
+
+      <!-- Throw conditions -->
+      <div class="tool-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="section-label" style="margin-bottom:0">Conditions</div>
+          <button class="btn btn-ghost" onclick="resetSliders()" style="font-size:12px;padding:6px 12px">Reset</button>
+        </div>
+        <div class="slider-bank">
+
+          <div class="slider-col">
+            <span class="slider-label">Hyzer</span>
+            <span class="slider-value" id="val-hyzer" style="color:var(--muted)">0°</span>
+            <div class="slider-track">
+              <span class="slider-tick"></span>
+              <input class="v-slider" id="sl-hyzer" type="range" min="-30" max="30" value="0" step="1" oninput="onSlider()">
+            </div>
+            <span class="slider-unit">degrees</span>
+          </div>
+
+          <div class="slider-col">
+            <span class="slider-label">Nose</span>
+            <span class="slider-value" id="val-nose" style="color:var(--muted)">0°</span>
+            <div class="slider-track">
+              <span class="slider-tick"></span>
+              <input class="v-slider" id="sl-nose" type="range" min="-15" max="15" value="0" step="1" oninput="onSlider()">
+            </div>
+            <span class="slider-unit">pitch</span>
+          </div>
+
+          <div class="slider-col">
+            <span class="slider-label">Wind</span>
+            <span class="slider-value" id="val-wind" style="color:var(--muted)">calm</span>
+            <div class="slider-track">
+              <span class="slider-tick"></span>
+              <input class="v-slider" id="sl-wind" type="range" min="-20" max="20" value="0" step="1" oninput="onSlider()">
+            </div>
+            <span class="slider-unit">mph</span>
+          </div>
+
+          <div class="slider-col">
+            <span class="slider-label">Arm</span>
+            <span class="slider-value" id="val-arm" style="color:var(--muted)">100%</span>
+            <div class="slider-track">
+              <span class="slider-tick"></span>
+              <input class="v-slider" id="sl-arm" type="range" min="60" max="140" value="100" step="1" oninput="onSlider()">
+            </div>
+            <span class="slider-unit">power</span>
+          </div>
+
+          <div class="slider-col">
+            <span class="slider-label">Spin</span>
+            <span class="slider-value" id="val-spin" style="color:var(--muted)">100%</span>
+            <div class="slider-track">
+              <span class="slider-tick"></span>
+              <input class="v-slider" id="sl-spin" type="range" min="50" max="150" value="100" step="1" oninput="onSlider()">
+            </div>
+            <span class="slider-unit">rpm</span>
+          </div>
+
+        </div>
+        <div class="dir-hint">
+          <span>↑hyzer ↓anz</span>
+          <span>↑up ↓down</span>
+          <span>↑head ↓tail</span>
+          <span>↑more ↓less</span>
+          <span>↑more ↓less</span>
+        </div>
+      </div>
+
+    </div><!-- /fs-left -->
+
+    <!-- RIGHT: arc preview -->
+    <div class="fs-right">
+      <div class="tool-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="section-label" style="margin-bottom:0">Flight shape</div>
+          <select id="arcViewSelect" onchange="arcView=this.value;updateArc();document.getElementById('arcViewLabel').textContent=arcView"
+                  style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
+            <option value="RHBH">RHBH</option>
+            <option value="RHFH">RHFH</option>
+            <option value="LHBH">LHBH</option>
+            <option value="LHFH">LHFH</option>
+          </select>
+        </div>
+        <div class="arc-preview">
+          <svg id="arcSVG" viewBox="0 0 280 420" class="arc-svg">
+            <text x="140" y="215" fill="rgba(255,255,255,0.2)" font-size="12"
+                  text-anchor="middle" font-family="system-ui,sans-serif">Select a disc above</text>
+          </svg>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);width:100%;padding:0 4px">
+            <span>Tee</span><span id="arcViewLabel">RHBH</span><span>Landing</span>
+          </div>
+
+          <div id="adj-panel" style="display:none;width:100%;text-align:center">
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px">
+              <span style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px">Adjusted</span>
+              <span id="adj-badge" class="stab-badge"></span>
+            </div>
+            <div class="nums-row" id="adj-nums" style="margin-bottom:8px"></div>
+            <div style="font-size:10px;color:var(--muted)">
+              Base: <span id="base-nums" style="font-family:ui-monospace,monospace"></span>
+            </div>
+          </div>
+
+          <div id="no-disc-msg" style="font-size:13px;color:var(--muted);text-align:center;padding:8px 0">
+            Select a disc to see the flight shape.
+          </div>
+        </div>
+      </div>
+    </div><!-- /fs-right -->
+
+  </div><!-- /fs-layout -->
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Physics modifier constants ────────────────────────────────────────────────
+// Renderer uses standard flight-number sign convention:
+//   more negative turn  → arc turns right (understable) for RHBH
+//   higher positive fade → arc fades left  (overstable)  for RHBH
+// All modifiers are applied to turn/fade before passing to arcPoints().
+const MOD = {
+  hyzer_turn: +0.05,  // hyzer > 0: more positive turn → less understable (counters turn)
+  pitch_turn: +0.08,  // nose up > 0: less negative turn (disc stalls before completing arc)
+  wind_turn:  -0.08,  // headwind > 0: more negative turn → more understable (acts faster)
+  arm_turn:   +0.03,  // underArm > 0: more positive turn → less understable (can't reach speed)
+  spin_turn:  +0.005, // overSpin > 0: very slight gyroscopic resistance to turn
+
+  hyzer_fade: +0.04,  // hyzer > 0: more fade (disc finishes harder on hyzer)
+  pitch_fade: +0.06,  // nose up > 0: more fade (early stall/fade — was -0.08, sign was wrong)
+  wind_fade:  +0.02,  // headwind > 0: slight fade increase (drag slows disc into fade sooner)
+  arm_fade:   +0.03,  // underArm > 0: more fade (underpowered disc fades earlier)
+  spin_fade:  -0.005, // overSpin > 0: very slight resistance to early fade
+};
+
+// ── Shared utilities (from index.html) ────────────────────────────────────────
+let arcView = 'RHBH';
+
+function stab(d) {
+  const net = d.turn + d.fade;
+  if (net >= 3) return 'overstable';
+  if (net <= 0) return 'understable';
+  return 'stable';
+}
+
+const STAB_META = {
+  overstable:  { short:'OS', cls:'stab-os', color:'#915EFF' },
+  stable:      { short:'ST', cls:'stab-st', color:'#4ade80' },
+  understable: { short:'US', cls:'stab-us', color:'#fbbf24' },
+};
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function arcPoints(d, W, H) {
+  const cx = W / 2;
+  const pad = W * 0.1;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const f = v => +v.toFixed(1);
+  const thr = arcView.toUpperCase();
+  const m = (thr === 'RHFH' || thr === 'LHBH') ? -1 : 1;
+  const sx = cx, sy = f(H * 0.925), ey = f(H * 0.075);
+  const sc = W / 50;
+  const endX = f(clamp(cx - m*(d.turn+d.fade)*3.4*sc, pad, W-pad));
+  const cp1x = f(clamp(cx - m*d.turn*1.5*sc, pad, W-pad));
+  const cp1y = f(sy - (sy-ey)*0.35);
+  const cp2x = f(clamp(cx - m*d.turn*7*sc - m*d.fade*2*sc, pad, W-pad));
+  const cp2y = f(ey + (sy-ey)*0.22);
+  const t = 0.65;
+  const q0x=f(sx+t*(cp1x-sx)),     q0y=f(sy+t*(cp1y-sy));
+  const q1x=f(cp1x+t*(cp2x-cp1x)), q1y=f(cp1y+t*(cp2y-cp1y));
+  const q2x=f(cp2x+t*(endX-cp2x)), q2y=f(cp2y+t*(ey-cp2y));
+  const r0x=f(q0x+t*(q1x-q0x)),    r0y=f(q0y+t*(q1y-q0y));
+  const r1x=f(q1x+t*(q2x-q1x)),    r1y=f(q1y+t*(q2y-q1y));
+  const mx =f(r0x+t*(r1x-r0x)),    my =f(r0y+t*(r1y-r0y));
+  const dx=endX-cp2x, dy=ey-cp2y, len=Math.sqrt(dx*dx+dy*dy)||1;
+  return { sx,sy,ey,endX,mx,my,q0x,q0y,r0x,r0y,r1x,r1y,q2x,q2y,nx:dx/len,ny:dy/len,cx };
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+let baseDisc = null;
+let bagDiscs = [];
+let mode = 'bag';
+
+// ── Slider helpers ────────────────────────────────────────────────────────────
+function getSliderValues() {
+  return {
+    hyzer:    parseInt(document.getElementById('sl-hyzer').value),
+    nose:     parseInt(document.getElementById('sl-nose').value),
+    wind:     parseInt(document.getElementById('sl-wind').value),
+    armSpeed: parseInt(document.getElementById('sl-arm').value),
+    spin:     parseInt(document.getElementById('sl-spin').value),
+  };
+}
+
+const SLIDER_DEFAULTS = { 'val-hyzer':0, 'val-nose':0, 'val-wind':0, 'val-arm':100, 'val-spin':100 };
+
+function sliderLabel(id, v) {
+  if (id === 'val-wind') {
+    if (v === 0) return 'calm';
+    return v > 0 ? '+' + v + ' H' : Math.abs(v) + ' T';
+  }
+  if (id === 'val-arm' || id === 'val-spin') return v + '%';
+  return (v > 0 ? '+' : '') + v + '°';
+}
+
+function onSlider() {
+  [['sl-hyzer','val-hyzer'],['sl-nose','val-nose'],['sl-wind','val-wind'],
+   ['sl-arm','val-arm'],['sl-spin','val-spin']].forEach(([slId, valId]) => {
+    const v = parseInt(document.getElementById(slId).value);
+    const el = document.getElementById(valId);
+    el.textContent = sliderLabel(valId, v);
+    el.style.color = v === SLIDER_DEFAULTS[valId] ? 'var(--muted)' : 'var(--accent)';
+  });
+  updateArc();
+}
+
+function resetSliders() {
+  document.getElementById('sl-hyzer').value = 0;
+  document.getElementById('sl-nose').value  = 0;
+  document.getElementById('sl-wind').value  = 0;
+  document.getElementById('sl-arm').value   = 100;
+  document.getElementById('sl-spin').value  = 100;
+  onSlider();
+}
+
+// ── Physics engine ────────────────────────────────────────────────────────────
+function clampN(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function applyModifiers(base, { hyzer, nose, wind, armSpeed, spin }) {
+  const underArm = 100 - armSpeed;
+  const overSpin = spin - 100;
+  const rawTurn = base.turn
+    + MOD.hyzer_turn * hyzer
+    + MOD.pitch_turn * nose
+    + MOD.wind_turn  * wind
+    + MOD.arm_turn   * underArm
+    + MOD.spin_turn  * overSpin;
+  const rawFade = base.fade
+    + MOD.hyzer_fade * hyzer
+    + MOD.pitch_fade * nose
+    + MOD.wind_fade  * wind
+    + MOD.arm_fade   * underArm
+    + MOD.spin_fade  * overSpin;
+  return {
+    speed: base.speed,
+    glide: base.glide,
+    turn:  Math.round(clampN(rawTurn, -6, 3) * 10) / 10,
+    fade:  Math.round(clampN(rawFade,  0, 7) * 10) / 10,
+  };
+}
+
+// ── Arc renderer ─────────────────────────────────────────────────────────────
+const ARC_W = 280, ARC_H = 420;
+
+function drawArc(adj, sliders) {
+  const svg = document.getElementById('arcSVG');
+  const color = STAB_META[stab(adj)].color;
+  const p = arcPoints(adj, ARC_W, ARC_H);
+  const f = v => +v.toFixed(1);
+  const aw = 9, pxv = -p.ny * aw, pyv = p.nx * aw;
+  const g1y = f(p.ey + (p.sy - p.ey) * 0.33);
+  const g2y = f(p.ey + (p.sy - p.ey) * 0.66);
+
+  const isNeutral = sliders.hyzer === 0 && sliders.nose === 0 && sliders.wind === 0
+                    && sliders.armSpeed === 100 && sliders.spin === 100;
+  let ghost = '';
+  if (!isNeutral && baseDisc) {
+    const pb = arcPoints(baseDisc, ARC_W, ARC_H);
+    const gaw = 7, gpx = -pb.ny * gaw, gpy = pb.nx * gaw;
+    ghost = `
+      <path d="M ${pb.sx},${pb.sy} C ${pb.q0x},${pb.q0y} ${pb.r0x},${pb.r0y} ${pb.mx},${pb.my}"
+            fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="7 5"/>
+      <path d="M ${pb.mx},${pb.my} C ${pb.r1x},${pb.r1y} ${pb.q2x},${pb.q2y} ${pb.endX},${pb.ey}"
+            fill="none" stroke="rgba(255,255,255,0.11)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="7 5"/>
+      <circle cx="${pb.endX}" cy="${pb.ey}" r="4" fill="rgba(255,255,255,0.1)"/>
+      <polyline points="${f(pb.endX-pb.nx*gaw+gpx)},${f(pb.ey-pb.ny*gaw+gpy)} ${pb.endX},${pb.ey} ${f(pb.endX-pb.nx*gaw-gpx)},${f(pb.ey-pb.ny*gaw-gpy)}"
+                fill="none" stroke="rgba(255,255,255,0.09)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+
+  svg.innerHTML = `
+    <line x1="0" y1="${g1y}" x2="${ARC_W}" y2="${g1y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+    <line x1="0" y1="${g2y}" x2="${ARC_W}" y2="${g2y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+    <line x1="${p.cx}" y1="${f(p.sy+6)}" x2="${p.cx}" y2="${p.ey}" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="6 8"/>
+    <rect x="${f(p.cx-18)}" y="${f(p.sy-5)}" width="36" height="10" rx="3" fill="rgba(255,255,255,0.07)"/>
+    <text x="${p.cx}" y="${f(p.sy+20)}" fill="rgba(255,255,255,0.2)" font-size="10" text-anchor="middle" font-family="system-ui,sans-serif">TEE</text>
+    ${ghost}
+    <path d="M ${p.sx},${p.sy} C ${p.q0x},${p.q0y} ${p.r0x},${p.r0y} ${p.mx},${p.my}"
+          fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M ${p.mx},${p.my} C ${p.r1x},${p.r1y} ${p.q2x},${p.q2y} ${p.endX},${p.ey}"
+          fill="none" stroke="${color}" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="${p.sx}" cy="${p.sy}" r="6" fill="rgba(255,255,255,0.45)"/>
+    <circle cx="${p.endX}" cy="${p.ey}" r="6" fill="${color}"/>
+    <polyline points="${f(p.endX-p.nx*aw+pxv)},${f(p.ey-p.ny*aw+pyv)} ${p.endX},${p.ey} ${f(p.endX-p.nx*aw-pxv)},${f(p.ey-p.ny*aw-pyv)}"
+              fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+
+// ── Update cycle ─────────────────────────────────────────────────────────────
+function updateArc() {
+  if (!baseDisc) return;
+  const sliders = getSliderValues();
+  const adj = applyModifiers(baseDisc, sliders);
+  drawArc(adj, sliders);
+
+  const sm = STAB_META[stab(adj)];
+  document.getElementById('adj-badge').textContent = sm.short;
+  document.getElementById('adj-badge').className   = 'stab-badge ' + sm.cls;
+  document.getElementById('adj-nums').innerHTML =
+    `<span>SPD <strong>${adj.speed}</strong></span>` +
+    `<span>GLI <strong>${adj.glide}</strong></span>` +
+    `<span>TRN <strong>${adj.turn}</strong></span>` +
+    `<span>FDE <strong>${adj.fade}</strong></span>`;
+  document.getElementById('base-nums').textContent =
+    `${baseDisc.speed} / ${baseDisc.glide} / ${baseDisc.turn} / ${baseDisc.fade}`;
+
+  document.getElementById('adj-panel').style.display = '';
+  document.getElementById('no-disc-msg').style.display = 'none';
+  document.getElementById('arcViewLabel').textContent = arcView;
+}
+
+// ── Disc selection ────────────────────────────────────────────────────────────
+function setBaseDisc(d) {
+  baseDisc = { speed: +d.speed, glide: +d.glide, turn: +d.turn, fade: +d.fade,
+               mold: d.mold || '', mfr: d.mfr || '' };
+  const el = document.getElementById('selected-disc');
+  el.style.display = 'flex';
+  el.innerHTML = d.mold
+    ? `<span style="font-size:11px;color:var(--muted)">${esc(d.mfr)}</span>
+       <span style="font-size:15px;font-weight:700;${d.mfr ? 'margin-left:6px' : ''}">${esc(d.mold)}</span>
+       <span style="margin-left:auto;font-family:ui-monospace,monospace;font-size:11px;color:var(--muted)">${d.speed} / ${d.glide} / ${d.turn} / ${d.fade}</span>`
+    : `<span style="font-size:13px;font-weight:600">Manual entry</span>
+       <span style="margin-left:auto;font-family:ui-monospace,monospace;font-size:11px;color:var(--muted)">${d.speed} / ${d.glide} / ${d.turn} / ${d.fade}</span>`;
+  updateArc();
+}
+
+function selectBagDisc(id) {
+  const d = bagDiscs.find(x => x.id === id);
+  if (!d) return;
+  document.querySelectorAll('#bag-list .lib-item').forEach(el => {
+    el.classList.toggle('selected', parseInt(el.dataset.id) === id);
+  });
+  setBaseDisc(d);
+}
+
+// ── Bag loading ───────────────────────────────────────────────────────────────
+async function loadBag() {
+  const statusEl = document.getElementById('bag-status');
+  const listEl   = document.getElementById('bag-list');
+  try {
+    const r = await fetch('/api/data');
+    if (r.status === 404) {
+      bagDiscs = [];
+    } else if (r.ok) {
+      const data = await r.json();
+      bagDiscs = (data && data.discs) ? data.discs : [];
+    } else {
+      throw new Error(`HTTP ${r.status}`);
+    }
+  } catch (e) {
+    statusEl.textContent = 'Could not load bag.';
+    return;
+  }
+  if (!bagDiscs.length) {
+    statusEl.textContent = 'Bag is empty — use Manual mode.';
+    return;
+  }
+  statusEl.style.display = 'none';
+  listEl.style.display = '';
+  const sorted = [...bagDiscs].sort((a, b) => b.speed - a.speed);
+  listEl.innerHTML = sorted.map(d => {
+    const s = STAB_META[stab(d)];
+    return `<div class="lib-item" data-id="${d.id}" onclick="selectBagDisc(${d.id})">
+      <div style="flex:1;min-width:0">
+        <div class="lib-item-name">${esc(d.mold)}</div>
+        <div class="lib-item-mfr">${esc(d.mfr)}</div>
+      </div>
+      <span class="stab-badge ${s.cls}" style="margin-right:6px">${s.short}</span>
+      <div class="lib-item-nums">${d.speed} / ${d.glide} / ${d.turn} / ${d.fade}</div>
+    </div>`;
+  }).join('');
+
+  // Auto-select first disc so the arc is immediately visible
+  if (sorted.length) selectBagDisc(sorted[0].id);
+}
+
+// ── Manual mode ───────────────────────────────────────────────────────────────
+function onManualChange() {
+  setBaseDisc({
+    speed: parseFloat(document.getElementById('m-speed').value) || 0,
+    glide: parseFloat(document.getElementById('m-glide').value) || 0,
+    turn:  parseFloat(document.getElementById('m-turn').value)  || 0,
+    fade:  parseFloat(document.getElementById('m-fade').value)  || 0,
+    mold: '', mfr: '',
+  });
+}
+
+// ── Mode switching ────────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('tab-bag').classList.toggle('active', m === 'bag');
+  document.getElementById('tab-manual').classList.toggle('active', m === 'manual');
+  document.getElementById('pane-bag').style.display    = m === 'bag'    ? '' : 'none';
+  document.getElementById('pane-manual').style.display = m === 'manual' ? '' : 'none';
+  if (m === 'manual') {
+    if (baseDisc) {
+      document.getElementById('m-speed').value = baseDisc.speed;
+      document.getElementById('m-glide').value = baseDisc.glide;
+      document.getElementById('m-turn').value  = baseDisc.turn;
+      document.getElementById('m-fade').value  = baseDisc.fade;
+    }
+    onManualChange();
+  }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  onSlider();
+  loadBag();
+});
+</script>
+</body>
+</html>

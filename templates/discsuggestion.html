@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disc Suggest — {{ username }}</title>
+<style>
+  :root {
+    --bg: #0b0e1a;
+    --card: #141829;
+    --card-hover: #1a1f36;
+    --border: #252b45;
+    --text: #e8eaf2;
+    --muted: #8b91ad;
+    --accent: #915EFF;
+    --os: #915EFF;
+    --st: #4ade80;
+    --us: #fbbf24;
+    --danger: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 20px 16px 60px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  header { margin-bottom: 24px; }
+  .eyebrow { color: var(--accent); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  h1 { font-size: 26px; font-weight: 700; }
+  .substat { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .stab-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+    border: 1px solid; flex-shrink: 0;
+  }
+  .stab-os { color: var(--os); border-color: rgba(145,94,255,0.4); background: rgba(145,94,255,0.08); }
+  .stab-st { color: var(--st); border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.08); }
+  .stab-us { color: var(--us); border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.08); }
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--card); border: 1px solid var(--accent); border-radius: 10px;
+    padding: 10px 18px; font-size: 13px; z-index: 100; opacity: 0; transition: opacity 0.25s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  /* Scenario grid */
+  .scenario-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  @media (min-width: 480px)  { .scenario-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 700px)  { .scenario-grid { grid-template-columns: repeat(6, 1fr); } }
+
+  .scenario-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+  }
+  .scenario-card:hover { border-color: var(--accent); background: var(--card-hover); }
+  .scenario-card.active {
+    border-color: var(--accent);
+    background: rgba(145,94,255,0.1);
+  }
+  .scenario-icon { font-size: 22px; line-height: 1; }
+  .scenario-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .scenario-desc  { font-size: 10px; color: var(--muted); line-height: 1.4; }
+
+  /* Results */
+  .results-section { display: none; }
+  .results-section.visible { display: block; }
+  .results-header {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .results-count {
+    font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+    background: rgba(145,94,255,0.12); color: var(--accent); border: 1px solid rgba(145,94,255,0.25);
+  }
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .disc-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .disc-card.in-bag {
+    border-color: rgba(145,94,255,0.4);
+    background: rgba(145,94,255,0.06);
+  }
+  .disc-name { font-size: 15px; font-weight: 700; }
+  .disc-mfr  { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+  .disc-meta {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .type-chip {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    color: var(--muted); border: 1px solid var(--border); border-radius: 4px;
+    padding: 1px 6px;
+  }
+  .disc-nums {
+    font-family: ui-monospace, monospace; font-size: 11px; color: var(--muted);
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .disc-nums span { color: var(--text); font-weight: 600; }
+  .stab-bar-wrap {
+    margin-top: 8px;
+    position: relative;
+    height: 4px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 2px;
+  }
+  .stab-bar-fill {
+    position: absolute; top: 0; height: 4px; border-radius: 2px;
+    transition: width 0.2s;
+  }
+  .stab-bar-zero {
+    position: absolute; top: -3px; width: 1px; height: 10px;
+    background: rgba(255,255,255,0.3);
+  }
+  .in-bag-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 4px;
+  }
+  .empty-bag {
+    font-size: 13px; color: var(--muted); padding: 16px 0; text-align: center;
+  }
+  .divider {
+    border: none; border-top: 1px solid var(--border); margin: 20px 0;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+      <div style="display:flex;gap:14px;align-items:baseline">
+        <a href="/" style="color:var(--muted);font-size:12px;text-decoration:none">← Bag</a>
+        <a href="/flightshape" style="color:var(--muted);font-size:12px;text-decoration:none">Flight Shape</a>
+      </div>
+      <form method="post" action="/switch" style="margin:0">
+        <button type="submit" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0">Switch user</button>
+      </form>
+    </div>
+    <p class="eyebrow">Disc Suggest</p>
+    <h1>What should I throw?</h1>
+    <p class="substat">Pick a scenario — see what fits from your bag and the full library</p>
+  </header>
+
+  <!-- Scenario selector -->
+  <div class="scenario-grid" id="scenarioGrid"></div>
+
+  <!-- Results -->
+  <div class="results-section" id="resultsSection">
+    <div id="bagResultsWrap">
+      <div class="results-header">
+        <span>From your bag</span>
+        <span class="results-count" id="bagCount">0</span>
+      </div>
+      <div class="results-grid" id="bagResults"></div>
+      <hr class="divider">
+    </div>
+    <div class="results-header">
+      <span>All options</span>
+      <span class="results-count" id="libCount">0</span>
+    </div>
+    <div class="results-grid" id="libResults"></div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Scenario definitions ──────────────────────────────────────────────────────
+const SCENARIOS = [
+  {
+    id: 'straight',
+    icon: '➡',
+    title: 'Dead Straight',
+    desc: 'Holds a line with minimal fade',
+    stabMin: -0.5, stabMax: 0.5,
+    types: ['Control Driver', 'Mid Range'],
+    bagTest: d => d.turn >= -1.5 && d.turn <= 0 && d.fade >= 0 && d.fade <= 2 && d.speed >= 4,
+  },
+  {
+    id: 'hyzer',
+    icon: '↙',
+    title: 'Reliable Hyzer',
+    desc: 'Finishes hard left, won\'t turn over',
+    stabMin: 2.5,
+    types: ['Control Driver', 'Distance Driver', 'Mid Range'],
+    bagTest: d => d.fade >= 3 && d.turn >= -1,
+  },
+  {
+    id: 'distance',
+    icon: '🚀',
+    title: 'Max Distance',
+    desc: 'Fast driver for max carry off the tee',
+    stabMin: 0, stabMax: 2.5,
+    speedMin: 11,
+    bagTest: d => d.speed >= 11 && d.fade <= 4 && d.turn >= -2,
+  },
+  {
+    id: 'headwind',
+    icon: '🌬',
+    title: 'Into Headwind',
+    desc: 'Won\'t flip even in a strong headwind',
+    stabMin: 3.5,
+    types: ['Control Driver', 'Distance Driver'],
+    bagTest: d => d.fade >= 3 && d.turn >= -0.5 && d.speed >= 7,
+  },
+  {
+    id: 'tailwind',
+    icon: '💨',
+    title: 'Tailwind',
+    desc: 'Wind at your back — understable flies straighter',
+    stabMin: -2, stabMax: 0.5,
+    speedMin: 9,
+    types: ['Control Driver', 'Distance Driver'],
+    bagTest: d => d.speed >= 9 && d.turn <= -1 && d.fade <= 2,
+  },
+  {
+    id: 'turnover',
+    icon: '↗',
+    title: 'Turnover',
+    desc: 'Turns right and holds the anhyzer',
+    stabMax: -2,
+    types: ['Control Driver', 'Distance Driver'],
+    bagTest: d => d.turn <= -2.5 && d.fade <= 2,
+  },
+  {
+    id: 'forehand',
+    icon: '✋',
+    title: 'Forehand',
+    desc: 'Won\'t flip on a sidearm release',
+    stabMin: 2,
+    types: ['Control Driver', 'Distance Driver'],
+    bagTest: d => d.fade >= 2 && d.turn >= -0.5 && d.speed >= 7,
+  },
+  {
+    id: 'tomahawk',
+    icon: '🪓',
+    title: 'Tomahawk',
+    desc: 'Upside-down hammer — high fade turns it over hard',
+    stabMin: 3,
+    types: ['Control Driver', 'Distance Driver'],
+    bagTest: d => d.fade >= 3 && d.turn >= -0.5 && d.speed >= 7,
+  },
+  {
+    id: 'approach',
+    icon: '🎯',
+    title: 'Approach',
+    desc: 'Controlled & accurate into the green',
+    stabMin: 0, stabMax: 2.5,
+    types: ['Putt & Approach'],
+    bagTest: d => d.speed <= 5 && d.fade >= 0 && d.fade <= 3,
+  },
+  {
+    id: 'accurate_mid',
+    icon: '⊙',
+    title: 'Accurate Mid',
+    desc: 'Predictable mid — slight fade, hits the gap',
+    stabMin: 0.5, stabMax: 1.5,
+    types: ['Mid Range'],
+    bagTest: d => d.speed >= 4 && d.speed <= 6 && d.turn >= -1 && d.fade >= 1 && d.fade <= 2,
+  },
+  {
+    id: 'hyzerflip',
+    icon: '↪',
+    title: 'Hyzer Flip',
+    desc: 'Starts hyzer, flips flat, holds straight',
+    stabMin: -1.5, stabMax: -0.5,
+    types: ['Control Driver'],
+    bagTest: d => d.speed >= 7 && d.speed <= 11 && d.turn <= -1 && d.turn >= -2 && d.fade >= 1 && d.fade <= 2,
+  },
+  {
+    id: 'roller',
+    icon: '⟳',
+    title: 'Roller',
+    desc: 'Understable enough to run on the ground',
+    stabMax: -3,
+    types: ['Control Driver', 'Distance Driver'],
+    bagTest: d => d.turn <= -3,
+  },
+];
+
+// ── State ────────────────────────────────────────────────────────────────────
+let allDiscs = null;
+let bagDiscs = [];
+let activeScenario = null;
+let dataReady = false;
+let pendingScenario = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function stabClass(stab) {
+  if (stab >= 2)  return 'stab-os';
+  if (stab <= -1) return 'stab-us';
+  return 'stab-st';
+}
+function stabShort(stab) {
+  if (stab >= 2)  return 'OS';
+  if (stab <= -1) return 'US';
+  return 'ST';
+}
+
+// Stability bar: maps -4..+7 range to 0-100%
+// Zero is at 36% (4/11 of the range from left)
+function stabBar(stab) {
+  const MIN = -4, MAX = 7, RANGE = MAX - MIN;
+  const pct = Math.round(((stab - MIN) / RANGE) * 100);
+  const zeroPct = Math.round(((-MIN) / RANGE) * 100);
+  const isOS = stab >= 0;
+  const color = stab >= 2 ? 'var(--os)' : stab <= -1 ? 'var(--us)' : 'var(--st)';
+  const left  = isOS ? zeroPct : pct;
+  const width = Math.abs(pct - zeroPct);
+  return `
+    <div class="stab-bar-wrap">
+      <div class="stab-bar-fill" style="left:${left}%;width:${width}%;background:${color}"></div>
+      <div class="stab-bar-zero" style="left:${zeroPct}%"></div>
+    </div>`;
+}
+
+function typeShort(type) {
+  if (type === 'Putt & Approach') return 'Putter';
+  if (type === 'Mid Range')       return 'Mid';
+  if (type === 'Control Driver')  return 'Fairway';
+  if (type === 'Distance Driver') return 'Driver';
+  return type;
+}
+
+function discCardHTML(d, inBag) {
+  const sc = stabClass(d.stability);
+  return `<div class="disc-card${inBag ? ' in-bag' : ''}">
+    ${inBag ? '<div class="in-bag-label">In your bag</div>' : ''}
+    <div class="disc-name">${esc(d.name)}</div>
+    <div class="disc-mfr">${esc(d.mfr)}</div>
+    <div class="disc-meta">
+      <span class="type-chip">${esc(typeShort(d.type))}</span>
+      <span class="stab-badge ${sc}">${stabShort(d.stability)}</span>
+    </div>
+    <div class="disc-nums">
+      <span>${d.speed}</span>/<span>${d.glide}</span>/<span>${d.turn}</span>/<span>${d.fade}</span>
+    </div>
+    ${stabBar(d.stability)}
+  </div>`;
+}
+
+// ── Filter logic ──────────────────────────────────────────────────────────────
+function filterLibrary(sc) {
+  if (!allDiscs) return [];
+  return allDiscs.filter(d => {
+    if (sc.stabMin !== undefined && d.stability < sc.stabMin) return false;
+    if (sc.stabMax !== undefined && d.stability > sc.stabMax) return false;
+    if (sc.speedMin !== undefined && d.speed < sc.speedMin) return false;
+    if (sc.types && !sc.types.includes(d.type)) return false;
+    return true;
+  }).sort((a, b) => {
+    const mid = ((sc.stabMin ?? -4) + (sc.stabMax ?? 7)) / 2;
+    return Math.abs(a.stability - mid) - Math.abs(b.stability - mid);
+  }).slice(0, 15);
+}
+
+function filterBag(sc) {
+  return bagDiscs.filter(d => sc.bagTest(d));
+}
+
+// Convert bag disc to library-compatible shape for display
+function bagToDisc(d) {
+  return {
+    name: d.mold, mfr: d.mfr,
+    type: d.speed <= 3 ? 'Putt & Approach'
+        : d.speed <= 5 ? 'Mid Range'
+        : d.speed <= 8 ? 'Control Driver'
+        : 'Distance Driver',
+    stability: Math.round((d.fade + (d.turn * -0.7)) * 10) / 10,
+    speed: d.speed, glide: d.glide, turn: d.turn, fade: d.fade,
+  };
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderScenario(sc) {
+  if (!dataReady) { pendingScenario = sc; return; }
+  activeScenario = sc.id;
+  document.querySelectorAll('.scenario-card').forEach(el => {
+    el.classList.toggle('active', el.dataset.id === sc.id);
+  });
+
+  const bagMatches = filterBag(sc);
+  const libMatches = filterLibrary(sc);
+
+  // Remove bag discs that are already shown in bag section (by name+mfr)
+  const bagNames = new Set(bagMatches.map(d => d.mold + '|' + d.mfr));
+  const libOnly = libMatches.filter(d => !bagNames.has(d.name + '|' + d.mfr));
+
+  // Bag section
+  const bagWrap = document.getElementById('bagResultsWrap');
+  const bagEl   = document.getElementById('bagResults');
+  const bagCnt  = document.getElementById('bagCount');
+  if (bagMatches.length) {
+    bagWrap.style.display = '';
+    bagCnt.textContent = bagMatches.length;
+    bagEl.innerHTML = bagMatches.map(d => discCardHTML(bagToDisc(d), true)).join('');
+  } else {
+    bagWrap.style.display = '';
+    bagCnt.textContent = '0';
+    bagEl.innerHTML = `<div class="empty-bag">No matches in your bag for this scenario.</div>`;
+  }
+
+  // Library section
+  document.getElementById('libCount').textContent = libOnly.length;
+  document.getElementById('libResults').innerHTML = libOnly.map(d => discCardHTML(d, false)).join('');
+
+  document.getElementById('resultsSection').classList.add('visible');
+  // Snap to bag results immediately — don't make the user scroll
+  document.getElementById('bagResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function buildScenarioGrid() {
+  const grid = document.getElementById('scenarioGrid');
+  grid.innerHTML = SCENARIOS.map(sc => `
+    <div class="scenario-card" data-id="${esc(sc.id)}">
+      <div class="scenario-icon">${sc.icon}</div>
+      <div class="scenario-title">${esc(sc.title)}</div>
+      <div class="scenario-desc">${esc(sc.desc)}</div>
+    </div>`).join('');
+  grid.addEventListener('click', e => {
+    const card = e.target.closest('.scenario-card');
+    if (!card) return;
+    const sc = SCENARIOS.find(s => s.id === card.dataset.id);
+    if (sc) renderScenario(sc);
+  });
+}
+
+async function loadData() {
+  // Load in parallel
+  const [discRes, bagRes] = await Promise.allSettled([
+    fetch('/api/master'),
+    fetch('/api/data'),
+  ]);
+
+  if (discRes.status === 'fulfilled' && discRes.value.ok) {
+    const raw = await discRes.value.json();
+    // master JSON uses {name, mfr, speed, glide, turn, fade, stability, type}
+    allDiscs = raw.filter(d => d.stability != null && d.type);
+  }
+
+  if (bagRes.status === 'fulfilled' && bagRes.value.ok) {
+    const data = await bagRes.value.json();
+    bagDiscs = (data && data.discs) ? data.discs : [];
+  }
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  buildScenarioGrid();
+  await loadData();
+  dataReady = true;
+  if (pendingScenario) renderScenario(pendingScenario);
+});
+</script>
+</body>
+</html>

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import json
 import sqlite3
 from functools import wraps
 from flask import Flask, jsonify, request, render_template, session, redirect, url_for, abort
@@ -116,6 +115,9 @@ def add_user():
     if not username:
         session['pick_error'] = 'Username cannot be empty.'
         return redirect(url_for('pick'))
+    if len(username) > 40:
+        session['pick_error'] = 'Username must be 40 characters or fewer.'
+        return redirect(url_for('pick'))
     try:
         with get_db() as db:
             cur = db.execute('INSERT INTO users (username) VALUES (?)', (username,))
@@ -128,13 +130,13 @@ def add_user():
 
 
 @app.route('/delete_user', methods=['POST'])
+@login_required
 def delete_user():
     user_id = request.form.get('user_id', type=int)
-    if user_id:
+    if user_id and user_id == session.get('user_id'):
         with get_db() as db:
             db.execute('DELETE FROM users WHERE id = ?', (user_id,))
-        if session.get('user_id') == user_id:
-            session.clear()
+        session.clear()
     return redirect(url_for('pick'))
 
 
@@ -157,6 +159,19 @@ def index():
         session.clear()
         return redirect(url_for('pick'))
     return render_template('index.html', username=row['username'])
+
+
+@app.route('/flightshape')
+@login_required
+def flightshape():
+    with get_db() as db:
+        row = db.execute(
+            'SELECT username FROM users WHERE id = ?', (session['user_id'],)
+        ).fetchone()
+    if not row:
+        session.clear()
+        return redirect(url_for('pick'))
+    return render_template('flightshape.html', username=row['username'])
 
 
 @app.route('/api/data', methods=['GET'])
@@ -205,12 +220,12 @@ def set_data():
             'speed, glide, turn, fade, use_desc, thr, notes, color, sort_order) '
             'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
-                (user_id, d.get('id', 0), d.get('mfr', ''), d.get('mold', ''),
-                 d.get('plastic', ''), d.get('weight', ''),
-                 d.get('speed', 0), d.get('glide', 0),
-                 d.get('turn', 0), d.get('fade', 0),
-                 d.get('use', ''), d.get('thr', ''), d.get('notes', ''),
-                 d.get('color', ''), i)
+                (user_id, int(d.get('id') or 0), str(d.get('mfr') or '')[:80], str(d.get('mold') or '')[:80],
+                 str(d.get('plastic') or '')[:80], str(d.get('weight') or '')[:20],
+                 float(d.get('speed') or 0), float(d.get('glide') or 0),
+                 float(d.get('turn') or 0), float(d.get('fade') or 0),
+                 str(d.get('use') or '')[:200], str(d.get('thr') or '')[:10], str(d.get('notes') or '')[:1000],
+                 str(d.get('color') or '')[:20], i)
                 for i, d in enumerate(discs)
             ]
         )
@@ -235,6 +250,20 @@ def get_master():
         with open(master_path) as f:
             _master_cache = f.read()
     return app.response_class(_master_cache, mimetype='application/json')
+
+
+
+@app.route('/discsuggestion')
+@login_required
+def discsuggestion():
+    with get_db() as db:
+        row = db.execute(
+            'SELECT username FROM users WHERE id = ?', (session['user_id'],)
+        ).fetchone()
+    if not row:
+        session.clear()
+        return redirect(url_for('pick'))
+    return render_template('discsuggestion.html', username=row['username'])
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

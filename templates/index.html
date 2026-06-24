@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Disc Bag Tracker</title>
+<title>{{ username }}'s Bag — Disc Tracker</title>
 <style>
   :root {
     --bg: #0b0e1a;
@@ -86,8 +86,8 @@
   .cswatch.sel { box-shadow:0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
   .cswatch-custom { background: conic-gradient(red,#ff0,lime,cyan,blue,magenta,red); border:1px solid var(--border); position:relative; overflow:hidden; }
   .cswatch-custom input[type=color] { opacity:0; position:absolute; inset:0; width:100%; height:100%; cursor:pointer; border:none; padding:0; }
-  .arc { width: 50px; flex-shrink: 0; opacity: 0.92; }
-  .nums { display: flex; gap: 12px; font-family: ui-monospace, monospace; font-size: 12px; }
+  .arc { width: 54px; flex-shrink: 0; opacity: 0.92; }
+  .nums { display: flex; gap: 8px; font-family: ui-monospace, monospace; font-size: 12px; }
   .nums div { display: flex; flex-direction: column; align-items: center; }
   .nums .lbl { font-size: 9px; color: var(--muted); }
   .nums .val { font-weight: 600; }
@@ -164,9 +164,13 @@
   <header>
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
       <p class="eyebrow">The Bag</p>
-      <form method="post" action="/switch" style="margin:0">
-        <button type="submit" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0">Switch user</button>
-      </form>
+      <div style="display:flex;align-items:baseline;gap:14px">
+        <a href="/flightshape" style="color:var(--muted);font-size:12px;text-decoration:none">Flight Shape</a>
+        <a href="/discsuggestion" style="color:var(--muted);font-size:12px;text-decoration:none">Disc Suggest</a>
+        <form method="post" action="/switch" style="margin:0">
+          <button type="submit" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0">Switch user</button>
+        </form>
+      </div>
     </div>
     <h1>{{ username }}'s Bag</h1>
     <p class="substat" id="substat">Loading…</p>
@@ -183,6 +187,7 @@
     </select>
     <button class="btn" id="addBtn">+ Add disc</button>
     <button class="btn btn-ghost" id="libraryBtn">Disc library</button>
+    <button class="btn btn-ghost" id="fieldBtn">Field view</button>
     <button class="btn btn-ghost" id="importBtn">Import CSV</button>
     <button class="btn btn-ghost" id="exportBtn">Export CSV</button>
   </div>
@@ -196,10 +201,10 @@
     <span><span class="swatch" style="background:var(--us)"></span>Understable</span>
     <span style="margin-left:auto; display:flex; align-items:center; gap:8px;">
       <select id="arcViewSelect" onchange="arcView=this.value;render()" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
-        <option value="RHBH">RHBH / default</option>
-        <option value="RHFH">RHFH / override</option>
-        <option value="LHBH">LHBH / override</option>
-        <option value="LHFH">LHFH / override</option>
+        <option value="RHBH">RHBH</option>
+        <option value="RHFH">RHFH</option>
+        <option value="LHBH">LHBH</option>
+        <option value="LHFH">LHFH</option>
       </select>
       <span id="dragHint">tap a card to edit</span>
     </span>
@@ -223,8 +228,8 @@ let filter = 'all';
 let typeFilter = 'all';
 let sortMode = 'speed-desc';
 let arcView = 'RHBH';
+let viewMode = 'cards';
 let dragEl = null, dragGhost = null, dragOffX = 0, dragOffY = 0;
-let dirty = false;
 
 function stab(d) {
   const net = d.turn + d.fade;
@@ -245,10 +250,10 @@ function discType(d) {
   return 'driver';
 }
 const TYPE_META = {
-  putter:  { short:'P',  label:'Putter',  word:'Putter',          cls:'type-p', color:'#94a3b8' },
-  mid:     { short:'M',  label:'Mid',     word:'Mid-range',        cls:'type-m', color:'#38bdf8' },
-  fairway: { short:'FD', label:'Fairway', word:'Fairway Driver',   cls:'type-f', color:'#2dd4bf' },
-  driver:  { short:'D',  label:'Driver',  word:'Distance Driver',  cls:'type-d', color:'#fb923c' },
+  putter:  { short:'P',  label:'Putter',  word:'Putter'          },
+  mid:     { short:'M',  label:'Mid',     word:'Mid-range'        },
+  fairway: { short:'FD', label:'Fairway', word:'Fairway Driver'   },
+  driver:  { short:'D',  label:'Driver',  word:'Distance Driver'  },
 };
 const DISC_COLORS = [
   { hex:'',        cls:'cswatch-none' },
@@ -308,7 +313,6 @@ async function persist() {
       body: JSON.stringify({ discs, nextId, sortMode })
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    dirty = false;
   } catch (e) {
     toast('Could not save — changes are session-only');
   }
@@ -321,61 +325,127 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 2200);
 }
 
+function arcPoints(d, W, H) {
+  const cx = W / 2;
+  const pad = W * 0.1;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const f = v => +v.toFixed(1);
+  const thr = arcView.toUpperCase();
+  const m = (thr === 'RHFH' || thr === 'LHBH') ? -1 : 1;
+  const sx = cx, sy = f(H * 0.925), ey = f(H * 0.075);
+  const sc = W / 50;
+  const endX = f(clamp(cx - m*(d.turn+d.fade)*3.4*sc, pad, W-pad));
+  const cp1x = f(clamp(cx - m*d.turn*1.5*sc, pad, W-pad));
+  const cp1y = f(sy - (sy-ey)*0.35);
+  const cp2x = f(clamp(cx - m*d.turn*7*sc - m*d.fade*2*sc, pad, W-pad));
+  const cp2y = f(ey + (sy-ey)*0.22);
+  const t = 0.65;
+  const q0x=f(sx+t*(cp1x-sx)),     q0y=f(sy+t*(cp1y-sy));
+  const q1x=f(cp1x+t*(cp2x-cp1x)), q1y=f(cp1y+t*(cp2y-cp1y));
+  const q2x=f(cp2x+t*(endX-cp2x)), q2y=f(cp2y+t*(ey-cp2y));
+  const r0x=f(q0x+t*(q1x-q0x)),    r0y=f(q0y+t*(q1y-q0y));
+  const r1x=f(q1x+t*(q2x-q1x)),    r1y=f(q1y+t*(q2y-q1y));
+  const mx =f(r0x+t*(r1x-r0x)),    my =f(r0y+t*(r1y-r0y));
+  const dx=endX-cp2x, dy=ey-cp2y, len=Math.sqrt(dx*dx+dy*dy)||1;
+  return { sx,sy,ey,endX,mx,my,q0x,q0y,r0x,r0y,r1x,r1y,q2x,q2y,nx:dx/len,ny:dy/len,cx };
+}
+
 function arcSVG(d) {
   const color = STAB_META[stab(d)].color;
   const W = 50, H = 80;
-  const cx = 25;
-  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const p = arcPoints(d, W, H);
   const f = v => +v.toFixed(1);
-
-  // RHFH and LHBH spin opposite to RHBH/LHFH — mirror laterally
-  // arcView is the master override; falls back to per-disc thr
-  const thr = (arcView || d.thr || '').toUpperCase();
-  const m = (thr === 'RHFH' || thr === 'LHBH') ? -1 : 1;
-
-  // Top-down view: disc travels bottom (release) to top (landing).
-  // For RHBH/LHFH: negative turn swings RIGHT, positive fade hooks LEFT.
-  // m = -1 flips this for RHFH/LHBH.
-  const sx = cx, sy = 74, ey = 6;
-
-  // Net landing position
-  const endX = clamp(cx - m * (d.turn + d.fade) * 3.4, 5, W - 5);
-
-  // CP1 stays near center-X so early flight is straight
-  const cp1x = f(clamp(cx - m * d.turn * 1.5, 5, W - 5));
-  const cp1y = f(sy - (sy - ey) * 0.35);
-
-  // CP2 is the max lateral excursion
-  const cp2x = f(clamp(cx - m * d.turn * 7 - m * d.fade * 2, 5, W - 5));
-  const cp2y = f(ey + (sy - ey) * 0.22);
-
-  // Split at t=0.65: turn phase is ~65% of flight, fade phase is the last 35%
-  const t = 0.65;
-  const q0x = f(sx + t*(cp1x-sx)),       q0y = f(sy + t*(cp1y-sy));
-  const q1x = f(cp1x + t*(cp2x-cp1x)),   q1y = f(cp1y + t*(cp2y-cp1y));
-  const q2x = f(cp2x + t*(endX-cp2x)),   q2y = f(cp2y + t*(ey-cp2y));
-  const r0x = f(q0x + t*(q1x-q0x)),      r0y = f(q0y + t*(q1y-q0y));
-  const r1x = f(q1x + t*(q2x-q1x)),      r1y = f(q1y + t*(q2y-q1y));
-  const mx  = f(r0x + t*(r1x-r0x)),      my  = f(r0y + t*(r1y-r0y));
-
-  // Arrowhead tangent at landing (direction from CP2 to end)
-  const dx = endX - cp2x, dy = ey - cp2y;
-  const len = Math.sqrt(dx*dx + dy*dy) || 1;
-  const nx = dx/len, ny = dy/len;
-  const px = -ny * 3, py = nx * 3;
-
+  const aw = 3, px = -p.ny*aw, py = p.nx*aw;
   return `<svg class="arc" viewBox="0 0 ${W} ${H}" aria-hidden="true">
-    <line x1="${cx}" y1="${sy}" x2="${cx}" y2="${ey}"
-          stroke="rgba(255,255,255,0.1)" stroke-width="0.6" stroke-dasharray="2 3"/>
-    <path d="M ${sx},${sy} C ${q0x},${q0y} ${r0x},${r0y} ${mx},${my}"
-          fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-linecap="round"/>
-    <path d="M ${mx},${my} C ${r1x},${r1y} ${q2x},${q2y} ${endX},${ey}"
-          fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
-    <circle cx="${sx}" cy="${sy}" r="2.8" fill="rgba(255,255,255,0.4)"/>
-    <circle cx="${endX}" cy="${ey}" r="2.2" fill="${color}"/>
-    <polyline points="${f(endX-nx*5+px)},${f(ey-ny*5+py)} ${endX},${ey} ${f(endX-nx*5-px)},${f(ey-ny*5-py)}"
-              fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="${p.cx}" y1="${p.sy}" x2="${p.cx}" y2="${p.ey}" stroke="rgba(255,255,255,0.1)" stroke-width="0.6" stroke-dasharray="2 3"/>
+    <path d="M ${p.sx},${p.sy} C ${p.q0x},${p.q0y} ${p.r0x},${p.r0y} ${p.mx},${p.my}" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M ${p.mx},${p.my} C ${p.r1x},${p.r1y} ${p.q2x},${p.q2y} ${p.endX},${p.ey}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="${p.sx}" cy="${p.sy}" r="2.8" fill="rgba(255,255,255,0.4)"/>
+    <circle cx="${p.endX}" cy="${p.ey}" r="2.2" fill="${color}"/>
+    <polyline points="${f(p.endX-p.nx*aw+px)},${f(p.ey-p.ny*aw+py)} ${p.endX},${p.ey} ${f(p.endX-p.nx*aw-px)},${f(p.ey-p.ny*aw-py)}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`;
+}
+
+function showArcDetail(e, id) {
+  e.stopPropagation();
+  const d = discs.find(x => x.id === id);
+  if (!d) return;
+  const W = 220, H = 350;
+  const color = STAB_META[stab(d)].color;
+  const sm = STAB_META[stab(d)];
+  const p = arcPoints(d, W, H);
+  const f = v => +v.toFixed(1);
+  const aw = 7, px = -p.ny*aw, py = p.nx*aw;
+  const g1y = f(p.ey + (p.sy-p.ey)*0.33);
+  const g2y = f(p.ey + (p.sy-p.ey)*0.66);
+  document.getElementById('modalRoot').innerHTML = `
+  <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:320px;padding:20px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
+        <div>
+          <div style="font-size:11px;color:var(--muted)">${esc(d.mfr)}</div>
+          <div style="font-size:20px;font-weight:700">${esc(d.mold)}</div>
+        </div>
+        <span class="stab-badge ${sm.cls}">${sm.short}</span>
+      </div>
+      <div style="display:flex;gap:20px;font-family:ui-monospace,monospace;font-size:13px;margin-bottom:14px">
+        <span style="color:var(--muted)">SPD <strong style="color:var(--text)">${d.speed}</strong></span>
+        <span style="color:var(--muted)">GLI <strong style="color:var(--text)">${d.glide}</strong></span>
+        <span style="color:var(--muted)">TRN <strong style="color:var(--text)">${d.turn}</strong></span>
+        <span style="color:var(--muted)">FDE <strong style="color:var(--text)">${d.fade}</strong></span>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid var(--border)">
+        <line x1="0" y1="${g1y}" x2="${W}" y2="${g1y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+        <line x1="0" y1="${g2y}" x2="${W}" y2="${g2y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+        <line x1="${p.cx}" y1="${f(p.sy+4)}" x2="${p.cx}" y2="${p.ey}" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="5 6"/>
+        <rect x="${f(p.cx-14)}" y="${f(p.sy-4)}" width="28" height="8" rx="3" fill="rgba(255,255,255,0.07)"/>
+        <path d="M ${p.sx},${p.sy} C ${p.q0x},${p.q0y} ${p.r0x},${p.r0y} ${p.mx},${p.my}" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M ${p.mx},${p.my} C ${p.r1x},${p.r1y} ${p.q2x},${p.q2y} ${p.endX},${p.ey}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="${p.sx}" cy="${p.sy}" r="5" fill="rgba(255,255,255,0.45)"/>
+        <circle cx="${p.endX}" cy="${p.ey}" r="5" fill="${color}"/>
+        <polyline points="${f(p.endX-p.nx*aw+px)},${f(p.ey-p.ny*aw+py)} ${p.endX},${p.ey} ${f(p.endX-p.nx*aw-px)},${f(p.ey-p.ny*aw-py)}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:5px;padding:0 2px">
+        <span>Tee</span><span>${arcView}</span><span>Landing</span>
+      </div>
+      <div class="modal-btns" style="margin-top:12px">
+        <span class="spacer"></span>
+        <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+        <button class="btn" onclick="closeModal();openEdit(${d.id})">Edit</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderFieldView(rows) {
+  const grid = document.getElementById('grid');
+  const W = 400, H = 380;
+  const f = v => +v.toFixed(1);
+  const pts = rows.map(d => ({ d, p: arcPoints(d, W, H), color: d.color || STAB_META[stab(d)].color }));
+  const { sy: sy0, ey: ey0, cx: cx0 } = pts[0].p;
+  const g1y = f(ey0 + (sy0-ey0)*0.33);
+  const g2y = f(ey0 + (sy0-ey0)*0.66);
+  const paths = pts.map(({ d, p, color }, i) => {
+    const aw = 6, px = -p.ny*aw, py = p.nx*aw;
+    const ly = f(p.ey + (i % 2 === 0 ? 13 : 24));
+    return `
+      <path d="M ${p.sx},${p.sy} C ${p.q0x},${p.q0y} ${p.r0x},${p.r0y} ${p.mx},${p.my}" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M ${p.mx},${p.my} C ${p.r1x},${p.r1y} ${p.q2x},${p.q2y} ${p.endX},${p.ey}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="${p.endX}" cy="${p.ey}" r="3.5" fill="${color}"/>
+      <polyline points="${f(p.endX-p.nx*aw+px)},${f(p.ey-p.ny*aw+py)} ${p.endX},${p.ey} ${f(p.endX-p.nx*aw-px)},${f(p.ey-p.ny*aw-py)}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="${p.endX}" y="${ly}" fill="${color}" font-size="10" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="600" opacity="0.9">${esc(d.mold)}</text>`;
+  }).join('');
+  grid.innerHTML = `<div style="grid-column:1/-1;display:flex;justify-content:center">
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:520px;border-radius:14px;background:rgba(255,255,255,0.015);border:1px solid var(--border)">
+      <line x1="0" y1="${g1y}" x2="${W}" y2="${g1y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+      <line x1="0" y1="${g2y}" x2="${W}" y2="${g2y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+      <line x1="${f(cx0)}" y1="${f(sy0-6)}" x2="${f(cx0)}" y2="${ey0}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="6 7"/>
+      <rect x="${f(cx0-18)}" y="${f(sy0-5)}" width="36" height="10" rx="3" fill="rgba(255,255,255,0.07)"/>
+      <text x="${f(cx0)}" y="${f(sy0+18)}" fill="rgba(255,255,255,0.22)" font-size="9" text-anchor="middle" font-family="system-ui,sans-serif">TEE</text>
+      ${paths}
+      <circle cx="${f(cx0)}" cy="${f(sy0)}" r="5" fill="rgba(255,255,255,0.5)"/>
+    </svg>
+  </div>`;
 }
 
 function render() {
@@ -413,21 +483,24 @@ function render() {
   else if (sortMode === 'mfr')        rows.sort((a,b) => (a.mfr + a.mold).localeCompare(b.mfr + b.mold));
   // 'custom' = leave in array order
 
-  const dragEnabled = sortMode === 'custom' && filter === 'all' && typeFilter === 'all' && !q;
+  const dragEnabled = sortMode === 'custom' && filter === 'all' && typeFilter === 'all' && !q && viewMode !== 'field';
   const hint = document.getElementById('dragHint');
-  if (sortMode === 'custom') {
-    hint.textContent = dragEnabled
-      ? 'drag the ⠿ handle to reorder'
-      : 'clear search/filter to drag-reorder';
+  if (viewMode === 'field') {
+    hint.textContent = 'field view · filters apply';
+  } else if (sortMode === 'custom') {
+    hint.textContent = dragEnabled ? 'drag ⠿ to reorder' : 'clear search/filter to drag-reorder';
   } else {
-    hint.textContent = 'arcs = RHBH flight · tap a card to edit';
+    hint.textContent = 'tap arc to expand · tap card to edit';
   }
+  const fb = document.getElementById('fieldBtn');
+  if (fb) fb.textContent = viewMode === 'field' ? 'Card view' : 'Field view';
 
   const grid = document.getElementById('grid');
   if (!rows.length) {
     grid.innerHTML = '<div class="empty">No discs match.</div>';
     return;
   }
+  if (viewMode === 'field') { renderFieldView(rows); return; }
   grid.innerHTML = rows.map(d => {
     const s = STAB_META[stab(d)];
     const t = TYPE_META[discType(d)];
@@ -446,7 +519,6 @@ function render() {
             <div class="mfr">${esc(d.mfr)}</div>
             <div class="mold">${esc(d.mold)}</div>
           </div>
-          <span class="stab-badge ${s.cls}">${s.short}</span>
         </div>
         <div class="nums">
           <div><span class="lbl">SPD</span><span class="val">${d.speed}</span></div>
@@ -457,9 +529,12 @@ function render() {
         ${meta}
         <div class="use">${esc(d.use)}</div>
         ${d.notes ? `<div class="note">📝 ${esc(d.notes)}</div>` : ''}
-        <div class="disc-type">${t.word}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <div class="disc-type">${t.word}</div>
+          <span class="stab-badge ${s.cls}">${s.short}</span>
+        </div>
       </div>
-      ${arcSVG(d)}
+      <div onclick="showArcDetail(event,${d.id})" style="flex-shrink:0;cursor:pointer" title="Flight detail">${arcSVG(d)}</div>
     </div>`;
   }).join('');
 }
@@ -543,8 +618,14 @@ let _libResults = [];
 
 async function loadMaster() {
   if (masterDiscs) return;
-  const r = await fetch('/api/master');
-  masterDiscs = await r.json();
+  try {
+    const r = await fetch('/api/master');
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    masterDiscs = await r.json();
+  } catch (e) {
+    masterDiscs = [];
+    toast('Could not load disc library');
+  }
 }
 
 function openLibrary() {
@@ -619,11 +700,6 @@ function showModal(d, isNew) {
         <div class="field"><label>Fade</label><input id="f-fade" type="number" step="0.5" value="${d.fade}"></div>
       </div>
       <div class="field"><label>Primary use</label><input id="f-use" value="${esc(d.use)}" placeholder="e.g. Overstable utility"></div>
-      <div class="field"><label>Throw style</label>
-        <select id="f-thr" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px;outline:none;font-family:inherit">
-          ${['RHBH','RHFH','LHBH','LHFH'].map(s => `<option value="${s}" ${(d.thr||'RHBH')===s?'selected':''}>${s}</option>`).join('')}
-        </select>
-      </div>
       <div class="field"><label>Notes</label><textarea id="f-notes" placeholder="Seasoning, condition, where you got it, flight tweaks…" style="width:100%;min-height:70px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px;outline:none;resize:vertical;font-family:inherit">${esc(d.notes || '')}</textarea></div>
       <div class="field">
         <label>Disc color</label>
@@ -672,7 +748,7 @@ async function saveDisc(id, isNew) {
     id,
     mfr: gv('f-mfr'), mold: gv('f-mold'), plastic: gv('f-plastic'), weight: gv('f-weight'),
     speed: gn('f-speed'), glide: gn('f-glide'), turn: gn('f-turn'), fade: gn('f-fade'),
-    use: gv('f-use'), thr: gv('f-thr'), notes: gv('f-notes'), color: gv('f-color')
+    use: gv('f-use'), thr: (discs.find(x => x.id === id) || {}).thr || 'RHBH', notes: gv('f-notes'), color: gv('f-color')
   };
   if (!obj.mold) { toast('Mold name is required'); return; }
   if (isNew) discs.push(obj);
@@ -772,7 +848,7 @@ function importCSV() {
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal">
       <h2>Import CSV</h2>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Upload a .csv file or paste CSV text. Expected columns: Manufacturer, Mold, Plastic, Weight, Speed, Glide, Turn, Fade, Primary Use, Throw Style, Notes.</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Upload a .csv file or paste CSV text. Expected columns: Manufacturer, Mold, Plastic, Weight, Speed, Glide, Turn, Fade, Primary Use, Notes.</p>
       <div class="field">
         <label>Upload file</label>
         <input type="file" id="csvFile" accept=".csv,text/csv" style="color:var(--text);font-size:13px;width:100%">
@@ -879,6 +955,7 @@ async function doImport() {
 document.getElementById('search').addEventListener('input', render);
 document.getElementById('addBtn').addEventListener('click', openAdd);
 document.getElementById('libraryBtn').addEventListener('click', openLibrary);
+document.getElementById('fieldBtn').addEventListener('click', () => { viewMode = viewMode === 'cards' ? 'field' : 'cards'; render(); });
 document.getElementById('importBtn').addEventListener('click', importCSV);
 document.getElementById('exportBtn').addEventListener('click', exportCSV);
 document.getElementById('sortSel').addEventListener('change', e => setSort(e.target.value));
