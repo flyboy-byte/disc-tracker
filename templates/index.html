@@ -141,6 +141,21 @@
     pointer-events: none;
   }
   .toast.show { opacity: 1; }
+  .field-balloon {
+    position: absolute; pointer-events: none;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 9px 12px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+    white-space: nowrap; z-index: 10;
+    transform: translate(-50%, calc(-100% - 10px));
+    transition: opacity 0.15s;
+  }
+  .field-balloon::after {
+    content: ''; position: absolute; bottom: -6px; left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent; border-bottom: none;
+    border-top: 6px solid var(--border);
+  }
   select.sort {
     background: var(--card); border: 1px solid var(--border); border-radius: 10px;
     color: var(--text); font-size: 14px; padding: 10px 12px; outline: none; cursor: pointer;
@@ -176,9 +191,75 @@
     .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
     h1 { font-size: 22px; }
   }
+  /* Welcome modal */
+  .welcome-bg {
+    position: fixed; inset: 0; background: rgba(5,8,22,0.88);
+    z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .welcome-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+    padding: 26px 24px; width: 100%; max-width: 360px;
+  }
+  .welcome-card h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .welcome-card .welcome-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .welcome-tips { display: flex; flex-direction: column; gap: 14px; margin-bottom: 22px; }
+  .welcome-tip { display: flex; gap: 12px; align-items: flex-start; }
+  .welcome-tip-icon {
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    background: rgba(145,94,255,0.14); border: 1px solid rgba(145,94,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; margin-top: 1px;
+  }
+  .welcome-tip-text strong { display: block; font-size: 13px; font-weight: 600; margin-bottom: 1px; }
+  .welcome-tip-text span { font-size: 12px; color: var(--muted); line-height: 1.4; }
+  .welcome-btn {
+    width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600; padding: 12px; cursor: pointer;
+  }
+  .welcome-btn:hover { opacity: 0.9; }
 </style>
 </head>
 <body>
+
+<!-- One-time welcome overlay -->
+<div class="welcome-bg" id="welcomeBg" style="display:none">
+  <div class="welcome-card">
+    <h2>Welcome to The Bag</h2>
+    <p class="welcome-sub">Your disc golf bag tracker — here's what it does.</p>
+    <div class="welcome-tips">
+      <div class="welcome-tip">
+        <div class="welcome-tip-icon">+</div>
+        <div class="welcome-tip-text">
+          <strong>Adding discs is easy</strong>
+          <span>Type a disc name and the library autofills the flight numbers for you.</span>
+        </div>
+      </div>
+      <div class="welcome-tip">
+        <div class="welcome-tip-icon">&#x2192;</div>
+        <div class="welcome-tip-text">
+          <strong>Tap the arc to zoom</strong>
+          <span>Tap the flight path arrow on any disc card to see its full flight layout.</span>
+        </div>
+      </div>
+      <div class="welcome-tip">
+        <div class="welcome-tip-icon">&#x7e;</div>
+        <div class="welcome-tip-text">
+          <strong>Flight Shape</strong>
+          <span>Visualize how hyzer, wind, and arm speed change a disc's path in real time.</span>
+        </div>
+      </div>
+      <div class="welcome-tip">
+        <div class="welcome-tip-icon">&#x25a6;</div>
+        <div class="welcome-tip-text">
+          <strong>Disc Suggest</strong>
+          <span>Tap a real-life scenario — it shows which discs in your bag are the right call.</span>
+        </div>
+      </div>
+    </div>
+    <button class="welcome-btn" id="welcomeDismiss">Got it — let's go</button>
+  </div>
+</div>
+
 <div class="wrap">
   <nav class="top-nav">
     <div class="nav-links">
@@ -249,6 +330,7 @@ let sortMode = 'speed-desc';
 let arcView = 'RHBH';
 let viewMode = 'cards';
 let dragEl = null, dragGhost = null, dragOffX = 0, dragOffY = 0;
+let _fieldPts = [], _fieldBalloonTimer = null;
 
 function stab(d) {
   const net = d.turn + d.fade;
@@ -442,21 +524,24 @@ function renderFieldView(rows) {
   const W = 400, H = 380;
   const f = v => +v.toFixed(1);
   const pts = rows.map(d => ({ d, p: arcPoints(d, W, H), color: d.color || STAB_META[stab(d)].color }));
+  _fieldPts = pts;
   const { sy: sy0, ey: ey0, cx: cx0 } = pts[0].p;
   const g1y = f(ey0 + (sy0-ey0)*0.33);
   const g2y = f(ey0 + (sy0-ey0)*0.66);
   const paths = pts.map(({ d, p, color }, i) => {
     const aw = 6, px = -p.ny*aw, py = p.nx*aw;
     const ly = f(p.ey + (i % 2 === 0 ? 13 : 24));
+    const pathD = `M ${p.sx},${p.sy} C ${p.q0x},${p.q0y} ${p.r0x},${p.r0y} ${p.mx},${p.my} C ${p.r1x},${p.r1y} ${p.q2x},${p.q2y} ${p.endX},${p.ey}`;
     return `
       <path d="M ${p.sx},${p.sy} C ${p.q0x},${p.q0y} ${p.r0x},${p.r0y} ${p.mx},${p.my}" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="2" stroke-linecap="round"/>
       <path d="M ${p.mx},${p.my} C ${p.r1x},${p.r1y} ${p.q2x},${p.q2y} ${p.endX},${p.ey}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
       <circle cx="${p.endX}" cy="${p.ey}" r="3.5" fill="${color}"/>
       <polyline points="${f(p.endX-p.nx*aw+px)},${f(p.ey-p.ny*aw+py)} ${p.endX},${p.ey} ${f(p.endX-p.nx*aw-px)},${f(p.ey-p.ny*aw-py)}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      <text x="${p.endX}" y="${ly}" fill="${color}" font-size="10" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="600" opacity="0.9">${esc(d.mold)}</text>`;
+      <text x="${p.endX}" y="${ly}" fill="${color}" font-size="10" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="600" opacity="0.9">${esc(d.mold)}</text>
+      <path d="${pathD}" fill="none" stroke="transparent" stroke-width="18" style="cursor:pointer" data-fidx="${i}"/>`;
   }).join('');
-  grid.innerHTML = `<div style="grid-column:1/-1;display:flex;justify-content:center">
-    <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:520px;border-radius:14px;background:rgba(255,255,255,0.015);border:1px solid var(--border)">
+  grid.innerHTML = `<div id="field-wrap" style="grid-column:1/-1;display:flex;justify-content:center;position:relative">
+    <svg id="field-svg" viewBox="0 0 ${W} ${H}" style="width:100%;max-width:520px;border-radius:14px;background:rgba(255,255,255,0.015);border:1px solid var(--border)">
       <line x1="0" y1="${g1y}" x2="${W}" y2="${g1y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
       <line x1="0" y1="${g2y}" x2="${W}" y2="${g2y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
       <line x1="${f(cx0)}" y1="${f(sy0-6)}" x2="${f(cx0)}" y2="${ey0}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="6 7"/>
@@ -465,7 +550,39 @@ function renderFieldView(rows) {
       ${paths}
       <circle cx="${f(cx0)}" cy="${f(sy0)}" r="5" fill="rgba(255,255,255,0.5)"/>
     </svg>
+    <div id="field-balloon" class="field-balloon" style="display:none"></div>
   </div>`;
+
+  document.getElementById('field-svg').addEventListener('click', onFieldClick);
+}
+
+function onFieldClick(e) {
+  const idx = e.target.dataset.fidx;
+  const balloon = document.getElementById('field-balloon');
+  if (!balloon) return;
+  if (idx == null) { balloon.style.display = 'none'; return; }
+
+  const i = +idx;
+  const { d, p, color } = _fieldPts[i];
+  const stabM = STAB_META[stab(d)];
+  const W = 400, H = 380;
+
+  const svg = document.getElementById('field-svg');
+  const svgRect = svg.getBoundingClientRect();
+  const wrapRect = document.getElementById('field-wrap').getBoundingClientRect();
+  const bx = (svgRect.left - wrapRect.left) + (p.endX / W) * svgRect.width;
+  const by = (svgRect.top  - wrapRect.top)  + (p.ey   / H) * svgRect.height;
+
+  balloon.innerHTML = `
+    <div style="font-size:13px;font-weight:700;color:${color};margin-bottom:2px">${esc(d.mold)}</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:5px">${esc(d.mfr)}</div>
+    <div style="font-size:11px;font-family:ui-monospace,monospace;color:var(--text)">${d.speed} / ${d.glide} / ${d.turn} / ${d.fade}</div>`;
+  balloon.style.left = bx + 'px';
+  balloon.style.top  = by + 'px';
+  balloon.style.display = 'block';
+
+  clearTimeout(_fieldBalloonTimer);
+  _fieldBalloonTimer = setTimeout(() => { balloon.style.display = 'none'; }, 4000);
 }
 
 function render() {
@@ -709,6 +826,20 @@ function showModal(d, isNew) {
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal">
       <h2>${isNew ? 'Add disc' : 'Edit disc'}</h2>
+      ${isNew ? `<button type="button" onclick="closeModal();openLibrary()" style="
+        display:flex;align-items:center;justify-content:space-between;
+        width:100%;background:rgba(145,94,255,0.1);border:1px solid rgba(145,94,255,0.35);
+        border-radius:10px;padding:11px 14px;margin-bottom:14px;cursor:pointer;
+        color:var(--accent);font-size:13px;font-weight:600;font-family:inherit;text-align:left;
+      ">
+        <span>Autofill from disc library</span>
+        <span style="font-size:16px;line-height:1">&#8250;</span>
+      </button>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:11px;color:var(--muted)">or enter manually</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>` : ''}
       <div class="field"><label>Manufacturer</label><input id="f-mfr" value="${esc(d.mfr)}" placeholder="e.g. Innova"></div>
       <div class="field"><label>Mold</label><input id="f-mold" value="${esc(d.mold)}" placeholder="e.g. Buzzz"></div>
       <div class="field"><label>Plastic</label><input id="f-plastic" value="${esc(d.plastic)}" placeholder="e.g. Star, Cosmic Neutron"></div>
@@ -979,6 +1110,24 @@ document.getElementById('fieldBtn').addEventListener('click', () => { viewMode =
 document.getElementById('importBtn').addEventListener('click', importCSV);
 document.getElementById('exportBtn').addEventListener('click', exportCSV);
 document.getElementById('sortSel').addEventListener('change', e => setSort(e.target.value));
+
+// Welcome modal — show once per browser
+(function() {
+  const bg = document.getElementById('welcomeBg');
+  if (!localStorage.getItem('disc_welcome_v1')) {
+    bg.style.display = 'flex';
+  }
+  document.getElementById('welcomeDismiss').addEventListener('click', () => {
+    localStorage.setItem('disc_welcome_v1', '1');
+    bg.style.display = 'none';
+  });
+  bg.addEventListener('click', e => {
+    if (e.target === bg) {
+      localStorage.setItem('disc_welcome_v1', '1');
+      bg.style.display = 'none';
+    }
+  });
+})();
 
 load();
 </script>
