@@ -389,6 +389,7 @@
             <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden">
               <div id="dist-bar" style="height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width 0.15s"></div>
             </div>
+            <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:6px;opacity:0.5;font-style:italic">Est. distance — this is just an example</div>
           </div>
 
           <div id="no-disc-msg" style="font-size:13px;color:var(--muted);text-align:center;padding:8px 0">
@@ -664,12 +665,16 @@ function drawArc(adj, sliders) {
 // baseFt: speed rating to rough ft ceiling (speed 4→180, speed 9→305, speed 14→430)
 // glideFactor: CL/CD proxy — paper confirms glide is primary distance driver
 // powerFactor: launch speed scales distance; at AdvR=0.5, spin also scales with power
-function estimateDist(base, armSpeed, wind, glide) {
-  const baseFt     = 80 + (base.speed ?? 7) * 25;
+// noseFactor: nose up → high AOA → high drag → shorter; nose down → also slightly shorter
+// hyzerFactor: extreme angle (either direction) is a controlled line, not a distance throw
+function estimateDist(base, armSpeed, wind, glide, nose, hyzer) {
+  const baseFt      = 80 + (base.speed ?? 7) * 25;
   const powerFactor = armSpeed / 100;
   const glideFactor = 0.85 + (glide ?? 5) * 0.03;
   const windFactor  = 1 - wind * 0.008;
-  return Math.round(baseFt * powerFactor * glideFactor * windFactor / 10) * 10;
+  const noseFactor  = 1 - Math.max(0, nose ?? 0) * 0.015 - Math.max(0, -(nose ?? 0)) * 0.005;
+  const hyzerFactor = 1 - (Math.abs(hyzer ?? 0) / 30) * 0.18;
+  return Math.round(baseFt * powerFactor * glideFactor * windFactor * noseFactor * hyzerFactor / 10) * 10;
 }
 
 // ── Update cycle ─────────────────────────────────────────────────────────────
@@ -690,7 +695,7 @@ function updateArc() {
   document.getElementById('base-nums').textContent =
     `${baseDisc.speed} / ${baseDisc.glide} / ${baseDisc.turn} / ${baseDisc.fade}`;
 
-  const dist = estimateDist(baseDisc, sliders.armSpeed, sliders.wind, adj.glide);
+  const dist = estimateDist(baseDisc, sliders.armSpeed, sliders.wind, adj.glide, sliders.nose, sliders.hyzer);
   document.getElementById('dist-val').textContent = `~${dist} ft`;
   document.getElementById('dist-bar').style.width = Math.min(100, (dist / 450) * 100) + '%';
   document.getElementById('dist-panel').style.display = '';
