@@ -280,10 +280,10 @@ const SCENARIOS = [
     id: 'tomahawk',
     icon: '🪓',
     title: 'Tomahawk',
-    desc: 'Inverted hammer throw — moderate OS lands predictably',
-    stabMin: 2.5,
+    desc: 'OS spikes down fast; US carries farther when inverted',
+    stabMin: -1, stabMax: 4,
     types: ['Control Driver', 'Distance Driver'],
-    bagTest: d => d.fade >= 3 && d.turn >= -0.5 && d.speed >= 7,
+    bagTest: d => d.speed >= 7 && d.fade >= 1,
   },
   {
     id: 'approach',
