@@ -147,8 +147,9 @@
     display: flex; justify-content: space-between; align-items: center;
     padding-bottom: 14px; margin-bottom: 18px;
     border-bottom: 1px solid var(--border);
+    flex-wrap: wrap; gap: 6px;
   }
-  .nav-links { display: flex; gap: 2px; }
+  .nav-links { display: flex; gap: 2px; flex-wrap: wrap; }
   .nav-link {
     font-size: 13px; font-weight: 500; color: var(--muted);
     text-decoration: none; padding: 5px 10px; border-radius: 7px;
@@ -302,26 +303,43 @@
           </div>
           <div id="angle-note" style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5;opacity:0.75"></div>
 
-          <!-- Hyzer reference diagram: three disc positions from back view -->
+          <!-- Hyzer reference diagram: X layout -->
           <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
-            <svg viewBox="0 0 260 64" style="width:100%;max-width:260px;display:block;margin:0 auto">
-              <!-- horizon rule -->
-              <line x1="10" y1="28" x2="250" y2="28" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
-              <!-- Anhyzer -->
-              <ellipse cx="44" cy="28" rx="30" ry="7" transform="rotate(-20,44,28)"
-                       fill="rgba(251,191,36,0.07)" stroke="#fbbf24" stroke-width="1.5"/>
-              <text x="44" y="54" fill="#fbbf24" font-size="8.5" text-anchor="middle"
+            <svg viewBox="0 0 340 94" style="width:100%;max-width:340px;display:block;margin:0 auto">
+              <!-- X guide lines -->
+              <line x1="110" y1="18" x2="230" y2="76" stroke="rgba(255,255,255,0.05)" stroke-width="10" stroke-linecap="round"/>
+              <line x1="230" y1="18" x2="110" y2="76" stroke="rgba(255,255,255,0.05)" stroke-width="10" stroke-linecap="round"/>
+              <!-- Anhyzer top-left -->
+              <ellipse cx="110" cy="20" rx="28" ry="6" transform="rotate(-24,110,20)"
+                       fill="rgba(251,191,36,0.1)" stroke="#fbbf24" stroke-width="1.5"/>
+              <!-- Anhyzer top-right -->
+              <ellipse cx="230" cy="20" rx="28" ry="6" transform="rotate(24,230,20)"
+                       fill="rgba(251,191,36,0.1)" stroke="#fbbf24" stroke-width="1.5"/>
+              <!-- Flat center -->
+              <ellipse cx="170" cy="47" rx="28" ry="6"
+                       fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+              <!-- Hyzer bottom-left -->
+              <ellipse cx="110" cy="74" rx="28" ry="6" transform="rotate(24,110,74)"
+                       fill="rgba(145,94,255,0.1)" stroke="#915EFF" stroke-width="1.5"/>
+              <!-- Hyzer bottom-right -->
+              <ellipse cx="230" cy="74" rx="28" ry="6" transform="rotate(-24,230,74)"
+                       fill="rgba(145,94,255,0.1)" stroke="#915EFF" stroke-width="1.5"/>
+              <!-- Center labels -->
+              <text x="170" y="9" fill="#fbbf24" font-size="8.5" text-anchor="middle"
                     font-family="system-ui,sans-serif" font-weight="600" opacity="0.75">Anhyzer</text>
-              <!-- Flat -->
-              <ellipse cx="130" cy="28" rx="30" ry="7"
-                       fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
-              <text x="130" y="54" fill="rgba(255,255,255,0.35)" font-size="8.5" text-anchor="middle"
+              <text x="170" y="61" fill="rgba(255,255,255,0.3)" font-size="8.5" text-anchor="middle"
                     font-family="system-ui,sans-serif" font-weight="600">Flat</text>
-              <!-- Hyzer -->
-              <ellipse cx="216" cy="28" rx="30" ry="7" transform="rotate(20,216,28)"
-                       fill="rgba(145,94,255,0.07)" stroke="#915EFF" stroke-width="1.5"/>
-              <text x="216" y="54" fill="#915EFF" font-size="8.5" text-anchor="middle"
+              <text x="170" y="91" fill="#915EFF" font-size="8.5" text-anchor="middle"
                     font-family="system-ui,sans-serif" font-weight="600" opacity="0.75">Hyzer</text>
+              <!-- Side labels -->
+              <text x="42" y="43" fill="rgba(255,255,255,0.55)" font-size="8" text-anchor="middle"
+                    font-family="system-ui,sans-serif" font-weight="600">Right Hand</text>
+              <text x="42" y="54" fill="rgba(255,255,255,0.55)" font-size="8" text-anchor="middle"
+                    font-family="system-ui,sans-serif" font-weight="600">Forehand</text>
+              <text x="298" y="43" fill="rgba(255,255,255,0.55)" font-size="8" text-anchor="middle"
+                    font-family="system-ui,sans-serif" font-weight="600">Right Hand</text>
+              <text x="298" y="54" fill="rgba(255,255,255,0.55)" font-size="8" text-anchor="middle"
+                    font-family="system-ui,sans-serif" font-weight="600">Backhand</text>
             </svg>
           </div>
         </div>
