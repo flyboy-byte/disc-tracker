@@ -337,12 +337,12 @@ function esc(s) {
 }
 
 function stabClass(stab) {
-  if (stab >= 2)  return 'stab-os';
+  if (stab >= 1)  return 'stab-os';
   if (stab <= -1) return 'stab-us';
   return 'stab-st';
 }
 function stabShort(stab) {
-  if (stab >= 2)  return 'OS';
+  if (stab >= 1)  return 'OS';
   if (stab <= -1) return 'US';
   return 'ST';
 }
