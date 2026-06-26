@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import re
 import sqlite3
 from functools import wraps
 from flask import Flask, jsonify, request, render_template, session, redirect, url_for, abort
@@ -218,6 +219,8 @@ def set_data():
     arc_view  = payload.get('arcView', 'RHBH')
     if arc_view not in ('RHBH', 'RHFH', 'LHBH', 'LHFH'):
         arc_view = 'RHBH'
+    if sort_mode not in ('speed-desc', 'speed-asc', 'name', 'mfr', 'custom'):
+        sort_mode = 'speed-desc'
     with get_db() as db:
         db.execute('DELETE FROM discs WHERE user_id = ?', (user_id,))
         db.executemany(
@@ -230,7 +233,7 @@ def set_data():
                  float(d.get('speed') or 0), float(d.get('glide') or 0),
                  float(d.get('turn') or 0), float(d.get('fade') or 0),
                  str(d.get('use') or '')[:200], str(d.get('thr') or '')[:10], str(d.get('notes') or '')[:1000],
-                 str(d.get('color') or '')[:20], i)
+                 (c if re.match(r'^#[0-9A-Fa-f]{6}$', c := str(d.get('color') or '')) else ''), i)
                 for i, d in enumerate(discs)
             ]
         )
@@ -270,8 +273,11 @@ def get_master():
     global _master_cache
     if _master_cache is None:
         master_path = os.path.join(os.path.dirname(__file__), 'static', 'discs_master.json')
-        with open(master_path) as f:
-            _master_cache = f.read()
+        try:
+            with open(master_path) as f:
+                _master_cache = f.read()
+        except (FileNotFoundError, IOError):
+            return jsonify({'error': 'Master disc library unavailable'}), 500
     return app.response_class(_master_cache, mimetype='application/json')
 
 

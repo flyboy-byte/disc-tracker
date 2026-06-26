@@ -172,7 +172,7 @@
   <nav class="top-nav">
     <div class="nav-links">
       <a href="/" class="nav-link">The Bag</a>
-      <a href="/flightshape" class="nav-link">Flight Shape</a>
+      <a href="/flightshape" class="nav-link">Flight Shaper</a>
       <a href="/discsuggestion" class="nav-link active">Disc Suggest</a>
     </div>
     <form method="post" action="/switch" style="margin:0">
@@ -416,7 +416,7 @@ function bagToDisc(d) {
         : d.speed <= 5 ? 'Mid Range'
         : d.speed <= 8 ? 'Control Driver'
         : 'Distance Driver',
-    stability: Math.round((d.fade + (d.turn * -0.7)) * 10) / 10,
+    stability: Math.round(((d.fade ?? 0) + ((d.turn ?? 0) * -0.7)) * 10) / 10,
     speed: d.speed, glide: d.glide, turn: d.turn, fade: d.fade,
   };
 }

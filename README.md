@@ -17,12 +17,40 @@
 ## Features
 
 - **Multi-user** — profile picker on launch, no passwords, each user has their own bag
-- **Disc library** — search 1,660 discs by name or manufacturer, auto-fill flight numbers
-- **Flight path arcs** — top-down RHBH visualization per disc, shaped by speed / glide / turn / fade
+- **Disc library** — search 1,660+ discs by name or manufacturer, auto-fill flight numbers
+- **Flight path arcs** — top-down visualization per disc shaped by speed / glide / turn / fade, two-phase bezier (turn + fade), colored by stability
+- **Flight Shape tool** — interactive page at `/flightshape`: adjust hyzer, nose pitch, wind, arm power, and spin to see how conditions warp a disc's arc in real time; includes estimated distance output
+- **Disc Suggest tool** — recommends discs from your bag based on shot shape needed
 - **Stability & type filters** — filter by overstable / stable / understable and disc type
 - **Disc colors** — assign a color per disc with presets or a custom color picker
 - **Drag reorder** — manually sort your bag in custom mode
 - **CSV import / export** — back up or move your collection
+
+---
+
+## Stability Colors
+
+| Stability | Color |
+|-----------|-------|
+| Overstable | Purple |
+| Stable | Green |
+| Understable | Yellow/Gold |
+
+---
+
+## Flight Shape Tool (`/flightshape`)
+
+Adjust five throw conditions and watch the arc update live:
+
+| Slider | Range | Effect |
+|--------|-------|--------|
+| Hyzer | ±30° | Positive = hyzer angle, increases fade |
+| Nose | ±15° | Nose up = higher AOA, more understable |
+| Wind | ±20 mph | Headwind = more overstable; tailwind = more understable |
+| Arm | 50–100% | Under-power shifts fast discs understable |
+| Spin | 50–100% | Lower spin = reduced gyroscopic stability, more turn |
+
+Physics grounded in Kamaruddin, Potts & Crowther (2018) — *Aerodynamic Performance of Flying Discs*.
 
 ---
 
@@ -68,18 +96,6 @@ systemctl --user daemon-reload
 systemctl --user enable disc_tracker
 systemctl --user start disc_tracker
 ```
-
----
-
-## Flight path visualization
-
-Each disc card shows a top-down RHBH flight arc based on its flight numbers, split into two phases — high-speed turn and low-speed fade — colored by stability.
-
-| Stability | Color |
-|-----------|-------|
-| Overstable | Orange |
-| Stable | Blue |
-| Understable | Green |
 
 ---
 
