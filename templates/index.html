@@ -300,7 +300,7 @@
     <span><span class="swatch" style="background:var(--st)"></span>Stable</span>
     <span><span class="swatch" style="background:var(--us)"></span>Understable</span>
     <span style="margin-left:auto; display:flex; align-items:center; gap:8px;">
-      <select id="arcViewSelect" onchange="arcView=this.value;render()" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
+      <select id="arcViewSelect" onchange="arcView=this.value;render();saveArcView(this.value)" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
         <option value="RHBH">RHBH</option>
         <option value="RHFH">RHFH</option>
         <option value="LHBH">LHBH</option>
@@ -334,8 +334,8 @@ let _fieldPts = [], _fieldBalloonTimer = null;
 
 function stab(d) {
   const net = (d.turn ?? 0) + (d.fade ?? 0);
-  if (net >= 3) return 'overstable';
-  if (net <= 0) return 'understable';
+  if (net >= 1)  return 'overstable';
+  if (net <= -1) return 'understable';
   return 'stable';
 }
 const STAB_META = {
@@ -1077,6 +1077,7 @@ function parseCSV(text) {
       use:     get('primary use'),
       thr:     get('throw style'),
       notes:   get('notes'),
+      color:   '',
     });
   }
   return result;
@@ -1135,6 +1136,14 @@ document.getElementById('sortSel').addEventListener('change', e => setSort(e.tar
     }
   });
 })();
+
+function saveArcView(v) {
+  fetch('/api/arcview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ arcView: v }),
+  }).catch(() => {});
+}
 
 load();
 </script>

@@ -429,8 +429,8 @@ let arcView = 'RHBH';
 
 function stab(d) {
   const net = (d.turn ?? 0) + (d.fade ?? 0);
-  if (net >= 3) return 'overstable';
-  if (net <= 0) return 'understable';
+  if (net >= 1)  return 'overstable';
+  if (net <= -1) return 'understable';
   return 'stable';
 }
 

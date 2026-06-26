@@ -234,10 +234,10 @@ const SCENARIOS = [
     id: 'distance',
     icon: '🚀',
     title: 'Max Distance',
-    desc: 'Fast driver for max carry off the tee',
-    stabMin: 0, stabMax: 2.5,
+    desc: 'Fast driver that turns and carries — not a pile-driver',
+    stabMin: -1, stabMax: 2,
     speedMin: 11,
-    bagTest: d => d.speed >= 11 && d.fade <= 4 && d.turn >= -2,
+    bagTest: d => d.speed >= 11 && d.fade <= 3 && d.turn <= -0.5,
   },
   {
     id: 'headwind',
@@ -354,7 +354,7 @@ function stabBar(stab) {
   const pct = Math.round(((stab - MIN) / RANGE) * 100);
   const zeroPct = Math.round(((-MIN) / RANGE) * 100);
   const isOS = stab >= 0;
-  const color = stab >= 2 ? 'var(--os)' : stab <= -1 ? 'var(--us)' : 'var(--st)';
+  const color = stab >= 1 ? 'var(--os)' : stab <= -1 ? 'var(--us)' : 'var(--st)';
   const left  = isOS ? zeroPct : pct;
   const width = Math.abs(pct - zeroPct);
   return `
