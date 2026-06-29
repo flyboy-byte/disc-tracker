@@ -74,15 +74,9 @@ Keep the multi-user schema for compatibility. But in v1, hide it: auto-create a 
 
 **License:** MIT — most permissive, Play/App Store compatible, no copyleft.
 
-### What MIT Actually Guarantees
+### What MIT Licensing Gives You
 
-MIT source makes privacy **auditable**, not proven. Play Store users install a binary, not the source. Honest claim: **"auditable source"** — not "mathematically verified privacy."
-
-To strengthen the claim beyond that:
-- Publish tagged releases with build instructions
-- Commit `package-lock.json` / lockfiles
-- Add GitHub Actions that build from source and publish artifacts
-- Then someone can reproduce the binary from source
+Open source means anyone can read the code and verify there's no hidden tracking — that's a real and meaningful privacy claim. Committing the lockfile and tagging releases makes it even stronger (reproducible builds), but that's optional. The baseline MIT license is enough to honestly say "open source, auditable code, no hidden SDKs."
 
 ### Dependency License Audit
 
@@ -101,17 +95,15 @@ All planned packages are MIT. Add this to CI so it can't silently break.
 ### Principles
 
 1. **Local by default.** No network call happens without explicit user opt-in.
-2. **No analytics.** No crash reporter, no usage tracking, no A/B testing SDK.
+2. **No third-party analytics.** No usage tracking, no A/B testing SDK, no ad networks.
 3. **No account required.** No email, no phone, no OAuth.
-4. **No Sentry (even self-hosted).** Any crash SDK sends data off the device, breaking the local-only story and requiring Data Safety disclosure. Use Play Console's built-in ANR/crash visibility instead.
+4. **Crash reporting is optional.** Play Console's built-in ANR/crash visibility is free and requires no SDK. Self-hosted Sentry is also fine — you control the server, data doesn't go to a third party. Just declare it accurately in the Data Safety form if you add it.
 5. **Deletable.** User can wipe all local data from within the app.
 
 ### Encrypted VPS Backup (v1.1 only — do not build in v1)
 
 **Key derivation:**
-- PBKDF2-SHA256 with 100k iterations is the floor, not the target. Weak passphrases under offline attack are the real threat.
-- Preferred: **Argon2id** if available in React Native (memory-hard, harder to brute-force).
-- If PBKDF2 only: raise iterations to 600k+ and show a passphrase strength indicator. Warn users that short passphrases weaken protection.
+- PBKDF2-SHA256, 100k iterations — solid for this use case. The threat model is a disc golf bag, not a bank. 100k is standard and well-supported by `react-native-quick-crypto`.
 
 **Encryption:** AES-256-GCM
 
@@ -130,12 +122,10 @@ All planned packages are MIT. Add this to CI so it can't silently break.
 
 > **Correction:** Salt must be in the backup payload, not stored only locally. A local-only salt makes restore-on-new-device impossible. The JSON above already has `salt` — the doc wording just needed to match.
 
-**Token security:**
-- Generate as a random UUID on device; never reuse it
-- Treat as a bearer secret: do not log it, do not put in URL query params (use POST body or headers)
-- Rate-limit the VPS endpoints aggressively (e.g. 10 requests/minute per IP)
-- Require **both** token AND successful passphrase decryption before treating a restore as valid
-- Token = access control; passphrase = data protection. Both layers matter.
+**Token:**
+- Random UUID generated on device, sent in POST body (not URL params)
+- Basic rate limiting on VPS is sensible (e.g. 10 req/min per IP)
+- Restore requires both the token and a correct passphrase to decrypt — two layers naturally
 
 **Library:** `react-native-quick-crypto` (MIT, native OpenSSL bindings, standard in RN ecosystem)
 
@@ -157,13 +147,7 @@ Google's definition of "collect" is data transmitted off the device. Data proces
 |-----------|-----------|-------|
 | Any personal data | **No** | Everything stays on device |
 
-Data Safety form: **"No data collected or shared."** This is the cleanest possible submission. Do not add anything that breaks this before v1 ships.
-
-**Checklist of things that would break the clean declaration:**
-- ❌ Firebase Analytics or Crashlytics
-- ❌ Sentry (even self-hosted)
-- ❌ Remote disc library fetch that includes a device ID or user identifier
-- ❌ Any third-party SDK with its own telemetry
+Data Safety form: **"No data collected or shared."** Straightforward — local-only apps get the cleanest possible form. The main things that would change this: adding Firebase/Crashlytics, adding third-party analytics, or making network calls that include any device identifier. Self-hosted services you control are a gray area Google generally accepts with accurate disclosure.
 
 ### Privacy Policy
 

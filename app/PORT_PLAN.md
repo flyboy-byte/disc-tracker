@@ -292,22 +292,23 @@ eas build --platform android --profile preview
 
 ---
 
-## What NOT to Do (Hard Constraints)
+## Scope Boundaries for v1
 
-These are not suggestions. Violating them requires explicit user approval:
+Keep v1 focused — these can be revisited after shipping:
 
-| ❌ Don't | Reason |
-|---------|--------|
-| Rewrite `applyModifiers()` or `arcPoints()` | Port exactly; V2 built alongside, not replacing |
-| Invent new flight number formulas | Website is the spec |
-| Change disc suggestion `bagTest` logic | Port exactly; improvements go in a separate PR |
-| Add Firebase, Sentry, Mixpanel, or any analytics SDK | Breaks local-only privacy claim |
-| Add cloud backup in v1 | Ships v1.1 |
-| Make app call Flask server | App must work fully offline |
-| Use Expo Go as final test assumption | Native modules require EAS dev build |
-| Target API < 35 | Play Store rejects as of Aug 31 2025 |
-| Add user login / OAuth | No account system in v1 |
-| Skip `PRAGMA foreign_keys = ON` | Silently breaks CASCADE deletes |
+| Defer to later | Notes |
+|----------------|-------|
+| Cloud backup | v1.1 — don't let it block shipping |
+| Physics V2 (`physicsV2.ts`) | Build alongside, switch when validated against real throw data |
+| Multi-user picker screen | Schema supports it; UI can wait |
+| User login / OAuth | Not needed — local-only |
+| Third-party analytics | Not planned |
+
+**Technical musts** (these will cause real problems if skipped):
+- `PRAGMA foreign_keys = ON` on every SQLite connection — or CASCADE deletes silently fail
+- Target API 35 — Play Store requirement as of Aug 31 2025; Expo SDK 52+ handles it
+- EAS dev build (not Expo Go) once any native module is added (e.g. `react-native-quick-crypto` in v1.1)
+- Port `applyModifiers()` and `arcPoints()` exactly — improve via `physicsV2.ts`, not by editing the port
 
 ---
 
