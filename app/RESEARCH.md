@@ -1,77 +1,33 @@
 # Disc Tracker — Android App Research
 
-> Living reference document. Bring feedback from external AI audits back here and update as decisions solidify. Not an immediate build plan — a foundation to build from when ready.
+> Living reference document. Reviewed and corrected against a ChatGPT architecture audit (see `/home/ubuntu/updatereview.md`). Update this doc as decisions solidify. Not a build sprint — a foundation to build from when ready.
 
 ---
 
-## 1. Framework Research
+## 1. Framework Decision: Expo EAS
 
-### Three Serious Options
+| | Expo EAS | Flutter | Native Android |
+|---|---|---|---|
+| Language | TypeScript — direct JS port | Dart — new language | Kotlin — new language |
+| iOS path | ✅ same codebase | ✅ same codebase | ❌ Android only |
+| Prior experience | ✅ user already shipped with EAS | ❌ | ❌ |
+| JS logic reuse | ✅ copy-paste + types | ❌ full Dart rewrite | ❌ full Kotlin rewrite |
 
-#### Option A: Expo (React Native) + EAS ✅ Chosen
-- Language: **TypeScript** — direct port from existing vanilla JS
-- Build/distribution: **Expo EAS** (prior shipped experience)
-- Cross-platform: Android + iOS from one codebase
-- All existing physics logic (`applyModifiers`, `estimateDist`, scenario filters) is pure JS — copy-paste with type annotations
-- SVG arc: `react-native-svg` uses same SVG element API (`<Svg>`, `<Path>`, `<Circle>`)
-- Vertical sliders: custom `PanResponder`-based component (RN has no native vertical slider)
-- Drag-reorder: `react-native-draggable-flatlist` (MIT licensed)
-- Storage: `expo-sqlite` — same SQLite API as Flask backend
-
-**Pros:** fastest path, no new language, iOS-ready, proven EAS pipeline  
-**Cons:** React Native "paper cuts" (bridge overhead, occasional native module issues), JS thread model
-
-#### Option B: Flutter
-- Language: **Dart** — new language, similar to TypeScript but different paradigm
-- Cross-platform: Android + iOS (also web/desktop)
-- Strong type system, hot reload, excellent performance
-- SVG: `CustomPainter` API — different mental model from SVG, requires rewriting arc math
-- SQLite: `sqflite` package (well maintained)
-- Build: `flutter build apk` / `flutter build ipa`; Codemagic or GitHub Actions for CI
-
-**Pros:** better performance, cohesive widget system, strong iOS support, growing ecosystem  
-**Cons:** full Dart rewrite (all JS logic must be reimplemented), new language learning curve, no EAS familiarity
-
-#### Option C: Native Android (Android Studio)
-- Language: **Kotlin** (or Java)
-- Android-only — no iOS path without a full separate rewrite in Swift
-- Best raw performance and deepest Android integration
-- SQLite via Android Room (ORM) or raw `SQLiteOpenHelper`
-
-**Pros:** best Android performance, full OS API access  
-**Cons:** no iOS path, completely different language and toolchain, largest rewrite effort
-
-### Decision: Expo EAS
-
-Given: prior EAS success, all logic is JS, iOS optionality wanted, and the app is not performance-critical (UI + SVG, no 3D/game-loop), **Expo EAS is the right call**. If the app grows and performance becomes an issue, migrating the inner rendering to a `react-native-skia` canvas is possible without switching frameworks.
+**Chosen: Expo EAS.** The app is not performance-critical (UI + SVG, no 3D). All physics and scenario logic is pure JS — ports with type annotations only. iOS comes for free later. If performance ever becomes an issue, `react-native-skia` can replace the SVG renderer without switching frameworks.
 
 ---
 
-## 2. Data Architecture Research
+## 2. Data Architecture: Local-First SQLite
 
-### The Core Problem
+### Decision: Option B — `expo-sqlite` on device
 
-The Flask app is a localhost server — it can't serve a phone directly. Two architectural paths:
+The Flask app is a localhost server that can't serve a phone. Three paths exist:
 
-#### Path A: LAN Bridge (least work, most fragile)
-- Phone calls Flask API over local WiFi (`http://192.168.x.x:5757/api/data`)
-- No porting needed — app is essentially a mobile browser
-- **Problems:** phone must be on same WiFi; server must be running; doesn't work anywhere else; not a real app
+- **Path A (LAN bridge):** Phone calls Flask API over WiFi. Fragile, server-dependent, not a real app. Rejected.
+- **Path B (local SQLite):** `expo-sqlite` on device. Fully offline. Schema is 1:1 with Flask. **Chosen for v1.**
+- **Path C (encrypted VPS backup):** Opt-in layer on top of Path B. v1.1 only.
 
-#### Path B: Local-First SQLite on Device ✅ Recommended
-- `expo-sqlite` holds all user data on the device
-- App runs fully offline, forever, with no server dependency
-- Schema is identical to Flask — 3 tables, same column names
-- `discs_master.json` (233 KB) bundled as a static asset via `require()`
-- On first launch, run migrations (same pattern as Flask's `init_db()`)
-
-**This is the correct architecture.** Local-first is both the privacy-correct choice and the UX-correct choice.
-
-#### Path C: VPS Encrypted Backup (opt-in layer on top of Path B)
-- Adds cloud backup without compromising privacy
-- See Section 4 for full encryption design
-
-### SQLite Schema Port (identical to Flask)
+### SQLite Schema (identical to Flask `init_db()`)
 
 ```sql
 CREATE TABLE IF NOT EXISTS users (
@@ -81,53 +37,52 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS discs (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id    INTEGER NOT NULL,
-  disc_id    TEXT,
-  mfr        TEXT,
-  mold       TEXT,
-  plastic    TEXT,
-  weight     REAL,
-  speed      REAL,
-  glide      REAL,
-  turn       REAL,
-  fade       REAL,
-  use_desc   TEXT,
-  thr        TEXT,
-  notes      TEXT,
-  color      TEXT,
-  sort_order INTEGER,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  disc_id    INTEGER NOT NULL,
+  mfr        TEXT DEFAULT '',
+  mold       TEXT NOT NULL,
+  plastic    TEXT DEFAULT '',
+  weight     TEXT DEFAULT '',
+  speed      REAL DEFAULT 0,
+  glide      REAL DEFAULT 0,
+  turn       REAL DEFAULT 0,
+  fade       REAL DEFAULT 0,
+  use_desc   TEXT DEFAULT '',
+  thr        TEXT DEFAULT '',
+  notes      TEXT DEFAULT '',
+  color      TEXT DEFAULT '',
+  sort_order INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS user_meta (
-  user_id   INTEGER PRIMARY KEY,
-  next_id   INTEGER DEFAULT 1,
-  sort_mode TEXT DEFAULT 'custom',
+  user_id   INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  next_id   INTEGER DEFAULT 100,
+  sort_mode TEXT DEFAULT 'speed-desc',
   arc_view  TEXT DEFAULT 'RHBH'
 );
 ```
 
-No schema changes needed. The port is 1:1.
+> **Critical:** SQLite does not enforce foreign keys by default. Every connection must run `PRAGMA foreign_keys = ON` before any operation, or `ON DELETE CASCADE` silently fails and orphaned discs accumulate. The Flask `get_db()` already does this — the mobile `db.ts` must too.
+
+### Multi-user vs Single-user
+
+Keep the multi-user schema for compatibility. But in v1, hide it: auto-create a single default user on first launch and skip the user picker screen. Add household/multi-user later without schema changes.
 
 ---
 
 ## 3. FOSS & MIT Licensing
 
-### Why MIT
+**License:** MIT — most permissive, Play/App Store compatible, no copyleft.
 
-MIT is the most permissive common FOSS license:
-- Anyone can read, fork, audit, modify, or self-host
-- No copyleft restriction (unlike GPL, which would require derivative apps to also be open source)
-- Compatible with the App Store and Play Store (both accept MIT-licensed apps)
-- Every dependency must also be MIT/BSD/Apache-2/ISC compatible
+### What MIT Actually Guarantees
 
-### What MIT Licensing Does for Privacy Claims
+MIT source makes privacy **auditable**, not proven. Play Store users install a binary, not the source. Honest claim: **"auditable source"** — not "mathematically verified privacy."
 
-Open source is verifiable privacy. A claim like "we don't track you" is just marketing in a closed-source app. In an MIT-licensed app:
-- Anyone can audit the source and confirm no analytics SDK is imported
-- `package.json` is public — no hidden Mixpanel, Firebase Analytics, Amplitude, etc.
-- The encryption implementation in `crypto.ts` can be independently reviewed
-- This is a meaningful, auditable distinction
+To strengthen the claim beyond that:
+- Publish tagged releases with build instructions
+- Commit `package-lock.json` / lockfiles
+- Add GitHub Actions that build from source and publish artifacts
+- Then someone can reproduce the binary from source
 
 ### Dependency License Audit
 
@@ -137,322 +92,316 @@ Run before every EAS production build:
 npx license-checker --onlyAllow 'MIT;BSD-2-Clause;BSD-3-Clause;Apache-2.0;ISC;0BSD'
 ```
 
-Key packages and their licenses:
-
-| Package | License |
-|---------|---------|
-| expo-sqlite | MIT |
-| expo-router | MIT |
-| react-native-svg | MIT |
-| react-native-draggable-flatlist | MIT |
-| @react-native-community/slider | MIT |
-| react-native-quick-crypto | MIT |
-| react, react-native | MIT |
-
-### NOTICE File
-
-MIT requires preserving copyright notices in distributions:
-
-```bash
-npx license-checker --out NOTICE --customPath licenseFormat.json
-```
+All planned packages are MIT. Add this to CI so it can't silently break.
 
 ---
 
-## 4. Privacy & Encryption Design
+## 4. Privacy Design
 
-### Privacy Principles
+### Principles
 
-1. **Local by default.** No network call ever happens without explicit user opt-in.
+1. **Local by default.** No network call happens without explicit user opt-in.
 2. **No analytics.** No crash reporter, no usage tracking, no A/B testing SDK.
-3. **No account required.** No email, no phone number, no OAuth sign-in.
-4. **Encryption before upload.** Cloud backup encrypts locally — the server never sees the key.
-5. **Deletable.** User can delete all data (local + VPS) from within the app.
+3. **No account required.** No email, no phone, no OAuth.
+4. **No Sentry (even self-hosted).** Any crash SDK sends data off the device, breaking the local-only story and requiring Data Safety disclosure. Use Play Console's built-in ANR/crash visibility instead.
+5. **Deletable.** User can wipe all local data from within the app.
 
-### Encryption Implementation (opt-in VPS backup only)
+### Encrypted VPS Backup (v1.1 only — do not build in v1)
 
-Uses well-understood, audited primitives — no homebrew crypto:
+**Key derivation:**
+- PBKDF2-SHA256 with 100k iterations is the floor, not the target. Weak passphrases under offline attack are the real threat.
+- Preferred: **Argon2id** if available in React Native (memory-hard, harder to brute-force).
+- If PBKDF2 only: raise iterations to 600k+ and show a passphrase strength indicator. Warn users that short passphrases weaken protection.
 
-**Key Derivation:**
-```
-passphrase (user-entered)
-  → PBKDF2-SHA256 (100,000 iterations, 16-byte random salt)
-  → 256-bit AES key
-```
-Salt is stored locally on-device. Key is never stored anywhere — re-derived on each backup/restore from passphrase.
+**Encryption:** AES-256-GCM
 
-**Encryption:**
-```
-disc data JSON string
-  → AES-256-GCM (12-byte random nonce/IV)
-  → { ciphertext, iv, salt } — all base64-encoded
-```
-AES-GCM provides both confidentiality and integrity (authentication tag detects tampering).
+> **Correction from audit:** AES-GCM produces a ciphertext + an authentication tag (16 bytes). The tag must be stored alongside the ciphertext — either concatenated into `blob` or as a separate `tag` field. Without restoring the tag on decrypt, GCM authentication fails. Store as `blob = ciphertext + tag` (concatenated, base64-encoded) or add a `tag` column.
 
-**What the VPS receives and stores:**
+**What the VPS stores:**
 ```json
 {
-  "token": "550e8400-e29b-41d4-a716-446655440000",
-  "blob": "base64_ciphertext...",
-  "iv": "base64_12_bytes",
-  "salt": "base64_16_bytes",
-  "updated_at": "2024-01-15T10:30:00Z"
+  "token": "uuid-random-not-guessable",
+  "blob": "base64(ciphertext + auth_tag)",
+  "iv":   "base64(12-byte nonce)",
+  "salt": "base64(16-byte PBKDF2 salt)",
+  "updated_at": "ISO-8601"
 }
 ```
 
-The VPS operator — even with full database access — sees only an opaque encrypted blob. Cannot determine how many discs exist, what they are named, or who the user is.
+> **Correction:** Salt must be in the backup payload, not stored only locally. A local-only salt makes restore-on-new-device impossible. The JSON above already has `salt` — the doc wording just needed to match.
 
-**Library:** `react-native-quick-crypto` — native OpenSSL bindings, MIT licensed, standard in the React Native ecosystem. Provides `pbkdf2Sync`, `randomBytes`, `createCipheriv`/`createDecipheriv`.
+**Token security:**
+- Generate as a random UUID on device; never reuse it
+- Treat as a bearer secret: do not log it, do not put in URL query params (use POST body or headers)
+- Rate-limit the VPS endpoints aggressively (e.g. 10 requests/minute per IP)
+- Require **both** token AND successful passphrase decryption before treating a restore as valid
+- Token = access control; passphrase = data protection. Both layers matter.
 
-### VPS Backup Endpoints (additions to app.py)
-
-```python
-# New table
-CREATE TABLE backups (
-  token      TEXT PRIMARY KEY,   -- random UUID, generated on device
-  blob       TEXT NOT NULL,      -- AES-256-GCM ciphertext (base64)
-  iv         TEXT NOT NULL,      -- 12-byte nonce (base64)
-  salt       TEXT NOT NULL,      -- PBKDF2 salt (base64)
-  updated_at TEXT NOT NULL
-);
-
-# Three endpoints
-POST   /api/backup          # upsert encrypted blob
-GET    /api/backup/<token>  # retrieve for restore
-DELETE /api/backup/<token>  # wipe on account delete
-```
-
-No authentication beyond the UUID token (secret to the device). Rate-limited server-side.
-
-### Privacy Claim Audit Table
-
-| Claim | Truthful? | Evidence in code |
-|-------|-----------|-----------------|
-| "We cannot read your data" | ✅ | Server receives ciphertext only; key never leaves device |
-| "No tracking or analytics" | ✅ | No analytics SDK in package.json (auditable) |
-| "Data is yours" | ✅ | MIT license + local-first; delete wipes VPS blob |
-| "Encrypted in transit" | ✅ | HTTPS + AES-256-GCM before upload |
+**Library:** `react-native-quick-crypto` (MIT, native OpenSSL bindings, standard in RN ecosystem)
 
 ---
 
 ## 5. Google Play Store Compliance
 
-### Data Safety Form (enforced since 2022)
+### Target SDK
 
-Inaccurate declarations can result in app removal. Our accurate answers:
+> **Correction:** As of **August 31, 2025**, Google Play requires `targetSdkVersion >= 35` (Android 15) for all new apps and updates. The previous doc said API 34 — that is stale. Expo SDK 52+ sets API 35 by default. Verify in `android/build.gradle` before submitting.
 
-| Data Type | Collected? | Shared? | Notes |
-|-----------|-----------|---------|-------|
-| Name | No | No | Username is device-local only |
-| Email / phone | No | No | No account system |
-| Location | No | No | — |
-| Device or other IDs | No | No | No advertising ID accessed |
-| App activity / interaction | No | No | No analytics |
-| Crash logs | No | No | No crash reporter SDK |
-| Personal disc data | Yes (local) | No | Stored only on device |
-| Backup data | Optional | No | Encrypted blob to user's own VPS if opted in |
+### Data Safety Form (v1 local-only)
 
-**For a local-only v1 (no backup):** Data Safety = "No data collected or shared." Cleanest possible Play Store submission.
+Google's definition of "collect" is data transmitted off the device. Data processed only locally does not need to be disclosed.
 
-**For v1 with backup:** Declare optional encrypted backup + provide privacy policy URL.
+**For a v1 with no backup, no analytics, no crash SDK, no remote library updates:**
 
-### Privacy Policy Requirements
+| Data Type | Collected? | Notes |
+|-----------|-----------|-------|
+| Any personal data | **No** | Everything stays on device |
 
-Google requires a privacy policy URL even for apps that collect no data. Must be:
-- Accessible from within the app (Settings → Privacy Policy link)
-- Hosted at a stable URL (GitHub Pages works)
-- Plain language (no legal boilerplate required)
+Data Safety form: **"No data collected or shared."** This is the cleanest possible submission. Do not add anything that breaks this before v1 ships.
 
-**Minimum content for local-only app:**
-1. What data the app stores (local SQLite — disc data, username, preferences)
-2. Where it's stored (on your device only)
-3. What is NOT collected (no analytics, no ads, no tracking)
-4. Contact for questions
-5. If backup added: what the encrypted backup contains and that the server cannot decrypt it
+**Checklist of things that would break the clean declaration:**
+- ❌ Firebase Analytics or Crashlytics
+- ❌ Sentry (even self-hosted)
+- ❌ Remote disc library fetch that includes a device ID or user identifier
+- ❌ Any third-party SDK with its own telemetry
 
-### Target API Level
+### Privacy Policy
 
-Play Store requires `targetSdkVersion >= 34` (Android 14) for new apps. Expo SDK 51+ sets this correctly by default. Verify in `android/build.gradle` before building.
+Required even for local-only apps. Host on GitHub Pages. Plain language, no legal boilerplate. Minimum content:
+1. What data the app stores (local SQLite — disc data, preferences)
+2. That data never leaves the device in v1
+3. What is not collected (no analytics, no ads, no tracking)
+4. Contact email
+5. (v1.1+) Encrypted backup section
 
-### App Content Declarations
+### Other Play Console Declarations
 
 | Field | Value |
 |-------|-------|
 | Category | Sports |
 | Content rating | Everyone (IARC questionnaire) |
 | Target audience | All ages |
-
-### App Signing
-
-Use **Google Play App Signing** — EAS manages the upload key, Google holds the final signing key. Required for Play Store, enables key recovery if upload key is lost.
+| App signing | Google Play App Signing via EAS |
 
 ---
 
-## 6. Logic Port Map (Web → Native)
+## 6. Expo Go vs Development Build
 
-All core logic is pure functions with zero DOM dependencies — direct copy with TypeScript types added:
+> **Correction:** Expo Go works for early layout/UI work but **cannot run native modules** like `react-native-quick-crypto`. Once any package with native code is installed, testing requires an **EAS Development Build** (`eas build --profile development`), not Expo Go.
 
-| Function(s) | Web source | Native destination |
-|------------|-----------|-------------------|
-| `stab()`, `stabClass()`, `stabShort()` | `discsuggestion.html` | `src/utils/disc.ts` |
-| `bagToDisc()` stability formula | `discsuggestion.html` | `src/utils/disc.ts` |
-| All 12 scenario objects + `bagTest` filters | `discsuggestion.html` | `src/utils/scenarios.ts` |
-| `applyModifiers()` | `flightshape.html` | `src/utils/physics.ts` |
-| `estimateDist()` | `flightshape.html` | `src/utils/physics.ts` |
-| Arc path math (Bézier control points) | `flightshape.html` | `src/components/ArcSvg.tsx` |
-| CSV import/export | `index.html` | `src/utils/disc.ts` |
+For v1 (no crypto, no native-only packages): Expo Go is fine for early testing.
+For v1.1 (encrypted backup adds `react-native-quick-crypto`): switch to dev build before testing backup.
 
-The arc SVG uses `<Svg>`, `<Path>`, `<Circle>` from `react-native-svg` — same element names and props as web SVG. The path `d` attribute string works unchanged.
+```bash
+# v1 testing (Expo Go compatible)
+npx expo start
 
----
-
-## 7. iOS Path Research
-
-When the app goes to iOS, the Expo codebase supports it with minimal changes:
-
-- **EAS Build:** `eas build --platform ios` — requires Apple Developer account ($99/yr)
-- **App Store Review:** 1–3 days review time (stricter than Google Play)
-- **Simulator testing:** `npx expo run:ios` requires macOS with Xcode
-- **App Privacy labels:** Same honest declarations apply (Apple's equivalent of Data Safety)
-- **`expo-sqlite`:** Works identically on iOS
-- **`react-native-quick-crypto`:** Works on iOS (OpenSSL bindings)
-- **No code changes needed** for core app — iOS and Android share 100% of source
-
-The only iOS-specific work: App Store screenshots, description, and Apple Developer enrollment.
+# v1.1+ (native modules — requires dev build)
+eas build --platform android --profile development
+# Install the APK, then `npx expo start` connects to it
+```
 
 ---
 
-## 8. Screen Map
+## 7. Physics Architecture: V2 Design
 
-| Web Page | Native Screen | Route |
-|----------|--------------|-------|
-| `pick.html` | UserPickerScreen | `/` |
-| `index.html` | BagScreen | `/bag` |
-| `flightshape.html` | FlightShapeScreen | `/flightshape` |
-| `discsuggestion.html` | DiscSuggestScreen | `/suggest` |
+> This section documents the planned physics improvement. The port is **not** a rewrite — current math is preserved as `legacyPhysics.ts`. V2 is built alongside it.
 
-Bottom tab navigator for Bag / Flight Shape / Disc Suggest once user is picked.
+### Problem with current approach
+
+`arcPoints()` in `flightshape.html` goes directly from flight numbers to Bézier control points. The curve is simultaneously the physics model, the tuning constants, and the renderer. Changing any one of these risks breaking the others. There is no test surface.
+
+### V2 Architecture
+
+```
+Input layer:   disc numbers + ThrowParams (hyzer, nose, wind, power, spin, arcView)
+     ↓
+Model layer:   simulateFlight() → FlightPoint[]  (50–120 points: {x, y, speed, phase})
+     ↓
+Render layer:  flightPointsToSvgPath(points) → SVG path string
+     ↓
+Component:     <ArcSvg> renders the string — contains zero physics logic
+```
+
+**Key rule:** React Native components must not contain flight math. They call the model, render the result.
+
+### `physicsV2.ts` — timestep simulation (not Bézier-first)
+
+```typescript
+// All tuning constants in one place — easy to adjust and test
+export const DEFAULT_FLIGHT_TUNING = {
+  dragRate:       0.012,   // speed loss per timestep
+  turnGain:       1.0,     // multiplier on high-speed turn force
+  fadeGain:       1.0,     // multiplier on low-speed fade force
+  glideLift:      0.03,    // distance bonus per glide point
+  spinResistance: 0.008,   // how much spin resists heading change
+  nosePenalty:    0.015,   // distance loss per degree nose-up
+  windInfluence:  0.08,    // heading shift per wind unit
+  phaseTransition: 0.55,   // speed ratio where turn→fade crossover happens
+};
+
+export function simulateFlight(
+  disc: DiscFlightNumbers,
+  params: ThrowParams,
+  tuning = DEFAULT_FLIGHT_TUNING
+): FlightPoint[] { ... }
+
+export function flightPointsToSvgPath(points: FlightPoint[]): string { ... }
+```
+
+**Timestep logic:**
+1. Start with initial speed = `(disc.speed / 14) * power`
+2. Each step: reduce speed by drag × glide factor
+3. Compute phase = current speed / initial speed
+4. If phase > phaseTransition: apply turn force (negative turn, anhyzer, wind)
+5. If phase ≤ phaseTransition: apply fade force (positive fade, hyzer, low spin)
+6. Update heading gradually (not instantly)
+7. Move position along heading
+8. Apply lateral wind drift
+9. Stop at distance/speed threshold
+10. Smooth path for SVG
+
+**Behavior goals (from audit):**
+
+| Input | Expected behavior |
+|-------|------------------|
+| RHBH, negative turn | Drifts right during high-speed phase |
+| RHBH, positive fade | Finishes left during low-speed phase |
+| More power | Turn phase more pronounced |
+| Less power | Disc behaves more overstable (less speed to reveal turn) |
+| Headwind | Disc behaves effectively faster early → more turn |
+| Tailwind | Disc behaves effectively slower → more overstable |
+| Hyzer release | Resists turn, increases fade finish |
+| Anhyzer release | Encourages right movement, possible flex |
+| Nose up | Reduces distance, earlier fade |
+| Low spin | Earlier fade, less smooth transition |
+| High spin | Smoother hold, later transition |
+
+### Hidden Developer Screen
+
+During development, expose `DEFAULT_FLIGHT_TUNING` constants as sliders in a hidden screen (`/dev` route or long-press on version number). Throw a real disc, observe, adjust. Hardcode the tuned values before v1 release. Do not expose in normal UI.
+
+### Migration Strategy
+
+```
+src/utils/legacyPhysics.ts   ← current applyModifiers() + arcPoints() preserved exactly
+src/utils/physicsV2.ts        ← new simulateFlight() + DEFAULT_FLIGHT_TUNING
+src/utils/flightRenderer.ts  ← flightPointsToSvgPath()
+```
+
+Both run in parallel initially. The FlightShape screen can have a toggle to compare. Once V2 is validated against real throw data, legacy is deprecated (not deleted until V2 is proven).
+
+### Real Throw Data Collection
+
+Without real data, tuning is just guessing. Collect per throw:
+- Disc mold, speed/glide/turn/fade, weight
+- Throw type (RHBH/RHFH/LHBH/LHFH)
+- Release angle estimate (hyzer °, flat, anhyzer °)
+- Nose angle estimate (up/neutral/down)
+- Power estimate (50/70/90/100%)
+- Wind (calm / head / tail / left / right, rough mph)
+- Actual distance (UDisc, Google Maps, pacing)
+- Lateral finish (feet left/right of target line)
+- Shape label: straight / hyzer-finish / turnover / S-curve / flex / roller-risk
+
+Tune the model against **shape class correctness**, not exact distance. A model that correctly predicts "this disc will turn right then finish straight" is more valuable than one that claims "274 ft" and is wrong.
 
 ---
 
-## 9. Web → Native API Mapping
-
-| Web | Native |
-|-----|--------|
-| CSS variables (`--accent`) | `src/theme.ts` constants |
-| `<input type="color">` | Color picker modal or wheel |
-| `<input type="range">` (horizontal) | `@react-native-community/slider` |
-| Vertical sliders (CSS transform) | Custom `PanResponder` vertical slider |
-| `localStorage` | `AsyncStorage` or SQLite `user_meta` |
-| `fetch('/api/data')` | Direct `expo-sqlite` calls |
-| `<svg>` arc | `react-native-svg` `<Svg><Path>` |
-| Drag reorder (mouse/touch events) | `react-native-draggable-flatlist` |
-| `document.getElementById` | React refs / state |
-
----
-
-## 10. Package List (all MIT licensed)
+## 8. Package List (all MIT)
 
 | Package | Purpose |
 |---------|---------|
-| `expo` | Core SDK |
+| `expo` | Core SDK (use SDK 52+ for API 35 default) |
 | `expo-router` | File-based navigation |
 | `expo-sqlite` | Local database |
 | `react-native-svg` | Arc flight shape SVG |
 | `react-native-draggable-flatlist` | Drag-reorder disc bag |
-| `@react-native-community/slider` | Sliders (arm, spin, wind, etc.) |
-| `react-native-quick-crypto` | Encryption for opt-in backup |
+| `@react-native-community/slider` | Sliders (hyzer, nose, wind, arm, spin) |
 | `react-native-gesture-handler` | Touch gesture primitives |
 | `react-native-reanimated` | Smooth animations |
-| `expo-file-system` | CSV export to device storage |
+| `expo-file-system` | CSV export to device |
 | `expo-sharing` | Share/export CSV file |
+| `react-native-quick-crypto` | v1.1 only — encrypted backup |
 
 ---
 
-## 11. Project File Structure
+## 9. Project File Structure
 
 ```
 disc_tracker/
-├── LICENSE                          ← MIT (covers everything)
+├── LICENSE                          ← MIT
 ├── app.py                           ← Flask backend (unchanged)
 ├── templates/                       ← Web app (unchanged)
 ├── static/
-│   └── discs_master.json            ← Master library (233 KB)
+│   └── discs_master.json            ← Master library (233 KB, 1660+ discs)
 └── app/                             ← Expo project root
     ├── LICENSE                      ← MIT
     ├── RESEARCH.md                  ← This document
-    ├── app.json                     ← Expo config
+    ├── MOBILE_PORT_AUDIT.md         ← Website behavior inventory
+    ├── PORT_PLAN.md                 ← Phased implementation plan
+    ├── app.json                     ← Expo config (SDK 52+, API 35)
     ├── eas.json                     ← EAS build profiles
     ├── package.json
+    ├── package-lock.json            ← Committed lockfile
     ├── tsconfig.json
     ├── assets/
     │   ├── icon.png
     │   ├── splash.png
-    │   └── discs_master.json        ← Bundled copy of master library
+    │   └── discs_master.json        ← Bundled copy
     └── src/
         ├── theme.ts                 ← Color constants (CSS vars → JS)
         ├── db/
-        │   └── db.ts                ← expo-sqlite CRUD layer
+        │   └── db.ts                ← expo-sqlite + PRAGMA foreign_keys = ON
         ├── utils/
-        │   ├── disc.ts              ← stab(), stabClass(), CSV
-        │   ├── physics.ts           ← applyModifiers(), estimateDist()
-        │   ├── scenarios.ts         ← 12 disc suggest scenarios
-        │   └── crypto.ts            ← PBKDF2 + AES-256-GCM (backup only)
+        │   ├── disc.ts              ← stab(), stabClass(), stabShort(), CSV
+        │   ├── legacyPhysics.ts     ← applyModifiers(), arcPoints() — preserved
+        │   ├── physicsV2.ts         ← simulateFlight(), DEFAULT_FLIGHT_TUNING
+        │   ├── flightRenderer.ts    ← flightPointsToSvgPath()
+        │   └── scenarios.ts         ← 12 SCENARIOS array + bagTest filters
         ├── screens/
-        │   ├── UserPickerScreen.tsx
-        │   ├── BagScreen.tsx
+        │   ├── BagScreen.tsx        ← v1: single user, no picker
         │   ├── FlightShapeScreen.tsx
-        │   └── DiscSuggestScreen.tsx
+        │   ├── DiscSuggestScreen.tsx
+        │   └── DevScreen.tsx        ← hidden tuning sliders (dev only)
         └── components/
             ├── DiscCard.tsx
-            ├── ArcSvg.tsx
+            ├── ArcSvg.tsx           ← calls flightPointsToSvgPath(), no physics
             ├── VerticalSlider.tsx
             └── StabilityChip.tsx
 ```
 
 ---
 
-## 12. Open Questions (resolve before building)
-
-1. **Backup in v1 or v1.1?** Shipping without backup keeps the Data Safety form at "no data collected" — cleanest Play Store submission. Recommended: ship v1 local-only, add encrypted backup in v1.1.
-
-2. **Multi-user or single-user on mobile?** Web app supports multiple users (household use). On mobile, single-user + device-local is more natural UX. Simplify to single-user for v1?
-
-3. **App name / Play Store slug?** `com.disctracker.app` as package name — check availability in Play Console before building.
-
-4. **Self-hosted VPS backup vs third-party?** Current plan uses the existing VPS. Alternative: Cloudflare R2 or Supabase for encrypted blob storage (simpler ops, same privacy since blobs are encrypted before upload).
-
-5. **Offline disc library updates?** `discs_master.json` is bundled — new discs require an app update. Alternative: fetch a versioned JSON from the VPS on launch (no personal data, purely additive).
-
-6. **Crash reporting?** Adding Sentry (self-hosted) would catch crashes without sending data to third parties. Or ship with none and rely on Play Console's built-in ANR/crash reports.
-
----
-
-## 13. EAS Build Quick Reference
+## 10. EAS Build Quick Reference
 
 ```bash
-# Initial setup (once)
+# Initial setup
 npm install -g eas-cli
 eas login
 eas build:configure
 
-# Development build (for device testing via Expo Go)
+# Early UI testing (Expo Go — v1 only, no native modules)
 npx expo start
 
-# Preview APK (sideload for testing, no Play Store)
+# Device testing APK (sideload — no Play Store)
 eas build --platform android --profile preview
 
-# Production AAB (Play Store upload)
+# Play Store upload
 eas build --platform android --profile production
 
-# iOS (when ready, requires Apple Developer account)
+# iOS (when ready)
 eas build --platform ios --profile production
 ```
 
-### `eas.json` profiles
+### `eas.json`
 ```json
 {
   "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
     "preview": {
       "android": { "buildType": "apk" }
     },
@@ -465,30 +414,11 @@ eas build --platform ios --profile production
 
 ---
 
-## 14. Implementation Phases (when ready)
+## 11. Open Questions
 
-### Phase 1 — Scaffold + Data Layer (~2 hrs)
-1. `npx create-expo-app app --template blank-typescript` inside `disc_tracker/`
-2. Install all packages from Section 10
-3. Write `src/db/db.ts` with schema + CRUD
-4. Write `src/utils/disc.ts`, `physics.ts`, `scenarios.ts` (JS ports)
-5. Copy `static/discs_master.json` → `app/assets/`
-6. Write `src/theme.ts` (CSS vars → constants)
-
-### Phase 2 — Screens (~4–6 hrs)
-1. `UserPickerScreen` — user list, add, delete (confirm tap)
-2. `BagScreen` — disc cards, drag-reorder, add/edit modal, stability chips
-3. `FlightShapeScreen` — disc picker, 5 sliders, SVG arc, distance bar
-4. `DiscSuggestScreen` — scenario grid, filtered results (bag + library)
-
-### Phase 3 — Backup Feature (~1–2 hrs, v1.1)
-1. Settings screen: enable backup toggle + passphrase input
-2. `src/utils/crypto.ts`: PBKDF2 key derive + AES-256-GCM encrypt/decrypt
-3. VPS: add 3 backup endpoints to `app.py`
-4. Sync on app foreground + manual "backup now" button
-
-### Phase 4 — Play Store Prep (~1 hr)
-1. `eas build --platform android --profile preview` → APK → smoke test on device
-2. Write privacy policy (plain English, host on GitHub Pages)
-3. Fill Data Safety form accurately
-4. `eas build --platform android --profile production` → AAB → upload to Play Console
+1. **V1 ship without backup?** Yes — confirmed. Keeps Data Safety form at "no data collected." Add backup in v1.1.
+2. **Single-user v1?** Yes — auto-create default user, skip picker screen. Schema stays multi-user for future.
+3. **Play Store slug?** `com.disctracker.app` — verify availability in Play Console before first build.
+4. **Argon2id availability?** Check if `react-native-quick-crypto` exposes Argon2id before committing to PBKDF2 for backup (v1.1 decision).
+5. **Offline disc library updates?** `discs_master.json` bundled — new discs require app update. Fine for v1.
+6. **V2 physics in v1 or v1.1?** V2 is the right architecture but should not block shipping. Suggestion: port legacy math first (unblock v1), build V2 in parallel, ship V2 in v1.1 alongside backup.
