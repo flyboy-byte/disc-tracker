@@ -296,14 +296,14 @@ Tune the model against **shape class correctness**, not exact distance. A model 
 
 | Package | Purpose |
 |---------|---------|
-| `expo` | Core SDK (use SDK 52+ for API 35 default) |
+| `expo` | Core SDK (SDK 54+ ships expo-sqlite v14 natively) |
 | `expo-router` | File-based navigation |
-| `expo-sqlite` | Local database |
+| `expo-sqlite` | Local database — use v14+ (built into SDK 54), NOT the community package |
 | `react-native-svg` | Arc flight shape SVG |
 | `react-native-draggable-flatlist` | Drag-reorder disc bag |
 | `@react-native-community/slider` | Sliders (hyzer, nose, wind, arm, spin) |
 | `react-native-gesture-handler` | Touch gesture primitives |
-| `react-native-reanimated` | Smooth animations |
+| `react-native-reanimated` | Animations — use Reanimated 4 + `useSharedValue` for 60fps slider arc |
 | `expo-file-system` | CSV export to device |
 | `expo-sharing` | Share/export CSV file |
 | `react-native-quick-crypto` | v1.1 only — encrypted backup |
@@ -324,11 +324,12 @@ disc_tracker/
     ├── RESEARCH.md                  ← This document
     ├── MOBILE_PORT_AUDIT.md         ← Website behavior inventory
     ├── PORT_PLAN.md                 ← Phased implementation plan
-    ├── app.json                     ← Expo config (SDK 52+, API 35)
+    ├── app.json                     ← Expo config (SDK 54+, API 35)
     ├── eas.json                     ← EAS build profiles
     ├── package.json
     ├── package-lock.json            ← Committed lockfile
     ├── tsconfig.json
+    ├── android/                     ← Committed prebuild output (see Section 10)
     ├── assets/
     │   ├── icon.png
     │   ├── splash.png
@@ -336,7 +337,8 @@ disc_tracker/
     └── src/
         ├── theme.ts                 ← Color constants (CSS vars → JS)
         ├── db/
-        │   └── db.ts                ← expo-sqlite + PRAGMA foreign_keys = ON
+        │   ├── db.ts                ← expo-sqlite + PRAGMA foreign_keys = ON
+        │   └── migrations.ts        ← versioned schema, run on app launch
         ├── utils/
         │   ├── disc.ts              ← stab(), stabClass(), stabShort(), CSV
         │   ├── legacyPhysics.ts     ← applyModifiers(), arcPoints() — preserved
@@ -358,6 +360,42 @@ disc_tracker/
 ---
 
 ## 10. EAS Build Quick Reference
+
+### Reference project
+
+**DragTree** — same stack (Expo EAS + TypeScript + local SQLite), working Android build pipeline including F-Droid. Study its:
+- `lib/settings.ts` — pub/sub + AsyncStorage for local state (no Redux/Zustand needed — borrow this pattern for bag/disc state)
+- `eas.json` build profiles (preview APK + play AAB)
+- `gradle.properties` JVM args
+- `pnpm-workspace.yaml` monorepo setup
+
+### Commit the android/ prebuild — do not gitignore it
+
+```bash
+# Run once early, then commit the output
+expo prebuild --platform android --clean
+git add android/
+git commit -m "add android prebuild output"
+```
+
+Every build-path problem (wrong subdir, wrong init path, build server not finding APK) traces back to treating the prebuild as throwaway. It's not — it's a build artifact and belongs in version control.
+
+### gradle.properties — set this before first build
+
+```properties
+# Prevents OOM at dex merge (React Native eats heap)
+org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
+org.gradle.workers.max=2
+```
+
+### Gradle failure order of likelihood
+
+1. **OOM at dex merge** — set the JVM args above before the first `./gradlew` run
+2. **Node not found at Gradle configure time** — Expo SDK 54's `settings.gradle` calls `node` to resolve package paths; make sure `node` is on `PATH` before Gradle runs
+3. **pnpm install from wrong directory** — monorepo root only, never from inside the `app/` subdir; causes "Unable to resolve" errors that look like Gradle problems but aren't
+4. **Deprecated Gradle features warning** — ignore; Expo/RN internals use APIs deprecated in Gradle 9, not fatal
+
+### Build commands
 
 ```bash
 # Initial setup

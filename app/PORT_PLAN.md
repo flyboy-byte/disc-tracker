@@ -100,11 +100,16 @@ npx expo install expo-sqlite expo-router react-native-svg \
   react-native-reanimated react-native-draggable-flatlist \
   expo-file-system expo-sharing expo-document-picker
 cp ../static/discs_master.json assets/
+
+# Run prebuild immediately and commit the output — don't gitignore android/
+npx expo prebuild --platform android --clean
+git add android/
 ```
 
 **Deliverables:**
-- `app.json` with `slug`, `android.package = "com.disctracker.app"`, SDK 52+
+- `app.json` with `slug`, `android.package = "com.disctracker.app"`, SDK 54+
 - `eas.json` with `preview` (APK) and `production` (AAB) profiles
+- `android/gradle.properties` with `-Xmx4g -XX:MaxMetaspaceSize=1g` JVM args (add before first build)
 - `src/theme.ts` with all color constants matching web CSS vars
 - Bottom tab navigator: Bag / Flight Shaper / Disc Suggest
 - `npx expo start` runs without errors
@@ -152,14 +157,16 @@ it('Roadrunner matches Tailwind scenario', () => {
 
 **Goal:** Database layer identical to Flask backend behavior.
 
-File: `src/db/db.ts`
+**Package:** `expo-sqlite` v14+ (built into Expo SDK 54) — native async/await, no community package needed.
+
+Files: `src/db/db.ts` + `src/db/migrations.ts`
 
 ```typescript
-// Must include on every connection:
+// db.ts — must run on every connection:
 db.execAsync('PRAGMA foreign_keys = ON');
 
 // Functions to implement:
-openDatabase(): Promise<void>         // run schema + migrations, set PRAGMA
+openDatabase(): Promise<void>         // run migrations, set PRAGMA
 getOrCreateDefaultUser(): Promise<number>   // v1: auto-create "My Bag" user
 getDiscs(userId: number): Promise<Disc[]>
 saveDiscs(userId: number, discs: Disc[]): Promise<void>   // bulk replace (same as POST /api/data)
@@ -167,7 +174,7 @@ getMeta(userId: number): Promise<UserMeta>
 setMeta(userId: number, updates: Partial<UserMeta>): Promise<void>
 ```
 
-**Migration pattern:** Same as Flask — `CREATE TABLE IF NOT EXISTS` for base tables, then `ALTER TABLE ADD COLUMN` wrapped in try/catch for each added column (color, arc_view).
+**Migration pattern:** All schema versions live in `migrations.ts`, applied in sequence on app launch. Version the schema — don't just rely on `CREATE IF NOT EXISTS`. Same logic as Flask's `init_db()`: base tables first, then `ALTER TABLE ADD COLUMN` for `color` and `arc_view`, each wrapped in try/catch.
 
 **Verification:** Write a test that:
 1. Opens DB
@@ -222,7 +229,7 @@ setMeta(userId: number, updates: Partial<UserMeta>): Promise<void>
 
 **Key mapping decisions:**
 - Horizontal `<input type="range">` → `@react-native-community/slider` (horizontal, default)
-- Vertical sliders → Custom `PanResponder` component (`VerticalSlider.tsx`)
+- Vertical sliders → Custom `VerticalSlider.tsx` using **Reanimated 4 + `useSharedValue`** — gives 60fps arc update on-device without threading headaches (smoother than canvas-based web approach)
 - `arcPoints()` output → `<Svg>` + `<Path>` in `react-native-svg`
 - `drawArc()` → `ArcSvg.tsx` component that takes adjusted disc + sliders, renders SVG
 
