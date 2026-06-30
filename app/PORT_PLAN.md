@@ -326,24 +326,87 @@ Submit to official F-Droid index when app is stable (weeks-long review process �
 
 ---
 
+## Phase 9 — VPS Sync (v1.1, after v1 ships)
+
+**Goal:** Optional manual sync between phone and the existing Flask website via the same `/api/data` endpoints.
+
+**What this is NOT:** a cloud service, a third-party backend, a new database. It's the user's own VPS running the same Flask app that powers the website.
+
+### Flask changes (minimal)
+
+```python
+# app.py — add token check to /api/data GET and POST
+SYNC_TOKEN = os.environ.get('SYNC_TOKEN')
+
+def check_sync_token():
+    if SYNC_TOKEN and request.headers.get('Authorization') != f'Bearer {SYNC_TOKEN}':
+        abort(401)
+
+# Add to both /api/data routes:
+check_sync_token()
+```
+
+### Mobile changes
+
+Settings screen additions:
+- Server URL field (e.g. `https://yoursite.com`)
+- Token field (bearer token matching `SYNC_TOKEN` on VPS)
+- "Push to server" button — sends local bag to server via `POST /api/data`
+- "Pull from server" button — fetches server bag and overwrites local via `GET /api/data`
+- Last synced timestamp display
+
+```typescript
+// sync.ts — the whole sync layer
+async function pushToServer(url: string, token: string, discs: Disc[]) {
+  await fetch(`${url}/api/data`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ discs })
+  });
+}
+
+async function pullFromServer(url: string, token: string): Promise<Disc[]> {
+  const res = await fetch(`${url}/api/data`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  const { discs } = await res.json();
+  return discs;
+}
+```
+
+**Conflict model:** none — full replace in the direction the user chose. For a single-user bag this is always correct.
+
+### Before submitting v1.1 to Play Store or F-Droid official index
+
+These must be resolved first (see `RESEARCH.md` Section 11 open questions):
+
+- [ ] Research how other self-hosted sync apps (Obsidian, Nextcloud, Syncthing) word Play Store Data Safety form for opt-in user-controlled sync
+- [ ] Write exact Data Safety form language for v1.1 — draft and review before submitting
+- [ ] Update privacy policy with sync section
+- [ ] Decide on token setup UX (env var on VPS? in-app pairing? auto-generated in Flask?)
+- [ ] Consider publishing OpenAPI spec for sync endpoints in repo — makes "open API" claim concrete
+
+---
+
 ## Scope Boundaries for v1
 
 Keep v1 focused — these can be revisited after shipping:
 
 | Defer to later | Notes |
 |----------------|-------|
-| Cloud backup | v1.1 — don't let it block shipping |
+| VPS sync | v1.1 — fully designed, don't build yet |
 | Physics V2 (`physicsV2.ts`) | Build alongside, switch when validated against real throw data |
 | Multi-user picker screen | Schema supports it; UI can wait |
-| User login / OAuth | Not needed — local-only |
+| User login / OAuth | Not needed — sync uses a simple bearer token |
 | Third-party analytics | Not planned |
 
 **Technical musts** (these will cause real problems if skipped):
 - `PRAGMA foreign_keys = ON` on every SQLite connection — or CASCADE deletes silently fail
 - Target API 35 — Play Store requirement as of Aug 31 2025; Expo SDK 54 handles it
 - No GMS dependencies — required for F-Droid; check `./gradlew app:dependencies` before submitting
-- EAS dev build (not Expo Go) once any native module is added (e.g. `react-native-quick-crypto` in v1.1)
+- EAS dev build (not Expo Go) once any native module is added
 - Port `applyModifiers()` and `arcPoints()` exactly — improve via `physicsV2.ts`, not by editing the port
+- Resolve sync privacy/Data Safety wording before v1.1 Play Store submission
 
 ---
 

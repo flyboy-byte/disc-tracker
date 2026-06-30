@@ -22,13 +22,45 @@
 
 ## 2. Data Architecture: Local-First SQLite
 
-### Decision: Option B — `expo-sqlite` on device
+### Decision: Local-first + optional sync to own VPS
 
-The Flask app is a localhost server that can't serve a phone. Three paths exist:
+The Flask app is a localhost server that can't serve a phone directly. Three paths considered:
 
 - **Path A (LAN bridge):** Phone calls Flask API over WiFi. Fragile, server-dependent, not a real app. Rejected.
-- **Path B (local SQLite):** `expo-sqlite` on device. Fully offline. Schema is 1:1 with Flask. **Chosen for v1.**
-- **Path C (encrypted VPS backup):** Opt-in layer on top of Path B. v1.1 only.
+- **Path B (local SQLite only):** `expo-sqlite` on device. Fully offline, no server dependency. **Chosen for v1.**
+- **Path C (encrypted blob backup):** Encrypt disc data, push opaque blob to VPS. Originally planned for v1.1 — **replaced by Path D.**
+- **Path D (sync with own Flask server):** Local SQLite on device stays the source of truth. Optional manual sync pushes/pulls the full bag to/from the existing VPS via the Flask API. **Target for v1.1.**
+
+### Path D — Sync Architecture
+
+The website's `/api/data` endpoints already do exactly what sync needs:
+- `GET /api/data` — returns full disc list for a user
+- `POST /api/data` — replaces full disc list for a user
+
+The mobile app calls the same endpoints. No new server logic needed except token auth on those routes (~5 lines of Flask).
+
+**Sync model:**
+- Local SQLite is always the primary store — app works fully offline forever
+- User opts in by entering their VPS URL + token in Settings
+- **Push:** local → server (edited on phone, send up to website)
+- **Pull:** server → local (edited on website, pull down to phone)
+- Full replace in one direction. No merge, no conflict resolution. For a single-user bag, last-write-wins is correct.
+
+**Flask changes needed for sync:**
+```python
+# Add to app.py — one token check on /api/data GET and POST
+SYNC_TOKEN = os.environ.get('SYNC_TOKEN')  # set in environment
+
+def require_sync_token():
+    if SYNC_TOKEN and request.headers.get('Authorization') != f'Bearer {SYNC_TOKEN}':
+        abort(401)
+```
+
+**Why this beats the encrypted blob backup:**
+- No encryption complexity, no passphrase UX, no key derivation
+- Sync result is readable on the website immediately — the "just works" continuity
+- Single codebase (Flask) handles both web and mobile data
+- Server is your own VPS either way — same trust model
 
 ### SQLite Schema (identical to Flask `init_db()`)
 
@@ -153,34 +185,13 @@ All planned packages are MIT. Add this to CI so it can't silently break.
 4. **Crash reporting is optional.** Play Console's built-in ANR/crash visibility is free and requires no SDK. Self-hosted Sentry is also fine — you control the server, data doesn't go to a third party. Just declare it accurately in the Data Safety form if you add it.
 5. **Deletable.** User can wipe all local data from within the app.
 
-### Encrypted VPS Backup (v1.1 only — do not build in v1)
+### Sync Privacy Principles (v1.1)
 
-**Key derivation:**
-- PBKDF2-SHA256, 100k iterations — solid for this use case. The threat model is a disc golf bag, not a bank. 100k is standard and well-supported by `react-native-quick-crypto`.
-
-**Encryption:** AES-256-GCM
-
-> **Correction from audit:** AES-GCM produces a ciphertext + an authentication tag (16 bytes). The tag must be stored alongside the ciphertext — either concatenated into `blob` or as a separate `tag` field. Without restoring the tag on decrypt, GCM authentication fails. Store as `blob = ciphertext + tag` (concatenated, base64-encoded) or add a `tag` column.
-
-**What the VPS stores:**
-```json
-{
-  "token": "uuid-random-not-guessable",
-  "blob": "base64(ciphertext + auth_tag)",
-  "iv":   "base64(12-byte nonce)",
-  "salt": "base64(16-byte PBKDF2 salt)",
-  "updated_at": "ISO-8601"
-}
-```
-
-> **Correction:** Salt must be in the backup payload, not stored only locally. A local-only salt makes restore-on-new-device impossible. The JSON above already has `salt` — the doc wording just needed to match.
-
-**Token:**
-- Random UUID generated on device, sent in POST body (not URL params)
-- Basic rate limiting on VPS is sensible (e.g. 10 req/min per IP)
-- Restore requires both the token and a correct passphrase to decrypt — two layers naturally
-
-**Library:** `react-native-quick-crypto` (MIT, native OpenSSL bindings, standard in RN ecosystem)
+1. **Opt-in only.** Sync is off by default. No network call happens until the user explicitly configures a server URL and token.
+2. **Your server, your data.** The VPS is user-controlled infrastructure — not a third party. The app never sends data anywhere the user didn't configure.
+3. **No account.** Auth is a bearer token the user sets themselves, not a username/password system.
+4. **Deletable.** Sync settings (URL + token) can be cleared from within the app, which stops all future sync calls.
+5. **Auditable.** Both the mobile sync code and the Flask endpoint are open source — anyone can verify what's sent and received.
 
 ---
 
@@ -190,26 +201,53 @@ All planned packages are MIT. Add this to CI so it can't silently break.
 
 > **Correction:** As of **August 31, 2025**, Google Play requires `targetSdkVersion >= 35` (Android 15) for all new apps and updates. The previous doc said API 34 — that is stale. Expo SDK 54 sets API 35 by default. Verify in `android/build.gradle` before submitting. F-Droid has no minimum SDK requirement — API 35 is fine there too.
 
-### Data Safety Form (v1 local-only)
+### Data Safety Form
 
 Google's definition of "collect" is data transmitted off the device. Data processed only locally does not need to be disclosed.
 
-**For a v1 with no backup, no analytics, no crash SDK, no remote library updates:**
+**v1 (local-only, no sync):**
 
 | Data Type | Collected? | Notes |
 |-----------|-----------|-------|
 | Any personal data | **No** | Everything stays on device |
 
-Data Safety form: **"No data collected or shared."** Straightforward — local-only apps get the cleanest possible form. The main things that would change this: adding Firebase/Crashlytics, adding third-party analytics, or making network calls that include any device identifier. Self-hosted services you control are a gray area Google generally accepts with accurate disclosure.
+Form answer: **"No data collected or shared."** Cleanest possible submission.
+
+**v1.1 (optional sync added):**
+
+| Data Type | Collected? | Shared? | Notes |
+|-----------|-----------|---------|-------|
+| Disc bag data | **Optional** | **No** | Only if user enables sync; sent to user's own server |
+| Any third-party data | **No** | **No** | Sync goes to user-controlled VPS only |
+
+Form answer for v1.1: declare optional data transmission to user-provided server, user-initiated only, user can delete. Google generally accepts "user's own infrastructure" as not a third-party share — but this needs to be worded carefully and is an **open question** (see Section 11).
+
+### Proving Sync is Private — Open Problem
+
+This is the hard part. Anyone can claim "your data goes to your own server." Here's how to make that claim credible:
+
+**What we have:**
+- MIT source code — anyone can read the sync function and verify it only calls the URL the user configured
+- No third-party SDK in the network path — standard `fetch()`, nothing else
+- Flask endpoint is also open source in the same repo — server side is auditable too
+- No device identifiers, no analytics, no fingerprinting in the sync payload
+
+**What still needs to be figured out before submission:**
+- Exact wording for Play Store Data Safety form when sync is opt-in and server is user-owned (research how other self-hosted sync apps like Syncthing, Nextcloud, Obsidian handle this)
+- Whether F-Droid's official index has any stance on apps with optional network features
+- Privacy policy language that accurately describes "we send your data to a server YOU configured, not ours"
+- Whether to publish a simple API spec (OpenAPI/Swagger) for the sync endpoints — makes the "open API" claim concrete and lets advanced users verify or self-host
+
+> **Don't block shipping on this.** v1 ships local-only with a clean Data Safety form. Figure out the sync privacy wording before v1.1 submission, not before v1.
 
 ### Privacy Policy
 
-Required even for local-only apps. Host on GitHub Pages. Plain language, no legal boilerplate. Minimum content:
+Required even for local-only apps. Host on GitHub Pages. Minimum content:
 1. What data the app stores (local SQLite — disc data, preferences)
 2. That data never leaves the device in v1
-3. What is not collected (no analytics, no ads, no tracking)
+3. What is not collected (no analytics, no ads, no tracking, no account)
 4. Contact email
-5. (v1.1+) Encrypted backup section
+5. (v1.1) Sync section: data only goes to a server URL the user provides, user can disable at any time, server is not operated by the developer
 
 ### Other Play Console Declarations
 
@@ -492,9 +530,12 @@ eas build --platform ios --profile production
 
 ## 11. Open Questions
 
-1. **V1 ship without backup?** Yes — confirmed. Keeps Data Safety form at "no data collected." Add backup in v1.1.
+1. **V1 local-only?** Yes — confirmed. No sync in v1. Keeps Data Safety form at "no data collected."
 2. **Single-user v1?** Yes — auto-create default user, skip picker screen. Schema stays multi-user for future.
 3. **Play Store slug?** `com.disctracker.app` — verify availability in Play Console before first build.
-4. **Argon2id availability?** Check if `react-native-quick-crypto` exposes Argon2id before committing to PBKDF2 for backup (v1.1 decision).
-5. **Offline disc library updates?** `discs_master.json` bundled — new discs require app update. Fine for v1.
-6. **V2 physics in v1 or v1.1?** V2 is the right architecture but should not block shipping. Suggestion: port legacy math first (unblock v1), build V2 in parallel, ship V2 in v1.1 alongside backup.
+4. **Offline disc library updates?** `discs_master.json` bundled — new discs require app update. Fine for v1.
+5. **V2 physics in v1 or v1.1?** V2 is the right architecture but should not block shipping. Port legacy math first (unblock v1), build V2 in parallel, ship in v1.1.
+6. **Sync Data Safety wording (v1.1 blocker):** Research how other open-source self-hosted sync apps (Obsidian Sync, Nextcloud, Syncthing) handle Play Store Data Safety form when sync is opt-in and server is user-owned. Do not submit v1.1 to Play Store without resolving this.
+7. **F-Droid official index stance on optional network features:** Check F-Droid inclusion policy — optional sync should be fine but confirm before submitting to official index.
+8. **OpenAPI spec for sync endpoints:** Consider publishing a simple spec for `GET /api/data` and `POST /api/data` in the repo. Makes the "open API, auditable sync" claim concrete rather than just a promise.
+9. **Token setup UX:** How does the user get a sync token? Options: (a) auto-generate in Flask admin, (b) set via env var on VPS, (c) in-app QR code pairing. Needs a decision before building sync UI.
