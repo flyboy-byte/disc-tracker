@@ -274,9 +274,11 @@ setMeta(userId: number, updates: Partial<UserMeta>): Promise<void>
 
 ---
 
-## Phase 8 — Android Build and Smoke Test
+## Phase 8 — Android Build, Smoke Test, and Distribution
 
-**Goal:** Real APK installed on a physical Android device, all screens verified.
+**Goal:** Real APK on a physical device, all screens verified, ready to submit to both Play Console and F-Droid.
+
+### 8A — EAS Preview Build (sideload testing)
 
 ```bash
 eas build --platform android --profile preview
@@ -297,6 +299,31 @@ eas build --platform android --profile preview
 - [ ] Kill app → reopen → Destroyer still in bag (SQLite persistence confirmed)
 - [ ] Play target SDK check: `aapt dump badging app.apk | grep sdkVersion` → `targetSdkVersion='35'`
 
+### 8B — GMS / Proprietary Dependency Check (required for F-Droid)
+
+```bash
+cd android && ./gradlew app:dependencies | grep -i 'gms\|firebase\|play-services'
+# Must return nothing — any GMS dep blocks F-Droid distribution
+```
+
+### 8C — Play Console Submission
+
+```bash
+eas build --platform android --profile production
+# Upload AAB to Play Console → Internal testing → Closed testing
+```
+
+### 8D — F-Droid (self-hosted, reuse DragTree pipeline)
+
+Reuse DragTree's `fdroidserver` setup — same infrastructure, new app entry.
+
+1. Add `metadata/com.disctracker.app.yml` to the F-Droid repo
+2. Tag the release: `git tag v1.0.0 && git push --tags`
+3. Run fdroidserver update — APK appears in self-hosted repo
+4. Verify install from F-Droid client using self-hosted repo URL
+
+Submit to official F-Droid index when app is stable (weeks-long review process — start early).
+
 ---
 
 ## Scope Boundaries for v1
@@ -313,7 +340,8 @@ Keep v1 focused — these can be revisited after shipping:
 
 **Technical musts** (these will cause real problems if skipped):
 - `PRAGMA foreign_keys = ON` on every SQLite connection — or CASCADE deletes silently fail
-- Target API 35 — Play Store requirement as of Aug 31 2025; Expo SDK 52+ handles it
+- Target API 35 — Play Store requirement as of Aug 31 2025; Expo SDK 54 handles it
+- No GMS dependencies — required for F-Droid; check `./gradlew app:dependencies` before submitting
 - EAS dev build (not Expo Go) once any native module is added (e.g. `react-native-quick-crypto` in v1.1)
 - Port `applyModifiers()` and `arcPoints()` exactly — improve via `physicsV2.ts`, not by editing the port
 

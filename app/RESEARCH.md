@@ -1,6 +1,8 @@
 # Disc Tracker — Android App Research
 
 > Living reference document. Reviewed and corrected against a ChatGPT architecture audit (see `/home/ubuntu/updatereview.md`). Update this doc as decisions solidify. Not a build sprint — a foundation to build from when ready.
+>
+> **Prior art:** DragTree is the developer's other app — same stack (Expo EAS + TypeScript + local SQLite), already live on Play Console (closed testing) and targeting F-Droid. Its build pipeline, `android/` prebuild, `eas.json`, and `gradle.properties` are directly reusable here. Both apps share the same FOSS/F-Droid target.
 
 ---
 
@@ -10,10 +12,11 @@
 |---|---|---|---|
 | Language | TypeScript — direct JS port | Dart — new language | Kotlin — new language |
 | iOS path | ✅ same codebase | ✅ same codebase | ❌ Android only |
-| Prior experience | ✅ user already shipped with EAS | ❌ | ❌ |
+| Prior experience | ✅ DragTree (developer's own app) live on Play Console | ❌ | ❌ |
 | JS logic reuse | ✅ copy-paste + types | ❌ full Dart rewrite | ❌ full Kotlin rewrite |
+| F-Droid | ✅ DragTree already has working F-Droid pipeline | ✅ possible | ✅ possible |
 
-**Chosen: Expo EAS.** The app is not performance-critical (UI + SVG, no 3D). All physics and scenario logic is pure JS — ports with type annotations only. iOS comes for free later. If performance ever becomes an issue, `react-native-skia` can replace the SVG renderer without switching frameworks.
+**Chosen: Expo EAS.** The app is not performance-critical (UI + SVG, no 3D). All physics and scenario logic is pure JS — ports with type annotations only. iOS comes for free later. The DragTree pipeline (eas.json, committed android/, gradle.properties) is directly reusable — no need to figure it out from scratch.
 
 ---
 
@@ -72,11 +75,61 @@ Keep the multi-user schema for compatibility. But in v1, hide it: auto-create a 
 
 ## 3. FOSS & MIT Licensing
 
-**License:** MIT — most permissive, Play/App Store compatible, no copyleft.
+**License:** MIT — most permissive, Play/App Store compatible, F-Droid compatible, no copyleft.
+
+### Distribution Targets
+
+Both Disc Tracker and DragTree target the same two channels:
+
+| Channel | Status | Notes |
+|---------|--------|-------|
+| Google Play Console | DragTree: live (closed testing) | Standard EAS production AAB |
+| F-Droid | DragTree: in progress | Requires no proprietary deps; self-hosted repo via `fdroidserver` |
+
+**F-Droid compatibility is a hard requirement, not optional.** This shapes every dependency choice: if a package pulls in Google Mobile Services (GMS) or any proprietary SDK, it breaks F-Droid distribution. All planned packages are MIT and GMS-free — verify this stays true as packages are added.
+
+### F-Droid Distribution
+
+Two paths:
+
+**Option A — Official F-Droid repo:** F-Droid builds your app from source on their infrastructure. Requires submitting metadata to `fdroid/fdroiddata` repo. Slower review process (weeks), but widest reach.
+
+**Option B — Self-hosted F-Droid repo (fdroidserver):** Host your own F-Droid repo, users add your repo URL in the F-Droid app. DragTree uses this path. Faster to set up, full control. Can run alongside official submission.
+
+Both can coexist. Start with self-hosted (reuse DragTree's fdroidserver setup), submit to official repo when the app is stable.
+
+### F-Droid Metadata File
+
+Each app needs `metadata/com.disctracker.app.yml` in your F-Droid repo:
+
+```yaml
+Categories:
+  - Sports
+License: MIT
+SourceCode: https://github.com/flyboy-byte/disc-tracker
+IssueTracker: https://github.com/flyboy-byte/disc-tracker/issues
+
+Builds:
+  - versionName: '1.0.0'
+    versionCode: 1
+    commit: v1.0.0
+    gradle:
+      - yes
+```
+
+### No GMS / Proprietary Dependency Rule
+
+F-Droid's build server rejects apps that depend on `com.google.android.gms` or any non-free SDK. Before adding any package, check it doesn't pull GMS transitively:
+
+```bash
+cd android && ./gradlew app:dependencies | grep -i 'gms\|firebase\|play-services'
+```
+
+All current planned packages pass this check. `react-native-quick-crypto` (v1.1) uses OpenSSL — fine.
 
 ### What MIT Licensing Gives You
 
-Open source means anyone can read the code and verify there's no hidden tracking — that's a real and meaningful privacy claim. Committing the lockfile and tagging releases makes it even stronger (reproducible builds), but that's optional. The baseline MIT license is enough to honestly say "open source, auditable code, no hidden SDKs."
+Open source means anyone can read the code and verify there's no hidden tracking — that's a real and meaningful privacy claim. The baseline MIT license is enough to honestly say "open source, auditable code, no hidden SDKs." F-Droid reinforces this: users can install from a fully open channel with no Google account required.
 
 ### Dependency License Audit
 
@@ -131,11 +184,11 @@ All planned packages are MIT. Add this to CI so it can't silently break.
 
 ---
 
-## 5. Google Play Store Compliance
+## 5. Distribution Compliance
 
 ### Target SDK
 
-> **Correction:** As of **August 31, 2025**, Google Play requires `targetSdkVersion >= 35` (Android 15) for all new apps and updates. The previous doc said API 34 — that is stale. Expo SDK 52+ sets API 35 by default. Verify in `android/build.gradle` before submitting.
+> **Correction:** As of **August 31, 2025**, Google Play requires `targetSdkVersion >= 35` (Android 15) for all new apps and updates. The previous doc said API 34 — that is stale. Expo SDK 54 sets API 35 by default. Verify in `android/build.gradle` before submitting. F-Droid has no minimum SDK requirement — API 35 is fine there too.
 
 ### Data Safety Form (v1 local-only)
 
@@ -361,13 +414,14 @@ disc_tracker/
 
 ## 10. EAS Build Quick Reference
 
-### Reference project
+### Reference project: DragTree
 
-**DragTree** — same stack (Expo EAS + TypeScript + local SQLite), working Android build pipeline including F-Droid. Study its:
-- `lib/settings.ts` — pub/sub + AsyncStorage for local state (no Redux/Zustand needed — borrow this pattern for bag/disc state)
+**DragTree is the developer's other app** — same stack (Expo EAS + TypeScript + local SQLite), live on Play Console (closed testing), F-Droid pipeline already working. Don't study it — copy from it directly:
+- `lib/settings.ts` — pub/sub + AsyncStorage for local state (no Redux/Zustand needed — use this pattern for bag/disc state)
 - `eas.json` build profiles (preview APK + play AAB)
 - `gradle.properties` JVM args
 - `pnpm-workspace.yaml` monorepo setup
+- `fdroidserver` config + metadata format (reuse for Disc Tracker's F-Droid entry)
 
 ### Commit the android/ prebuild — do not gitignore it
 
