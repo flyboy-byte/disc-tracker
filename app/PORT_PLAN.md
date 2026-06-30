@@ -10,6 +10,22 @@
 > - Do not add cloud backup, analytics, Firebase, Sentry, OAuth, or ads
 > - Do not make the app depend on the Flask server
 > - Local-only v1. Single-user UX. Android-first.
+> - Do not work ahead — complete and verify each phase before starting the next
+> - Physics V2, VPS sync, and F-Droid distribution are explicitly out of scope until v1 APK is proven
+
+## Minimum Credible v1 Milestone
+
+> This is the real finish line for v1. Not Play Store. Not F-Droid. Not Physics V2.
+
+- [ ] Expo app opens cold on a physical Android device without crashing
+- [ ] SQLite persists a bag across app kills (add disc → kill app → reopen → disc still there)
+- [ ] Stability labels on disc cards match the website for the same disc
+- [ ] Phase 0 parity tests pass (stability, distance, scenario filters)
+- [ ] Flight Shape arc renders and updates when sliders move
+- [ ] Disc Suggest shows correct bag matches for at least Roller and Max Distance scenarios
+- [ ] CSV export produces a file, CSV import reads it back correctly
+
+Everything after this — Play Store submission, F-Droid, Physics V2, sync — is a separate job.
 
 ---
 
@@ -25,14 +41,16 @@ Run each test case on the website, capture the exact output, record it here.
 | Disc | Speed | Glide | Turn | Fade | Net (fade+turn) | Expected label |
 |------|-------|-------|------|------|-----------------|----------------|
 | Aviar | 2 | 3 | 0 | 1 | +1 | OS |
-| Leopard3 | 7 | 5 | -2 | 1 | -1 | ST (boundary) |
+| Leopard3 | 7 | 5 | -2 | 1 | -1 | US |
 | Destroyer | 12 | 5 | -1 | 3 | +2 | OS |
 | Sonic (putter) | 2 | 1 | 0 | 4 | +4 | OS |
 | Roadrunner | 9 | 5 | -4 | 1 | -3 | US |
 | Buzz | 5 | 4 | -1 | 2 | +1 | OS |
 | River | 7 | 7 | -1 | 1 | 0 | ST |
 
-**Expected formula:** `stability = fade + turn`. OS ≥ 1, US ≤ -1, ST in between.
+**Expected formula:** `stability = fade + turn`. OS ≥ 1, US ≤ -1, ST = anything in between (strictly greater than -1 and less than 1).
+
+> **Correction:** Leopard3 net = -1, which satisfies `≤ -1`, so it is US — not ST. Previous label "ST (boundary)" was wrong and would have encoded a contradiction into the parity tests. Verify on the website before porting.
 
 ### 0B — Distance Estimate Fixtures
 
@@ -79,11 +97,13 @@ Test discs:
 | Dead Straight | ❌ (speed<4? No, spd=2<4) | ✅ | ✅ (net=-1 boundary) | ❌ net>1 | ❌ net<-1 |
 | Reliable Hyzer | ❌ fade=1 | ❌ fade=2 | ❌ fade=1 | ✅ fade=3,turn≥-1 | ❌ turn=-4 |
 | Max Distance | ❌ spd<11 | ❌ spd<11 | ❌ spd<11 | ✅ spd≥11,fade≤3,turn≤-0.5 | ❌ spd<11? No, spd=9<11 |
-| Tailwind | ❌ spd<9 | ❌ spd<9 | ❌ spd<9 | ❌ turn=-1 not ≤-1 | ✅ spd≥9,turn≤-1,net≤0 |
+| Tailwind | ❌ spd<9 | ❌ spd<9 | ❌ spd<9 | ❌ net=+2, fails net≤0 | ✅ spd≥9,turn≤-1,net≤0 |
 | Turnover | ❌ | ❌ | ❌ turn=-2 but net=-1 OK? Check: turn≤-2 ✅ fade≤2 ✅ net≤-1 ✅ | ❌ | ✅ turn=-4,fade=1,net=-3 |
 | Roller | ❌ | ❌ | ❌ turn=-2 not ≤-3 | ❌ | ✅ turn=-4,fade=1≤1 |
 
 > Verify these against the running website. Correct any wrong cells above before porting.
+
+> **Correction:** Destroyer's Tailwind rejection was previously noted as "turn=-1 not ≤-1" which is mathematically false (-1 ≤ -1 is true). The real reason Destroyer fails Tailwind is `net = +2`, which fails `net ≤ 0`. The comment bug matters — if copied into code or test comments it would describe the wrong condition.
 
 ---
 
@@ -274,9 +294,9 @@ setMeta(userId: number, updates: Partial<UserMeta>): Promise<void>
 
 ---
 
-## Phase 8 — Android Build, Smoke Test, and Distribution
+## Phase 8 — Android Build and Smoke Test
 
-**Goal:** Real APK on a physical device, all screens verified, ready to submit to both Play Console and F-Droid.
+**Goal:** Real APK on a physical device, all screens verified. This phase ends at a working APK — Play Console and F-Droid submission are distribution tasks that follow, not part of this phase.
 
 ### 8A — EAS Preview Build (sideload testing)
 
@@ -299,30 +319,40 @@ eas build --platform android --profile preview
 - [ ] Kill app → reopen → Destroyer still in bag (SQLite persistence confirmed)
 - [ ] Play target SDK check: `aapt dump badging app.apk | grep sdkVersion` → `targetSdkVersion='35'`
 
-### 8B — GMS / Proprietary Dependency Check (required for F-Droid)
+### 8B — GMS / Proprietary Dependency Check
 
 ```bash
 cd android && ./gradlew app:dependencies | grep -i 'gms\|firebase\|play-services'
-# Must return nothing — any GMS dep blocks F-Droid distribution
+# Must return nothing — any GMS dep blocks F-Droid distribution later
 ```
 
-### 8C — Play Console Submission
+> Phase 8 ends here. The APK works, the parity checklist passes, GMS is clean. **Distribution is a separate track that starts after this.**
+
+---
+
+## Distribution Track (after Phase 8 APK is proven)
+
+> These are not phases of the port — they are deployment infrastructure. Do not start until the minimum v1 milestone is met.
+
+### D1 — Play Console
 
 ```bash
 eas build --platform android --profile production
 # Upload AAB to Play Console → Internal testing → Closed testing
 ```
 
-### 8D — F-Droid (self-hosted, reuse DragTree pipeline)
+### D2 — F-Droid Self-Hosted (reuse DragTree pipeline)
 
-Reuse DragTree's `fdroidserver` setup — same infrastructure, new app entry.
+F-Droid took 3x longer than Play Console to set up the first time (DragTree). Treat it as infrastructure work, not app work. Reuse DragTree's `fdroidserver` setup — same infrastructure, new app entry.
 
 1. Add `metadata/com.disctracker.app.yml` to the F-Droid repo
 2. Tag the release: `git tag v1.0.0 && git push --tags`
 3. Run fdroidserver update — APK appears in self-hosted repo
 4. Verify install from F-Droid client using self-hosted repo URL
 
-Submit to official F-Droid index when app is stable (weeks-long review process — start early).
+### D3 — Official F-Droid Index (optional, later)
+
+Weeks-long review process. Start it early once the app is stable, but do not let it block anything. Self-hosted F-Droid (D2) is enough for FOSS credibility in the meantime.
 
 ---
 
