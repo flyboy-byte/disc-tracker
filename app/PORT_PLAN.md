@@ -333,26 +333,39 @@ cd android && ./gradlew app:dependencies | grep -i 'gms\|firebase\|play-services
 ## Distribution Track (after Phase 8 APK is proven)
 
 > These are not phases of the port — they are deployment infrastructure. Do not start until the minimum v1 milestone is met.
+>
+> **Sequence these in order. Do not run D1 and D2 in parallel.** From DragTree experience: Play Console and F-Droid each have their own gradle/signing/metadata problems. Debugging both at once means you cannot isolate which system is causing a given failure. Get Play Console internal testing fully working first, then start F-Droid. The app does not change between them — only the build pipeline and metadata do.
 
-### D1 — Play Console
+### D1 — Play Console (do this first)
 
 ```bash
 eas build --platform android --profile production
 # Upload AAB to Play Console → Internal testing → Closed testing
 ```
 
-### D2 — F-Droid Self-Hosted (reuse DragTree pipeline)
+Resolve all Play Console requirements before touching F-Droid:
+- Target SDK declaration
+- Data Safety form
+- Content rating (IARC)
+- Privacy policy URL live on GitHub Pages
+- App signing configured via EAS
 
-F-Droid took 3x longer than Play Console to set up the first time (DragTree). Treat it as infrastructure work, not app work. Reuse DragTree's `fdroidserver` setup — same infrastructure, new app entry.
+Only move to D2 once an internal tester can install and run the app from Play Console.
+
+### D2 — F-Droid Self-Hosted (after D1 is working)
+
+F-Droid setup took significantly longer than Play Console on DragTree — different kind of pain (reproducible build expectations, metadata files, fdroidserver quirks, key decisions) vs Play Console's bureaucratic UI hoops. Do not underestimate it.
+
+Reuse DragTree's `fdroidserver` setup — same infrastructure, new app entry.
 
 1. Add `metadata/com.disctracker.app.yml` to the F-Droid repo
 2. Tag the release: `git tag v1.0.0 && git push --tags`
 3. Run fdroidserver update — APK appears in self-hosted repo
 4. Verify install from F-Droid client using self-hosted repo URL
 
-### D3 — Official F-Droid Index (optional, later)
+### D3 — Official F-Droid Index (optional, after D2 is stable)
 
-Weeks-long review process. Start it early once the app is stable, but do not let it block anything. Self-hosted F-Droid (D2) is enough for FOSS credibility in the meantime.
+Weeks-long review process. Start submission early, but self-hosted F-Droid (D2) provides full FOSS credibility in the meantime — users can install from your repo without waiting for the official index. Do not let D3 block anything.
 
 ---
 
