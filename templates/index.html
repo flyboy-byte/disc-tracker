@@ -64,6 +64,16 @@
     display: flex; flex-direction: row; align-items: stretch; gap: 12px; position: relative;
   }
   .card:hover { border-color: var(--accent); background: var(--card-hover); }
+  .card.bagged { border-color: rgba(145,94,255,0.5); }
+  .bag-check {
+    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+    border: 1.5px solid var(--border); background: transparent;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: transparent;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+  }
+  .bag-check:hover { border-color: var(--accent); }
+  .bag-check.checked { background: var(--accent); border-color: var(--accent); color: #fff; }
   .card-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
   .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
   .mfr { font-size: 11px; color: var(--muted); }
@@ -329,6 +339,7 @@ let typeFilter = 'all';
 let sortMode = 'speed-desc';
 let arcView = 'RHBH';
 let viewMode = 'cards';
+let baggedIds = new Set(); // session-only: discs in "today's bag" for export
 let dragEl = null, dragGhost = null, dragOffX = 0, dragOffY = 0;
 let _fieldPts = [], _fieldBalloonTimer = null;
 
@@ -597,8 +608,10 @@ function render() {
   const typeCounts = { all: discs.length, putter:0, mid:0, fairway:0, driver:0 };
   discs.forEach(d => { stabCounts[stab(d)]++; typeCounts[discType(d)]++; });
 
+  const bagCount = baggedIds.size;
   document.getElementById('substat').textContent =
-    `${discs.length} discs · ${typeCounts.driver}D · ${typeCounts.fairway}FD · ${typeCounts.mid}M · ${typeCounts.putter}P`;
+    `${discs.length} discs · ${typeCounts.driver}D · ${typeCounts.fairway}FD · ${typeCounts.mid}M · ${typeCounts.putter}P` +
+    (bagCount ? ` · ${bagCount} in bag today` : '');
 
   // Stability pills
   const stabDefs = [['all','All'],['overstable','OS'],['stable','ST'],['understable','US']];
@@ -655,7 +668,8 @@ function render() {
       : '';
     const safeColor = /^#[0-9A-Fa-f]{6}$/.test(d.color) ? d.color : null;
     const colorStyle = safeColor ? `border-left:3px solid ${safeColor};` : '';
-    return `<div class="card ${dragEnabled ? 'drag-on' : ''}" data-id="${d.id}" onclick="openEdit(${d.id})" style="${colorStyle}">
+    const isBagged = baggedIds.has(d.id);
+    return `<div class="card ${dragEnabled ? 'drag-on' : ''} ${isBagged ? 'bagged' : ''}" data-id="${d.id}" onclick="openEdit(${d.id})" style="${colorStyle}">
       ${grip}
       <div class="card-main">
         <div class="card-head">
@@ -663,6 +677,7 @@ function render() {
             <div class="mfr">${esc(d.mfr)}</div>
             <div class="mold">${esc(d.mold)}</div>
           </div>
+          <button class="bag-check ${isBagged ? 'checked' : ''}" onclick="toggleBagged(event,${d.id})" title="${isBagged ? 'Remove from today\'s bag' : 'Add to today\'s bag'}">✓</button>
         </div>
         <div class="nums">
           <div><span class="lbl">SPD</span><span class="val">${d.speed}</span></div>
@@ -685,6 +700,12 @@ function render() {
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function toggleBagged(e, id) {
+  e.stopPropagation();
+  if (baggedIds.has(id)) baggedIds.delete(id); else baggedIds.add(id);
+  render();
 }
 
 function setFilter(f) { filter = f; render(); }
@@ -939,24 +960,44 @@ function csvCell(s) {
   return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 
-function buildCSV() {
+function buildCSV(source) {
+  source = source || discs;
   const hdr = 'Manufacturer,Mold,Plastic,Weight,Speed,Glide,Turn,Fade,Primary Use,Throw Style,Notes\n';
-  const rows = discs.map(d =>
+  const rows = source.map(d =>
     [d.mfr, d.mold, d.plastic || 'Unknown', d.weight || 'Unknown', d.speed, d.glide, d.turn, d.fade, d.use, d.thr, d.notes || '']
       .map(csvCell).join(',')
   ).join('\n');
   return hdr + rows;
 }
 
+function updateExportPreview() {
+  const scope = document.querySelector('input[name="exportScope"]:checked')?.value || 'all';
+  const source = scope === 'bag' ? discs.filter(d => baggedIds.has(d.id)) : discs;
+  window._csvData = buildCSV(source);
+  const ta = document.getElementById('csvOut');
+  if (ta) ta.value = window._csvData;
+}
+
 function exportCSV() {
-  const csv = buildCSV();
-  window._csvData = csv;
+  const bagCount = baggedIds.size;
+  window._csvData = buildCSV();
   document.getElementById('modalRoot').innerHTML = `
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal">
       <h2>Export CSV</h2>
+      ${bagCount ? `
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <label style="flex:1;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer">
+          <input type="radio" name="exportScope" value="all" checked onchange="updateExportPreview()">
+          <span style="font-size:13px">All discs <span style="color:var(--muted)">(${discs.length})</span></span>
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer">
+          <input type="radio" name="exportScope" value="bag" onchange="updateExportPreview()">
+          <span style="font-size:13px">Today's bag <span style="color:var(--muted)">(${bagCount})</span></span>
+        </label>
+      </div>` : ''}
       <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Tap Copy, or select the text and copy manually. Download works in some browsers.</p>
-      <textarea id="csvOut" readonly style="width:100%;height:200px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:ui-monospace,monospace;font-size:11px;padding:10px;resize:vertical;outline:none">${esc(csv)}</textarea>
+      <textarea id="csvOut" readonly style="width:100%;height:200px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:ui-monospace,monospace;font-size:11px;padding:10px;resize:vertical;outline:none">${esc(window._csvData)}</textarea>
       <div class="modal-btns">
         <button class="btn btn-ghost" onclick="downloadCSV()">Download</button>
         <span class="spacer"></span>
