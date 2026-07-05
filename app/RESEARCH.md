@@ -16,7 +16,9 @@
 | JS logic reuse | ✅ copy-paste + types | ❌ full Dart rewrite | ❌ full Kotlin rewrite |
 | F-Droid | ✅ DragTree already has working F-Droid pipeline | ✅ possible | ✅ possible |
 
-**Chosen: Expo EAS.** The app is not performance-critical (UI + SVG, no 3D). All physics and scenario logic is pure JS — ports with type annotations only. iOS comes for free later. The DragTree pipeline (eas.json, committed android/, gradle.properties) is directly reusable — no need to figure it out from scratch.
+**Chosen: Expo (framework) + local Gradle builds (pipeline).** The app is not performance-critical (UI + SVG, no 3D). All physics and scenario logic is pure JS — ports with type annotations only. iOS comes for free later.
+
+EAS cloud builds are kept as a fallback (useful for iOS), but Android is built locally with `./gradlew` — this is what enables F-Droid reproducible builds and signing with your own keystore. EAS cloud-built binaries don't byte-match F-Droid's build server output, which blocks the official F-Droid index.
 
 ---
 
@@ -450,29 +452,65 @@ disc_tracker/
 
 ---
 
-## 10. EAS Build Quick Reference
+## 10. Build Pipeline
 
-### Reference project: DragTree
+### Primary: Local Gradle builds
 
-**DragTree is the developer's other app** — same stack (Expo EAS + TypeScript + local SQLite), live on Play Console (closed testing), F-Droid pipeline already working. Don't study it — copy from it directly:
-- `lib/settings.ts` — pub/sub + AsyncStorage for local state (no Redux/Zustand needed — use this pattern for bag/disc state)
-- `eas.json` build profiles (preview APK + play AAB)
-- `gradle.properties` JVM args
-- `pnpm-workspace.yaml` monorepo setup
-- `fdroidserver` config + metadata format (reuse for Disc Tracker's F-Droid entry)
+**EAS cloud builds are not the primary pipeline.** EAS-built binaries do not byte-match F-Droid's reproducible builds — the cloud build environment (Expo's servers, timestamps, toolchain) can't be replicated by F-Droid's build server. The fix is to build locally with Gradle directly, sign with your own keystore, and give F-Droid something it can actually reproduce from source.
+
+Expo the **framework** stays (expo-sqlite, expo-router, react-native-svg, all packages). EAS the **cloud build service** is demoted to optional/fallback (useful for iOS later, or as a backup).
+
+### How local builds work with Expo
+
+`expo prebuild` generates the bare `android/` project from your JS/TS source. After that, standard Gradle takes over — Expo is not involved in the actual compilation.
+
+```bash
+# Generate the android/ project (run whenever app.json or native deps change)
+npx expo prebuild --platform android --clean
+
+# Build APK locally (F-Droid, sideload, testing)
+cd android
+./gradlew assembleRelease
+
+# Build AAB locally (Play Store)
+./gradlew bundleRelease
+```
+
+### Signing with your own keystore
+
+Configure once in `android/app/build.gradle` — credentials read from environment or `~/.gradle/gradle.properties` so they're never committed:
+
+```groovy
+signingConfigs {
+    release {
+        storeFile file(System.getenv("KEYSTORE_PATH"))
+        storePassword System.getenv("KEYSTORE_PASSWORD")
+        keyAlias System.getenv("KEY_ALIAS")
+        keyPassword System.getenv("KEY_PASSWORD")
+    }
+}
+buildTypes {
+    release {
+        signingConfig signingConfigs.release
+    }
+}
+```
+
+Same key signs both the Play Store AAB and the F-Droid APK — this matters for Play Store upgrades to work correctly on devices that installed via F-Droid first (and vice versa).
 
 ### Commit the android/ prebuild — do not gitignore it
 
+Every build-path problem traces back to treating the prebuild output as throwaway. It belongs in version control.
+
 ```bash
-# Run once early, then commit the output
-expo prebuild --platform android --clean
+npx expo prebuild --platform android --clean
 git add android/
 git commit -m "add android prebuild output"
 ```
 
-Every build-path problem (wrong subdir, wrong init path, build server not finding APK) traces back to treating the prebuild as throwaway. It's not — it's a build artifact and belongs in version control.
+Re-run prebuild (and re-commit) when: native package versions change, `app.json` plugin config changes, or Expo SDK is upgraded.
 
-### gradle.properties — set this before first build
+### gradle.properties — set before first build
 
 ```properties
 # Prevents OOM at dex merge (React Native eats heap)
@@ -484,31 +522,13 @@ org.gradle.workers.max=2
 
 1. **OOM at dex merge** — set the JVM args above before the first `./gradlew` run
 2. **Node not found at Gradle configure time** — Expo SDK 54's `settings.gradle` calls `node` to resolve package paths; make sure `node` is on `PATH` before Gradle runs
-3. **pnpm install from wrong directory** — monorepo root only, never from inside the `app/` subdir; causes "Unable to resolve" errors that look like Gradle problems but aren't
+3. **pnpm install from wrong directory** — monorepo root only, never from inside the `app/` subdir
 4. **Deprecated Gradle features warning** — ignore; Expo/RN internals use APIs deprecated in Gradle 9, not fatal
 
-### Build commands
+### EAS — kept for iOS and as fallback
 
-```bash
-# Initial setup
-npm install -g eas-cli
-eas login
-eas build:configure
+EAS is still useful for iOS builds (requires macOS/Xcode otherwise) and as a fallback if local Android builds break. Keep `eas.json` in the repo but it is not the primary Android pipeline.
 
-# Early UI testing (Expo Go — v1 only, no native modules)
-npx expo start
-
-# Device testing APK (sideload — no Play Store)
-eas build --platform android --profile preview
-
-# Play Store upload
-eas build --platform android --profile production
-
-# iOS (when ready)
-eas build --platform ios --profile production
-```
-
-### `eas.json`
 ```json
 {
   "build": {
@@ -525,6 +545,14 @@ eas build --platform ios --profile production
   }
 }
 ```
+
+### Reference project: DragTree
+
+**DragTree is the developer's other app** — same stack, currently working through the same local build + F-Droid reproducibility problem. Copy from it directly:
+- `lib/settings.ts` — pub/sub + AsyncStorage for local state (no Redux/Zustand)
+- `gradle.properties` JVM args
+- `pnpm-workspace.yaml` monorepo setup
+- `fdroidserver` config + metadata format
 
 ---
 

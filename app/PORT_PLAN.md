@@ -121,18 +121,21 @@ npx expo install expo-sqlite expo-router react-native-svg \
   expo-file-system expo-sharing expo-document-picker
 cp ../static/discs_master.json assets/
 
-# Run prebuild immediately and commit the output — don't gitignore android/
+# Generate the android/ bare project and commit it immediately
 npx expo prebuild --platform android --clean
 git add android/
 ```
 
 **Deliverables:**
 - `app.json` with `slug`, `android.package = "com.disctracker.app"`, SDK 54+
-- `eas.json` with `preview` (APK) and `production` (AAB) profiles
 - `android/gradle.properties` with `-Xmx4g -XX:MaxMetaspaceSize=1g` JVM args (add before first build)
+- `android/app/build.gradle` signing config reading from env vars (never commit credentials)
 - `src/theme.ts` with all color constants matching web CSS vars
 - Bottom tab navigator: Bag / Flight Shaper / Disc Suggest
 - `npx expo start` runs without errors
+- `cd android && ./gradlew assembleRelease` produces an APK signed with your key
+
+**EAS:** keep `eas.json` in the repo for iOS fallback, but Android builds run locally via Gradle.
 
 **Do not yet:** write any disc logic, DB calls, or screen content.
 
@@ -356,6 +359,8 @@ Only move to D2 once an internal tester can install and run the app from Play Co
 
 F-Droid setup took significantly longer than Play Console on DragTree — different kind of pain (reproducible build expectations, metadata files, fdroidserver quirks, key decisions) vs Play Console's bureaucratic UI hoops. Do not underestimate it.
 
+**Why local builds matter here:** EAS cloud-built binaries do not byte-match F-Droid's reproducible builds — Expo's build server bakes in environment specifics that F-Droid can't replicate. Local Gradle builds (`./gradlew assembleRelease`) solve this. F-Droid can build from source, your binary matches, and you sign with your own keystore throughout.
+
 Reuse DragTree's `fdroidserver` setup — same infrastructure, new app entry.
 
 1. Add `metadata/com.disctracker.app.yml` to the F-Droid repo
@@ -363,9 +368,9 @@ Reuse DragTree's `fdroidserver` setup — same infrastructure, new app entry.
 3. Run fdroidserver update — APK appears in self-hosted repo
 4. Verify install from F-Droid client using self-hosted repo URL
 
-### D3 — Official F-Droid Index (optional, after D2 is stable)
+### D3 — Official F-Droid Index (after D2 is stable)
 
-Weeks-long review process. Start submission early, but self-hosted F-Droid (D2) provides full FOSS credibility in the meantime — users can install from your repo without waiting for the official index. Do not let D3 block anything.
+Weeks-long review process. Start submission early — local Gradle builds mean F-Droid's build server can actually reproduce your binary, which is required for the official index. Self-hosted (D2) covers you in the meantime. Do not let D3 block anything.
 
 ---
 
