@@ -353,7 +353,7 @@ let typeFilter = 'all';
 let sortMode = 'speed-desc';
 let arcView = 'RHBH';
 let viewMode = 'cards';
-let bagFilter = false;
+let bagFilter = sessionStorage.getItem('bagFilter') === '1';
 // Today's bag: persists across page refreshes within the same tab session
 let baggedIds = new Set(JSON.parse(sessionStorage.getItem('baggedIds') || '[]'));
 let dragEl = null, dragGhost = null, dragOffX = 0, dragOffY = 0;
@@ -730,7 +730,7 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function toggleBagFilter() { bagFilter = !bagFilter; render(); }
+function toggleBagFilter() { bagFilter = !bagFilter; sessionStorage.setItem('bagFilter', bagFilter ? '1' : '0'); render(); }
 
 function toggleBagged(e, id) {
   e.stopPropagation();
