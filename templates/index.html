@@ -313,6 +313,7 @@
     <button class="btn btn-ghost" id="fieldBtn">Field view</button>
     <button class="btn btn-ghost" id="importBtn">Import CSV</button>
     <button class="btn btn-ghost" id="exportBtn">Export CSV</button>
+    <button id="bagFilterBtn" onclick="toggleBagFilter()" style="background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:14px;font-weight:600;padding:10px 16px;cursor:pointer;white-space:nowrap;transition:border-color 0.15s,color 0.15s,background 0.15s">In bag</button>
   </div>
 
   <div class="pills" id="pills"></div>
@@ -352,6 +353,7 @@ let typeFilter = 'all';
 let sortMode = 'speed-desc';
 let arcView = 'RHBH';
 let viewMode = 'cards';
+let bagFilter = false;
 // Today's bag: persists across page refreshes within the same tab session
 let baggedIds = new Set(JSON.parse(sessionStorage.getItem('baggedIds') || '[]'));
 let dragEl = null, dragGhost = null, dragOffX = 0, dragOffY = 0;
@@ -641,12 +643,22 @@ function render() {
     `<button class="pill ${typeFilter===k?'active':''}" onclick="setTypeFilter('${k}')">${lbl}${k!=='all'?` <span style="opacity:0.6">${typeCounts[k]}</span>`:''}</button>`
   ).join('');
 
+  // Update in-bag filter button appearance
+  const bfBtn = document.getElementById('bagFilterBtn');
+  if (bfBtn) {
+    bfBtn.style.borderColor = bagFilter ? 'var(--accent)' : 'var(--border)';
+    bfBtn.style.color = bagFilter ? 'var(--accent)' : 'var(--muted)';
+    bfBtn.style.background = bagFilter ? 'rgba(145,94,255,0.1)' : 'transparent';
+    bfBtn.textContent = bagFilter ? `In bag (${baggedIds.size})` : 'In bag';
+  }
+
   // Grid
   let rows = discs.filter(d => {
     const matchS = filter === 'all' || stab(d) === filter;
     const matchT = typeFilter === 'all' || discType(d) === typeFilter;
     const matchQ = !q || (d.mfr + d.mold + d.plastic + d.use + (d.notes || '')).toLowerCase().includes(q);
-    return matchS && matchT && matchQ;
+    const matchB = !bagFilter || baggedIds.has(d.id);
+    return matchS && matchT && matchQ && matchB;
   });
 
   if (sortMode === 'speed-desc')      rows.sort((a,b) => b.speed - a.speed);
@@ -717,6 +729,8 @@ function render() {
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+
+function toggleBagFilter() { bagFilter = !bagFilter; render(); }
 
 function toggleBagged(e, id) {
   e.stopPropagation();
