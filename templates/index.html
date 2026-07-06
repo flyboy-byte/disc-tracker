@@ -324,7 +324,7 @@
     <span><span class="swatch" style="background:var(--st)"></span>Stable</span>
     <span><span class="swatch" style="background:var(--us)"></span>Understable</span>
     <span style="margin-left:auto; display:flex; align-items:center; gap:8px;">
-      <select id="arcViewSelect" onchange="arcView=this.value;render();saveArcView(this.value)" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
+      <select id="arcViewSelect" onchange="arcView=this.value;localStorage.setItem('arcView',arcView);render();saveArcView(this.value)" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
         <option value="RHBH">RHBH</option>
         <option value="RHFH">RHFH</option>
         <option value="LHBH">LHBH</option>
@@ -351,7 +351,7 @@ let nextId = 100;
 let filter = 'all';
 let typeFilter = 'all';
 let sortMode = 'speed-desc';
-let arcView = 'RHBH';
+let arcView = localStorage.getItem('arcView') || 'RHBH';
 let viewMode = 'cards';
 let bagFilter = sessionStorage.getItem('bagFilter') === '1';
 // Today's bag: persists across page refreshes within the same tab session
@@ -419,7 +419,7 @@ async function load() {
         // Add random tab offset so two tabs don't generate the same disc IDs
         nextId += Math.floor(Math.random() * 10000) * 1000;
         if (data.sortMode) sortMode = data.sortMode;
-        if (data.arcView)  { arcView = data.arcView; document.getElementById('arcViewSelect').value = arcView; }
+        if (data.arcView)  { arcView = data.arcView; localStorage.setItem('arcView', arcView); document.getElementById('arcViewSelect').value = arcView; }
       } else {
         discs = SEED.map(d => ({...d}));
         await persist();

@@ -370,7 +370,7 @@
       <div class="tool-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
           <div class="section-label" style="margin-bottom:0">Flight shape</div>
-          <select id="arcViewSelect" onchange="arcView=this.value;updateArc();document.getElementById('arcViewLabel').textContent=arcView;saveArcView(arcView);updateAngleRef()"
+          <select id="arcViewSelect" onchange="arcView=this.value;localStorage.setItem('arcView',arcView);updateArc();document.getElementById('arcViewLabel').textContent=arcView;saveArcView(arcView);updateAngleRef()"
                   style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
             <option value="RHBH">RHBH</option>
             <option value="RHFH">RHFH</option>
@@ -442,7 +442,7 @@ const MOD = {
 };
 
 // ── Shared utilities (from index.html) ────────────────────────────────────────
-let arcView = 'RHBH';
+let arcView = localStorage.getItem('arcView') || 'RHBH';
 
 function stab(d) {
   const net = (d.turn ?? 0) + (d.fade ?? 0);
@@ -759,6 +759,7 @@ async function loadBag() {
       bagDiscs = (data && data.discs) ? data.discs : [];
       if (data && data.arcView) {
         arcView = data.arcView;
+        localStorage.setItem('arcView', arcView);
         document.getElementById('arcViewSelect').value = arcView;
         document.getElementById('arcViewLabel').textContent = arcView;
       }
@@ -839,6 +840,9 @@ function saveArcView(v) {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+  // Apply localStorage arcView immediately so the select isn't wrong while server loads
+  document.getElementById('arcViewSelect').value = arcView;
+  document.getElementById('arcViewLabel').textContent = arcView;
   onSlider();
   loadBag();
 });
