@@ -466,3 +466,125 @@ Build `physicsV2.ts` alongside the port, but do not switch the Flight Shape scre
 3. User explicitly approves the switch
 
 See `RESEARCH.md` Section 7 for full V2 architecture and real-throw data collection format.
+
+---
+
+## Marshall Street Flight Path Images (Decision Track)
+
+> Decision: **implement in v1.1, not v1.** The feature is compelling and the API is free, but it introduces a network dependency and design questions that should not block shipping. Document the decision here so it's ready to build.
+
+### What the DiscIt API provides
+
+Live REST API at `discit-api.fly.dev` — scrapes Marshall Street Disc Golf's interactive flight guide nightly.
+
+```
+GET /disc             → all discs
+GET /disc?name=buzzz  → filter by field
+GET /disc/:id         → single disc
+```
+
+Each disc record includes:
+
+```json
+{
+  "id": "aa24b5ff-...",
+  "name": "Destroyer",
+  "brand": "Innova",
+  "category": "Distance Driver",
+  "speed": "12", "glide": "5", "turn": "-1", "fade": "3",
+  "stability": "Overstable",
+  "link": "https://www.marshallstreetdiscgolf.com/?s=destroyer&post_type=product",
+  "pic": "https://s3.amazonaws.com/media.marshallstreetdiscgolf.com/inbounds/2079719.webp",
+  "color": "#2A290E",
+  "background_color": "#F3EB09"
+}
+```
+
+**Coverage:** 1,107 of 1,203 discs have a `pic` URL (~92%). The ~96 without are obscure/rare molds.
+
+### What the `pic` images actually are
+
+400×340 webp. White background. Left half: a colored arc on a coordinate grid (meters on Y, lateral % on X). Right half: disc name, brand, PDGA physical specs (diameter, height, rim depth/width, max weight, approval date), Marshall Street branding.
+
+The arc is a real measured flight path from Marshall Street's own flight guide — not computed from flight numbers. RHBH only. No adjustments for conditions (wind, hyzer, etc.).
+
+### What this adds to the app
+
+| Feature | Notes |
+|---------|-------|
+| **Reference flight image** | Show the MS image on the disc detail modal — the "official" arc from the manufacturer's data, not our approximation |
+| **PDGA physical specs** | Diameter, height, rim dimensions, weight. Currently not shown anywhere in the app |
+| **Store link** | "Buy at Marshall Street" link per disc — natural monetization-neutral feature |
+| **5-tier stability label** | Very Understable / Understable / Stable / Overstable / Very Overstable — richer than our 3-tier OS/ST/US |
+| **Flight path source toggle** | Let user choose: Marshall Street image (when online) vs computed arc (always available offline) |
+
+### Is this over-engineered?
+
+**The `pic` image alone: no.** It's a single image URL cached per disc. The implementation is:
+1. Look up disc by name+brand in DiscIt API → get `pic` URL
+2. Store URL in local SQLite alongside the disc
+3. Show image in an expandable detail view
+
+That's 50 lines of code and zero ongoing complexity.
+
+**The flight path source toggle: maybe.** Showing the MS image *instead of* the computed arc in the Flight Shaper requires replacing the interactive SVG with a static image, which means losing hyzer/wind/arm adjustments for the MS mode. That's a real UX tradeoff.
+
+**The right framing:** the MS image and the computed arc answer *different questions*:
+- MS image = "what does this disc do at 100% power, RHBH, flat, calm" — a static reference
+- Computed arc = "what does this disc do *given my throw conditions*" — interactive
+
+They're not competing. Show both, in different places.
+
+### Proposed feature design
+
+**Show MS image in disc detail modal (always, when available):**
+- User taps the arc SVG on a bag card → expand modal
+- Existing computed arc at top (interactive, per throw conditions)
+- Below it: "Marshall Street reference" section showing the `pic` image
+- Falls back gracefully if `pic` is null or network unavailable — just shows nothing
+
+**Settings toggle for Flight Shaper:**
+```
+Flight path source:
+  ● Computed (offline, adjustable for conditions)  ← default
+  ○ Marshall Street (requires internet, RHBH reference only)
+```
+
+When "Marshall Street" is selected:
+- Flight Shaper shows the `pic` image instead of the computed SVG
+- Sliders are hidden (they don't apply to a static image)
+- A note: "Marshall Street reference — RHBH, full power, calm"
+- If image fails to load or disc has no `pic`: auto-fall back to computed arc
+
+**v1.1 implementation order:**
+1. Add `ms_pic_url` column to discs SQLite table (migration, nullable)
+2. On disc add/import: look up DiscIt API by name+brand, store `pic` URL if found
+3. Show MS image in disc detail expand modal (read-only reference)
+4. Add Settings screen with flight path source toggle
+5. Flight Shaper respects the toggle
+
+### API reliability and privacy
+
+- DiscIt API is a third-party free service. It could go down, change, or disappear. **Never block the app on it.** Always fall back to computed arc.
+- The API call is outbound from the device to `discit-api.fly.dev`. For F-Droid/FOSS claims: declare it in the privacy policy as "optional disc image fetching from a third-party service." No personal data is sent — only the disc name/brand.
+- Cache `pic` URLs locally in SQLite after first fetch. Don't re-fetch on every launch.
+- If the user has flight path source set to "computed," no call to DiscIt API is ever made.
+
+### Decision summary
+
+| Question | Answer |
+|----------|--------|
+| Do this? | Yes — the `pic` images are genuinely cool and unique |
+| Blocks v1? | No — v1.1 feature |
+| Replace computed arc? | No — show both, for different purposes |
+| Settings toggle needed? | Yes — Marshall Street is RHBH-only, offline users need computed arc |
+| Over-engineered? | Not if scoped to `pic` display + optional toggle. Over-engineered if we try to parse the image or mix the two arcs |
+| F-Droid safe? | Yes — network call is optional, no GMS, no proprietary SDK |
+| Super cool? | Yes — official Marshall Street flight data alongside your adjusted arc is genuinely useful |
+
+### Open questions before building
+
+1. Does the DiscIt API's `pic` URL for a disc in `discs_master.json` match by name+brand? Need to verify matching logic — some disc names differ slightly between datasets (e.g. "Buzzz" vs "Buzzz OS").
+2. Should we bundle a pre-fetched lookup table (name → pic URL) with the app, or always fetch live? Bundled = no network needed but gets stale; live = always current but requires connectivity on disc add.
+3. The MS images have a white background. The app is dark-themed. Options: show image in a white-background card, invert the image (hacky), or accept the contrast mismatch.
+4. The 5-tier stability label from DiscIt ("Very Overstable" etc.) — do we adopt it alongside or instead of the 3-tier (OS/ST/US)?

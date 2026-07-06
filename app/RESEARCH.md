@@ -556,7 +556,26 @@ EAS is still useful for iOS builds (requires macOS/Xcode otherwise) and as a fal
 
 ---
 
-## 11. Open Questions
+## 11. External Reference: DiscIt API
+
+Repo cloned at `/home/ubuntu/refs/discit-api`.
+
+Live API: `https://discit-api.fly.dev/disc` — scrapes Marshall Street Disc Golf's flight guide nightly. 1,203 discs, ~92% have `pic` URLs.
+
+The `pic` field is a 400×340 webp from Marshall Street's S3 bucket showing the real measured RHBH flight path on a coordinate grid, plus PDGA physical specs. This is sourced from the Marshall Street flight guide, not computed from flight numbers.
+
+**What it adds over `discs_master.json`:**
+- `pic` — Marshall Street flight path image URL
+- `link` — Marshall Street store URL per disc
+- `stability` — 5-tier text label (Very Understable → Very Overstable)
+- `color` / `background_color` — Marshall Street's own color coding per disc
+- PDGA physical specs (embedded in the image, not as separate fields in the API)
+
+**Decision:** Use `pic` URLs as an optional reference display in v1.1. See PORT_PLAN.md — Marshall Street Flight Path Images section.
+
+---
+
+## 12. Open Questions
 
 1. **V1 local-only?** Yes — confirmed. No sync in v1. Keeps Data Safety form at "no data collected."
 2. **Single-user v1?** Yes — auto-create default user, skip picker screen. Schema stays multi-user for future.
