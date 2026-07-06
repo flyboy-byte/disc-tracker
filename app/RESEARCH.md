@@ -454,53 +454,87 @@ disc_tracker/
 
 ## 10. Build Pipeline
 
-### Primary: Local Gradle builds
+### Why local Gradle (not EAS)
 
-**EAS cloud builds are not the primary pipeline.** EAS-built binaries do not byte-match F-Droid's reproducible builds — the cloud build environment (Expo's servers, timestamps, toolchain) can't be replicated by F-Droid's build server. The fix is to build locally with Gradle directly, sign with your own keystore, and give F-Droid something it can actually reproduce from source.
+Two reasons, both proven on DragTree:
 
-Expo the **framework** stays (expo-sqlite, expo-router, react-native-svg, all packages). EAS the **cloud build service** is demoted to optional/fallback (useful for iOS later, or as a backup).
+1. **F-Droid reproducible builds:** EAS builds on Expo's cloud servers (Ubuntu + specific toolchain). F-Droid builds in a Debian trixie sandbox. The environments never match — byte comparison always fails. Local builds close that gap: same JDK flavor, same NDK version, same flat `node_modules`. No React Native/Expo app is *known* to have achieved a full F-Droid byte-match, but local is as close as it can get.
+
+2. **Transparency:** `./gradlew assembleRelease` is something you own and can debug. EAS is a black box that adds ceremony (cloud queue, CLI auth, pnpm workspace issues in DragTree's case) on top of something Gradle can do directly.
+
+Expo the **framework** stays (expo-sqlite, expo-router, react-native-svg, all packages). EAS the **cloud build service** is optional/fallback — kept for iOS only.
+
+### Required toolchain
+
+Learned from DragTree — use these exact versions to match F-Droid's build environment as closely as possible:
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| JDK | 21 **OpenJDK** (not Temurin) | F-Droid uses OpenJDK; Temurin has different internals |
+| Android SDK | 36 | |
+| NDK | 27.1.12297006 | Exact version matters for reproducibility |
+| Node | via `.nvmrc` | Pinned version |
+| npm | at repo root | **Not pnpm.** Flat `node_modules`, no workspace hoisting |
+
+### Repo structure — flat, no monorepo
+
+DragTree started as a pnpm workspace monorepo and migrated away from it. Disc Tracker should never be a monorepo. Use:
+- `npm install` at repo root
+- No `pnpm-workspace.yaml`, no `.npmrc` with hoisted linker
+- No nested `artifacts/` subdir — `android/` lives at repo root after prebuild
 
 ### How local builds work with Expo
 
-`expo prebuild` generates the bare `android/` project from your JS/TS source. After that, standard Gradle takes over — Expo is not involved in the actual compilation.
+`expo prebuild` generates the bare `android/` project from your JS/TS source. After that, Gradle takes over — Expo is not involved in compilation.
 
 ```bash
-# Generate the android/ project (run whenever app.json or native deps change)
+# Generate the android/ project (run when app.json or native deps change)
 npx expo prebuild --platform android --clean
 
 # Build APK locally (F-Droid, sideload, testing)
-cd android
-./gradlew assembleRelease
+cd android && ./gradlew assembleRelease
 
 # Build AAB locally (Play Store)
-./gradlew bundleRelease
+cd android && ./gradlew bundleRelease
 ```
 
 ### Signing with your own keystore
 
-Configure once in `android/app/build.gradle` — credentials read from environment or `~/.gradle/gradle.properties` so they're never committed:
+Use `android/local.properties` for credentials — never committed, never in env vars. This pattern (from DragTree) prevents AGP config-time failures on machines without credentials:
 
 ```groovy
+// android/app/build.gradle
+def keystorePropertiesFile = rootProject.file("local.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 signingConfigs {
     release {
-        storeFile file(System.getenv("KEYSTORE_PATH"))
-        storePassword System.getenv("KEYSTORE_PASSWORD")
-        keyAlias System.getenv("KEY_ALIAS")
-        keyPassword System.getenv("KEY_PASSWORD")
+        if (keystoreProperties['RELEASE_STORE_FILE']) {
+            storeFile file(keystoreProperties['RELEASE_STORE_FILE'])
+            storePassword keystoreProperties['RELEASE_STORE_PASSWORD']
+            keyAlias keystoreProperties['RELEASE_KEY_ALIAS']
+            keyPassword keystoreProperties['RELEASE_KEY_PASSWORD']
+        }
     }
 }
 buildTypes {
     release {
+        // Falls back to debug keystore when local.properties absent
         signingConfig signingConfigs.release
     }
 }
 ```
 
-Same key signs both the Play Store AAB and the F-Droid APK — this matters for Play Store upgrades to work correctly on devices that installed via F-Droid first (and vice versa).
+Track `android/local.properties.example` in git as a template. Add `android/local.properties` and `android/app/*.keystore` to `.gitignore`.
 
-### Commit the android/ prebuild — do not gitignore it
+**F-Droid note:** F-Droid runs `sed -i '/signingConfig /d'` on build.gradle — it strips signing entirely and produces an unsigned APK. This is expected and correct. You sign the *reference APK* separately with your production keystore and upload it to GitHub releases alongside the tag.
 
-Every build-path problem traces back to treating the prebuild output as throwaway. It belongs in version control.
+Same key signs both Play Store AAB and reference APK — Play Store upgrades work correctly on devices that installed via F-Droid.
+
+### Commit the android/ prebuild
 
 ```bash
 npx expo prebuild --platform android --clean
@@ -508,7 +542,7 @@ git add android/
 git commit -m "add android prebuild output"
 ```
 
-Re-run prebuild (and re-commit) when: native package versions change, `app.json` plugin config changes, or Expo SDK is upgraded.
+Re-run and re-commit when: native package versions change, `app.json` plugin config changes, or Expo SDK upgrades.
 
 ### gradle.properties — set before first build
 
@@ -520,39 +554,48 @@ org.gradle.workers.max=2
 
 ### Gradle failure order of likelihood
 
-1. **OOM at dex merge** — set the JVM args above before the first `./gradlew` run
-2. **Node not found at Gradle configure time** — Expo SDK 54's `settings.gradle` calls `node` to resolve package paths; make sure `node` is on `PATH` before Gradle runs
-3. **pnpm install from wrong directory** — monorepo root only, never from inside the `app/` subdir
+1. **OOM at dex merge** — set JVM args above before the first `./gradlew` run
+2. **Node not found at Gradle configure time** — Expo SDK 54's `settings.gradle` calls `node`; make sure it's on PATH
+3. **npm install from wrong directory** — run at repo root only, never from `app/` subdir
 4. **Deprecated Gradle features warning** — ignore; Expo/RN internals use APIs deprecated in Gradle 9, not fatal
 
-### EAS — kept for iOS and as fallback
+### F-Droid reference APK workflow
 
-EAS is still useful for iOS builds (requires macOS/Xcode otherwise) and as a fallback if local Android builds break. Keep `eas.json` in the repo but it is not the primary Android pipeline.
+1. Build locally with production keystore: `./gradlew assembleRelease`
+2. Verify: `apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk` — confirm SHA256 matches `AllowedAPKSigningKeys` in fdroiddata YAML
+3. Tag the release: `git tag v1.0.0 && git push --tags`
+4. Upload signed APK to GitHub releases as `disc-tracker-v1.0.0.apk`
+5. Add `Binaries:` entry to fdroiddata YAML pointing at the GitHub release URL
+6. F-Droid builds from source, strips signing, compares output to your reference APK
+
+### EAS — iOS only, fallback
+
+Keep `eas.json` in the repo. Android never uses it in normal workflow. Use EAS for iOS (requires macOS/Xcode otherwise) or as an emergency fallback if local builds break.
 
 ```json
 {
   "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal"
-    },
-    "preview": {
-      "android": { "buildType": "apk" }
-    },
-    "production": {
-      "android": { "buildType": "app-bundle" }
-    }
+    "development": { "developmentClient": true, "distribution": "internal" },
+    "preview": { "android": { "buildType": "apk" } },
+    "production": { "android": { "buildType": "app-bundle" } }
   }
 }
 ```
 
 ### Reference project: DragTree
 
-**DragTree is the developer's other app** — same stack, currently working through the same local build + F-Droid reproducibility problem. Copy from it directly:
-- `lib/settings.ts` — pub/sub + AsyncStorage for local state (no Redux/Zustand)
+**DragTree is the developer's other app** — same stack, completed the pnpm→npm migration and local build setup. Copy from it directly:
+- `android/app/build.gradle` — signing config pattern with `local.properties`
+- `android/local.properties.example` — credential template
 - `gradle.properties` JVM args
-- `pnpm-workspace.yaml` monorepo setup
-- `fdroidserver` config + metadata format
+- `lib/settings.ts` — pub/sub + AsyncStorage for local state (no Redux/Zustand)
+- `fdroidserver` config + metadata YAML format
+
+**What DragTree resolved that this app benefits from:**
+- pnpm workspace → flat npm (eliminates hoisted linker, workspace ceremony, cd path issues)
+- Monorepo subdir → repo root (eliminates F-Droid subdir confusion)
+- EAS → local Gradle (eliminates cloud environment mismatch for F-Droid)
+- Signing via `local.properties` (no null `storeFile` crash on CI/F-Droid)
 
 ---
 

@@ -135,6 +135,10 @@ git add android/
 - `npx expo start` runs without errors
 - `cd android && ./gradlew assembleRelease` produces an APK signed with your key
 
+**Package manager:** `npm` at repo root. No pnpm, no workspace, no monorepo subdir. Flat `node_modules`.
+
+**Required toolchain:** JDK 21 OpenJDK (not Temurin), Android SDK 36, NDK 27.1.12297006.
+
 **EAS:** keep `eas.json` in the repo for iOS fallback, but Android builds run locally via Gradle.
 
 **Do not yet:** write any disc logic, DB calls, or screen content.
@@ -342,7 +346,8 @@ cd android && ./gradlew app:dependencies | grep -i 'gms\|firebase\|play-services
 ### D1 — Play Console (do this first)
 
 ```bash
-eas build --platform android --profile production
+# Local AAB build (not EAS)
+cd android && ./gradlew bundleRelease
 # Upload AAB to Play Console → Internal testing → Closed testing
 ```
 
@@ -351,7 +356,7 @@ Resolve all Play Console requirements before touching F-Droid:
 - Data Safety form
 - Content rating (IARC)
 - Privacy policy URL live on GitHub Pages
-- App signing configured via EAS
+- App signing: upload keystore to Play App Signing via Play Console
 
 Only move to D2 once an internal tester can install and run the app from Play Console.
 
@@ -359,18 +364,26 @@ Only move to D2 once an internal tester can install and run the app from Play Co
 
 F-Droid setup took significantly longer than Play Console on DragTree — different kind of pain (reproducible build expectations, metadata files, fdroidserver quirks, key decisions) vs Play Console's bureaucratic UI hoops. Do not underestimate it.
 
-**Why local builds matter here:** EAS cloud-built binaries do not byte-match F-Droid's reproducible builds — Expo's build server bakes in environment specifics that F-Droid can't replicate. Local Gradle builds (`./gradlew assembleRelease`) solve this. F-Droid can build from source, your binary matches, and you sign with your own keystore throughout.
+**The reproducible build reality (from DragTree):**
+Local builds are the prerequisite — EAS cloud builds never matched F-Droid's Debian sandbox. Local builds close the gap as much as possible (same JDK flavor, same NDK version, flat npm). However: no React Native/Expo app is *known* to have achieved a full F-Droid byte-match. The goal is to get close enough that F-Droid's reviewer accepts it, not to guarantee a perfect bit-for-bit match.
 
+**Reference APK workflow:**
+1. Build locally with production keystore: `cd android && ./gradlew assembleRelease`
+2. Verify signing: `apksigner verify --print-certs app-release.apk` — SHA256 must match `AllowedAPKSigningKeys` in fdroiddata YAML
+3. Tag: `git tag v1.0.0 && git push --tags`
+4. Upload signed APK to GitHub releases as `disc-tracker-v1.0.0.apk`
+5. Add `Binaries:` entry to fdroiddata YAML pointing at the GitHub release URL
+
+**Self-hosted repo:**
 Reuse DragTree's `fdroidserver` setup — same infrastructure, new app entry.
 
 1. Add `metadata/com.disctracker.app.yml` to the F-Droid repo
-2. Tag the release: `git tag v1.0.0 && git push --tags`
-3. Run fdroidserver update — APK appears in self-hosted repo
-4. Verify install from F-Droid client using self-hosted repo URL
+2. Run fdroidserver update — APK appears in self-hosted repo
+3. Verify install from F-Droid client using self-hosted repo URL
 
 ### D3 — Official F-Droid Index (after D2 is stable)
 
-Weeks-long review process. Start submission early — local Gradle builds mean F-Droid's build server can actually reproduce your binary, which is required for the official index. Self-hosted (D2) covers you in the meantime. Do not let D3 block anything.
+Weeks-long review process. Start submission early. Self-hosted (D2) covers distribution in the meantime. Local builds give the best shot at reproducibility verification — but be honest with the reviewer about Expo/RN's reproducibility limitations if they flag it. Do not let D3 block anything.
 
 ---
 
