@@ -66,15 +66,23 @@
   .card:hover { border-color: var(--accent); background: var(--card-hover); }
   .card.bagged { border-color: rgba(145,94,255,0.5); }
   .bag-check {
-    position: absolute; top: 8px; right: 8px;
-    width: 22px; height: 22px; border-radius: 50%;
+    position: absolute; top: 8px; right: 8px; z-index: 2;
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 8px; border-radius: 6px;
     border: 1.5px solid var(--border); background: var(--card);
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    font-size: 11px; color: transparent; z-index: 2;
+    cursor: pointer; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.4px; color: var(--muted); white-space: nowrap;
     transition: border-color 0.15s, background 0.15s, color 0.15s;
   }
-  .bag-check:hover { border-color: var(--accent); }
-  .bag-check.checked { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .bag-check:hover { border-color: var(--accent); color: var(--accent); }
+  .bag-check.checked { background: rgba(145,94,255,0.15); border-color: var(--accent); color: var(--accent); }
+  .bag-check-dot {
+    width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0;
+    border: 1.5px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; line-height: 1;
+  }
+  .bag-check.checked .bag-check-dot { background: var(--accent); border-color: var(--accent); color: #fff; }
   .card-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
   .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
   .mfr { font-size: 11px; color: var(--muted); }
@@ -203,6 +211,7 @@
     h1 { font-size: 22px; }
     .card { flex-direction: row; }
     .meta, .use { white-space: normal; overflow: visible; text-overflow: unset; }
+    .bag-check { font-size: 9px; padding: 3px 6px; gap: 4px; }
   }
   /* Welcome modal */
   .welcome-bg {
@@ -677,7 +686,7 @@ function render() {
     const colorStyle = safeColor ? `border-left:3px solid ${safeColor};` : '';
     const isBagged = baggedIds.has(d.id);
     return `<div class="card ${dragEnabled ? 'drag-on' : ''} ${isBagged ? 'bagged' : ''}" data-id="${d.id}" onclick="openEdit(${d.id})" style="${colorStyle}">
-      <button class="bag-check ${isBagged ? 'checked' : ''}" onclick="toggleBagged(event,${d.id})" title="${isBagged ? 'Remove from today\'s bag' : 'Add to today\'s bag'}">✓</button>
+      <button class="bag-check ${isBagged ? 'checked' : ''}" onclick="toggleBagged(event,${d.id})" title="${isBagged ? 'Remove from today\'s bag' : 'Add to today\'s bag'}"><span class="bag-check-dot">${isBagged ? '✓' : ''}</span>in bag</button>
       ${grip}
       <div class="card-main">
         <div class="card-head">
@@ -700,7 +709,7 @@ function render() {
           <span class="stab-badge ${s.cls}">${s.short}</span>
         </div>
       </div>
-      <div onclick="showArcDetail(event,${d.id})" style="flex-shrink:0;cursor:pointer" title="Flight detail">${arcSVG(d)}</div>
+      <div onclick="showArcDetail(event,${d.id})" style="flex-shrink:0;cursor:pointer;padding-top:28px" title="Flight detail">${arcSVG(d)}</div>
     </div>`;
   }).join('');
 }
