@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import re
+import secrets
 import sqlite3
 from functools import wraps
 from flask import Flask, jsonify, request, render_template, session, redirect, url_for, abort
@@ -85,6 +86,16 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
+def get_csrf_token():
+    if 'csrf_token' not in session:
+        session['csrf_token'] = secrets.token_hex(32)
+    return session['csrf_token']
+
+def check_csrf():
+    token = request.form.get('_csrf') or request.headers.get('X-CSRF-Token')
+    if not token or token != session.get('csrf_token'):
+        abort(403)
+
 
 # ── Picker ────────────────────────────────────────────────────────────────────
 
@@ -95,11 +106,12 @@ def pick():
         users = db.execute(
             'SELECT id, username FROM users ORDER BY username COLLATE NOCASE'
         ).fetchall()
-    return render_template('pick.html', users=users, error=error)
+    return render_template('pick.html', users=users, error=error, csrf_token=get_csrf_token())
 
 
 @app.route('/pick', methods=['POST'])
 def pick_post():
+    check_csrf()
     user_id = request.form.get('user_id', type=int)
     if not user_id:
         return redirect(url_for('pick'))
@@ -113,6 +125,7 @@ def pick_post():
 
 @app.route('/add_user', methods=['POST'])
 def add_user():
+    check_csrf()
     username = (request.form.get('username') or '').strip()
     if not username:
         session['pick_error'] = 'Username cannot be empty.'
@@ -134,6 +147,7 @@ def add_user():
 @app.route('/delete_user', methods=['POST'])
 @login_required
 def delete_user():
+    check_csrf()
     user_id = request.form.get('user_id', type=int)
     if user_id and user_id == session.get('user_id'):
         with get_db() as db:
@@ -144,6 +158,7 @@ def delete_user():
 
 @app.route('/switch', methods=['POST'])
 def switch():
+    check_csrf()
     session.clear()
     return redirect(url_for('pick'))
 
@@ -160,7 +175,7 @@ def index():
     if not row:
         session.clear()
         return redirect(url_for('pick'))
-    return render_template('index.html', username=row['username'])
+    return render_template('index.html', username=row['username'], csrf_token=get_csrf_token())
 
 
 @app.route('/flightshape')
@@ -173,7 +188,7 @@ def flightshape():
     if not row:
         session.clear()
         return redirect(url_for('pick'))
-    return render_template('flightshape.html', username=row['username'])
+    return render_template('flightshape.html', username=row['username'], csrf_token=get_csrf_token())
 
 
 @app.route('/api/data', methods=['GET'])
@@ -214,7 +229,7 @@ def set_data():
         abort(400)
     user_id   = session['user_id']
     discs     = payload.get('discs', [])
-    next_id   = payload.get('nextId', 100)
+    next_id   = max(1, min(int(payload.get('nextId') or 100), 999_999_999))
     sort_mode = payload.get('sortMode', 'speed-desc')
     arc_view  = payload.get('arcView', 'RHBH')
     if arc_view not in ('RHBH', 'RHFH', 'LHBH', 'LHFH'):
@@ -235,6 +250,7 @@ def set_data():
                  str(d.get('use') or '')[:200], str(d.get('thr') or '')[:10], str(d.get('notes') or '')[:1000],
                  (c if re.match(r'^#[0-9A-Fa-f]{6}$', c := str(d.get('color') or '')) else ''), i)
                 for i, d in enumerate(discs)
+                if str(d.get('mold') or '').strip()  # skip discs with no mold name
             ]
         )
         db.execute(
@@ -292,7 +308,7 @@ def discsuggestion():
     if not row:
         session.clear()
         return redirect(url_for('pick'))
-    return render_template('discsuggestion.html', username=row['username'])
+    return render_template('discsuggestion.html', username=row['username'], csrf_token=get_csrf_token())
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

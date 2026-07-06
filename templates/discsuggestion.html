@@ -176,6 +176,7 @@
       <a href="/discsuggestion" class="nav-link active">Disc Suggest</a>
     </div>
     <form method="post" action="/switch" style="margin:0">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <button type="submit" class="nav-switch">Switch user</button>
     </form>
   </nav>
@@ -244,7 +245,7 @@ const SCENARIOS = [
     icon: '🌬',
     title: 'Into Headwind',
     desc: 'Won\'t flip even in a strong headwind',
-    stabMin: 3,
+    stabMin: 2.5,
     types: ['Control Driver', 'Distance Driver'],
     bagTest: d => d.fade >= 3 && d.turn >= -0.5 && d.speed >= 7,
   },
@@ -290,9 +291,9 @@ const SCENARIOS = [
     icon: '🎯',
     title: 'Approach',
     desc: 'Controlled & accurate into the green',
-    stabMin: 0, stabMax: 2.5,
+    stabMin: -1, stabMax: 2.5,
     types: ['Putt & Approach', 'Mid Range'],
-    bagTest: d => d.speed <= 6 && d.fade <= 3 && d.turn >= -2,
+    bagTest: d => d.speed <= 6 && d.fade <= 3 && d.turn >= -2 && (d.fade + d.turn) >= -1,
   },
   {
     id: 'accurate_mid',
@@ -308,9 +309,9 @@ const SCENARIOS = [
     icon: '↪',
     title: 'Hyzer Flip',
     desc: 'Starts hyzer, flips flat, holds straight',
-    stabMin: -2, stabMax: -0.5,
+    stabMin: -2, stabMax: 0,
     types: ['Control Driver', 'Distance Driver'],
-    bagTest: d => d.speed >= 7 && d.speed <= 12 && d.turn <= -1 && d.turn >= -2 && d.fade >= 1 && d.fade <= 2,
+    bagTest: d => d.speed >= 7 && d.speed <= 12 && d.turn <= -1 && d.turn >= -2 && d.fade >= 1 && d.fade <= 2 && (d.fade + d.turn) <= 0,
   },
   {
     id: 'roller',
@@ -432,9 +433,9 @@ function renderScenario(sc) {
   const bagMatches = filterBag(sc);
   const libMatches = filterLibrary(sc);
 
-  // Remove bag discs that are already shown in bag section (by name+mfr)
-  const bagNames = new Set(bagMatches.map(d => d.mold + '|' + d.mfr));
-  const libOnly = libMatches.filter(d => !bagNames.has(d.name + '|' + d.mfr));
+  // Remove bag discs that are already shown in bag section (by name+mfr, case-insensitive)
+  const bagNames = new Set(bagMatches.map(d => (d.mold + '|' + d.mfr).toLowerCase()));
+  const libOnly = libMatches.filter(d => !bagNames.has((d.name + '|' + d.mfr).toLowerCase()));
 
   // Bag section
   const bagWrap = document.getElementById('bagResultsWrap');

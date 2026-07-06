@@ -83,6 +83,7 @@
   <h1>Who's throwing?</h1>
 
   <form method="post" action="/add_user" class="add-row">
+    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
     <input type="text" name="username" placeholder="New username…" autocomplete="off" autofocus maxlength="40">
     <button class="btn" type="submit">Add</button>
   </form>
@@ -98,6 +99,7 @@
     {% for u in users %}
     <div class="user-slot" data-name="{{ u['username'] | lower }}">
       <form method="post" action="/pick">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
         <input type="hidden" name="user_id" value="{{ u['id'] }}">
         <button type="submit" class="user-card">
           <div class="avatar">{{ u['username'][0] | upper }}</div>
@@ -105,6 +107,7 @@
         </button>
       </form>
       <form method="post" action="/delete_user">
+        <input type="hidden" name="_csrf" value="{{ csrf_token }}">
         <input type="hidden" name="user_id" value="{{ u['id'] }}">
         <button type="button" class="del-btn" onclick="confirmDel(this)">Delete</button>
       </form>
@@ -132,14 +135,16 @@ function confirmDel(btn) {
   if (btn.dataset.confirm) {
     btn.closest('form').submit();
   } else {
-    btn.textContent = 'Sure?';
+    btn.textContent = 'Sure? Press again to confirm';
     btn.dataset.confirm = '1';
     btn.style.background = 'rgba(248,113,113,0.18)';
-    setTimeout(() => {
+    btn.focus();
+    const timer = setTimeout(() => {
       btn.textContent = 'Delete';
       btn.style.background = '';
       delete btn.dataset.confirm;
-    }, 2500);
+    }, 3000);
+    btn.dataset.timer = timer;
   }
 }
 </script>

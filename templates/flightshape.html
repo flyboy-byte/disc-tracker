@@ -110,7 +110,7 @@
   .slider-label { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
   .slider-value { font-size: 12px; font-weight: 700; font-family: ui-monospace, monospace; min-width: 44px; text-align: center; transition: color 0.15s; }
   .slider-unit { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
-  .slider-track { position: relative; height: 120px; display: flex; align-items: center; justify-content: center; }
+  .slider-track { position: relative; height: 120px; width: 28px; display: flex; align-items: center; justify-content: center; }
   .slider-tick {
     position: absolute; left: 50%; top: 50%;
     transform: translate(-50%, -50%);
@@ -118,16 +118,32 @@
     background: rgba(255,255,255,0.3);
     pointer-events: none; z-index: 1;
   }
+  /* Rotate a horizontal range input to make a vertical slider.
+     Works on iOS Safari, Chrome, Firefox — unlike writing-mode/appearance tricks. */
   .v-slider {
-    -webkit-appearance: slider-vertical;
-    writing-mode: vertical-lr;
-    direction: rtl;
-    width: 28px;
-    height: 120px;
-    accent-color: var(--accent);
-    cursor: pointer;
-    background: transparent;
-    padding: 0;
+    position: absolute;
+    appearance: none; -webkit-appearance: none;
+    width: 120px; height: 28px;
+    transform: rotate(-90deg);
+    cursor: pointer; background: transparent; margin: 0; padding: 0;
+  }
+  .v-slider::-webkit-slider-runnable-track {
+    height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,0.12);
+  }
+  .v-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); margin-top: -9px; cursor: pointer;
+    box-shadow: 0 0 0 3px rgba(145,94,255,0.2);
+  }
+  .v-slider::-moz-range-track {
+    height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,0.12);
+  }
+  .v-slider::-moz-range-thumb {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); border: none; cursor: pointer;
   }
   .dir-hint {
     display: flex; justify-content: space-around; padding: 8px 0 0;
@@ -170,7 +186,7 @@
     .arc-svg { max-width: 260px; margin: 0 auto; }
     /* Slightly taller slider tracks for easier thumb contact */
     .slider-track { height: 140px; }
-    .v-slider { height: 140px; }
+    .v-slider { width: 140px; }
     .slider-value { font-size: 11px; min-width: 36px; }
   }
 </style>
@@ -185,6 +201,7 @@
       <a href="/discsuggestion" class="nav-link">Disc Suggest</a>
     </div>
     <form method="post" action="/switch" style="margin:0">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <button type="submit" class="nav-switch">Switch user</button>
     </form>
   </nav>

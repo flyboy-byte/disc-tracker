@@ -174,7 +174,7 @@
   select.sort:focus { border-color: var(--accent); }
   .grip {
     display: flex; align-items: center; justify-content: center; align-self: stretch;
-    width: 18px; flex-shrink: 0; cursor: grab; touch-action: none;
+    width: 28px; min-width: 28px; flex-shrink: 0; cursor: grab; touch-action: none;
     color: var(--muted); font-size: 15px; border-radius: 6px; user-select: none;
   }
   .grip:hover { color: var(--text); background: rgba(255,255,255,0.05); }
@@ -281,6 +281,7 @@
       <a href="/discsuggestion" class="nav-link">Disc Suggest</a>
     </div>
     <form method="post" action="/switch" style="margin:0">
+      <input type="hidden" name="_csrf" value="{{ csrf_token }}">
       <button type="submit" class="nav-switch">Switch user</button>
     </form>
   </nav>
@@ -342,7 +343,8 @@ let typeFilter = 'all';
 let sortMode = 'speed-desc';
 let arcView = 'RHBH';
 let viewMode = 'cards';
-let baggedIds = new Set(); // session-only: discs in "today's bag" for export
+// Today's bag: persists across page refreshes within the same tab session
+let baggedIds = new Set(JSON.parse(sessionStorage.getItem('baggedIds') || '[]'));
 let dragEl = null, dragGhost = null, dragOffX = 0, dragOffY = 0;
 let _fieldPts = [], _fieldBalloonTimer = null;
 
@@ -403,6 +405,8 @@ async function load() {
       if (data) {
         discs = data.discs || [];
         nextId = data.nextId || 100;
+        // Add random tab offset so two tabs don't generate the same disc IDs
+        nextId += Math.floor(Math.random() * 10000) * 1000;
         if (data.sortMode) sortMode = data.sortMode;
         if (data.arcView)  { arcView = data.arcView; document.getElementById('arcViewSelect').value = arcView; }
       } else {
@@ -708,6 +712,7 @@ function esc(s) {
 function toggleBagged(e, id) {
   e.stopPropagation();
   if (baggedIds.has(id)) baggedIds.delete(id); else baggedIds.add(id);
+  sessionStorage.setItem('baggedIds', JSON.stringify([...baggedIds]));
   render();
 }
 
@@ -882,6 +887,11 @@ function showModal(d, isNew) {
         <div class="field"><label>Fade</label><input id="f-fade" type="number" step="0.5" value="${d.fade}"></div>
       </div>
       <div class="field"><label>Primary use</label><input id="f-use" value="${esc(d.use)}" placeholder="e.g. Overstable utility"></div>
+      <div class="field"><label>Throw style</label>
+        <select id="f-thr" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px;outline:none">
+          ${['RHBH','RHFH','LHBH','LHFH'].map(t => `<option value="${t}" ${(d.thr||'RHBH')===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
       <div class="field"><label>Notes</label><textarea id="f-notes" placeholder="Seasoning, condition, where you got it, flight tweaks…" style="width:100%;min-height:70px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px;outline:none;resize:vertical;font-family:inherit">${esc(d.notes || '')}</textarea></div>
       <div class="field">
         <label>Disc color</label>
@@ -891,7 +901,7 @@ function showModal(d, isNew) {
                      style="${c.hex?'background:'+c.hex:''}" title="${c.label||'None'}"
                      onclick="pickColor('${c.hex}')"></button>`
           ).join('')}
-          <label id="custom-swatch" class="cswatch cswatch-custom" data-hex="${esc(d.color||'')}" title="Custom color">
+          <label id="custom-swatch" class="cswatch cswatch-custom" data-hex="${esc(d.color||'#ffffff')}" title="Custom color">
             <input type="color" id="f-color-picker" value="${esc(d.color||'#ffffff')}" oninput="pickColorCustom(this.value)">
           </label>
         </div>
@@ -930,7 +940,7 @@ async function saveDisc(id, isNew) {
     id,
     mfr: gv('f-mfr'), mold: gv('f-mold'), plastic: gv('f-plastic'), weight: gv('f-weight'),
     speed: gn('f-speed'), glide: gn('f-glide'), turn: gn('f-turn'), fade: gn('f-fade'),
-    use: gv('f-use'), thr: (discs.find(x => x.id === id) || {}).thr || 'RHBH', notes: gv('f-notes'), color: gv('f-color')
+    use: gv('f-use'), thr: gv('f-thr') || 'RHBH', notes: gv('f-notes'), color: gv('f-color')
   };
   if (!obj.mold) { toast('Mold name is required'); return; }
   if (isNew) discs.push(obj);
