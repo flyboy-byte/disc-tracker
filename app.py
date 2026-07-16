@@ -345,6 +345,27 @@ def get_ms_pic():
     return jsonify({'pic': pic})
 
 
+@app.route('/api/ms_pic_img', methods=['GET'])
+@login_required
+def get_ms_pic_img():
+    # Proxies the actual image bytes so the browser only ever loads same-origin
+    # <img> sources — avoids relaxing the site's img-src CSP to a third-party host.
+    mfr  = request.args.get('mfr', '')
+    mold = request.args.get('mold', '')
+    pic = fetch_ms_pic(mfr, mold)
+    if not pic:
+        abort(404)
+    try:
+        with urllib.request.urlopen(pic, timeout=5) as resp:
+            data = resp.read()
+            ctype = resp.headers.get('Content-Type', 'image/webp')
+    except Exception:
+        abort(502)
+    response = app.response_class(data, mimetype=ctype)
+    response.headers['Cache-Control'] = 'public, max-age=604800'
+    return response
+
+
 # ── Master disc library ───────────────────────────────────────────────────────
 
 _master_cache = None

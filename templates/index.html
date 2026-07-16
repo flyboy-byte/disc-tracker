@@ -561,29 +561,24 @@ function showArcDetail(e, id) {
     </div>
   </div>`;
 
-  if (useMsApi && arcView === 'RHBH') loadMsPic(d, 220);
+  if (useMsApi && arcView === 'RHBH') loadMsPic(d);
 }
 
-async function loadMsPic(d, width) {
-  try {
-    const r = await fetch(`/api/ms_pic?mfr=${encodeURIComponent(d.mfr||'')}&mold=${encodeURIComponent(d.mold||'')}`);
-    if (!r.ok) return;
-    const { pic } = await r.json();
-    if (!pic) return;
+function loadMsPic(d) {
+  // Proxied through our own /api/ms_pic_img so the <img> stays same-origin —
+  // avoids relaxing the site's img-src CSP to a third-party host.
+  const url = `/api/ms_pic_img?mfr=${encodeURIComponent(d.mfr||'')}&mold=${encodeURIComponent(d.mold||'')}`;
+  const img = new Image();
+  img.onload = () => {
     const slot = document.getElementById('arcDetailSlot');
     if (!slot) return; // modal closed before fetch resolved
-    const img = new Image();
-    img.onload = () => {
-      slot.innerHTML = `<img src="${pic}" style="width:100%;border-radius:10px;border:1px solid var(--border)" alt="Marshall Street reference flight path">
-        <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:3px;opacity:0.6">Marshall Street reference — RHBH, full power, calm</div>`;
-      const label = document.getElementById('arcDetailLabel');
-      if (label) label.textContent = 'RHBH';
-    };
-    img.onerror = () => {}; // image failed to load — computed arc stays as-is
-    img.src = pic;
-  } catch (e) {
-    // network error — computed arc stays as-is
-  }
+    slot.innerHTML = `<img src="${url}" style="width:100%;border-radius:10px;border:1px solid var(--border)" alt="Marshall Street reference flight path">
+      <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:3px;opacity:0.6">Marshall Street reference — RHBH, full power, calm</div>`;
+    const label = document.getElementById('arcDetailLabel');
+    if (label) label.textContent = 'RHBH';
+  };
+  img.onerror = () => {}; // no match or fetch failed — computed arc stays as-is
+  img.src = url;
 }
 
 function renderFieldView(rows) {
