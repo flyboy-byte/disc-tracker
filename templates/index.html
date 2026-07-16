@@ -553,6 +553,7 @@ function showArcDetail(e, id) {
       <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:5px;padding:0 2px">
         <span>Tee</span><span id="arcDetailLabel">${arcView}</span><span>Landing</span>
       </div>
+      ${useMsApi && arcView !== 'RHBH' ? `<div style="font-size:9px;color:var(--muted);text-align:center;margin-top:6px;opacity:0.6">Switch to RHBH to see the Marshall Street reference image</div>` : ''}
       <div class="modal-btns" style="margin-top:12px">
         <span class="spacer"></span>
         <button class="btn btn-ghost" onclick="closeModal()">Close</button>
