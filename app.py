@@ -224,6 +224,7 @@ def get_data():
 @app.route('/api/data', methods=['POST'])
 @login_required
 def set_data():
+    check_csrf()
     payload = request.get_json(silent=True)
     if payload is None:
         abort(400)
@@ -265,6 +266,7 @@ def set_data():
 @app.route('/api/arcview', methods=['POST'])
 @login_required
 def set_arcview():
+    check_csrf()
     payload = request.get_json(silent=True)
     if not payload:
         abort(400)
@@ -314,4 +316,4 @@ def discsuggestion():
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5757, debug=False)
+    app.run(host='127.0.0.1', port=5757, debug=False)
