@@ -86,10 +86,9 @@ ms_pic_cache  (lookup_key, pic)   -- cached DiscIt API lookups, keyed by "mfr|mo
 ### Marshall Street reference images (DiscIt API)
 
 - Live, on by default. Frontend calls `GET /api/ms_pic?mfr=&mold=`; server queries `discit-api.fly.dev`, matches by brand+name, and caches the result (including "not found") in `ms_pic_cache` so each disc is only looked up once.
-- Shown in two places, both **RHBH-only** (that's all the API provides) and both fail silently to the existing computed arc on any error, timeout, or missing match — the app never blocks on this API:
-  - Bag view disc detail modal (`showArcDetail` in `index.html`) — shown whenever available.
-  - Flight Shaper (`flightshape.html`) — shown only when sliders are at neutral defaults (hyzer/nose/wind = 0, arm/spin = 100%), since the MS image is a fixed full-power/calm-wind reference and can't reflect adjusted throw conditions. Moving any slider reverts to the computed arc.
-- User toggle "MS reference" (checkbox next to the arc-view selector in both views) persisted to `localStorage.useMsApi`, default on. When off, no request is made to the API at all.
+- Shown only in the bag view disc detail modal (`showArcDetail` in `index.html`) — **RHBH-only** (that's all the API provides), falls back silently to the computed arc on any error, timeout, missing match, or when arc view isn't RHBH.
+- Deliberately **not** in Flight Shaper — that tool's whole purpose is interactively adjusting the arc via sliders, so a static reference image (even at neutral slider defaults) fights the tool's purpose rather than serving it.
+- User toggle "MS reference" (checkbox next to the arc-view selector) persisted to `localStorage.useMsApi`, default on. When off, no request is made to the API at all.
 
 ---
 
