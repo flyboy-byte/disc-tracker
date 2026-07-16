@@ -330,6 +330,10 @@
         <option value="LHBH">LHBH</option>
         <option value="LHFH">LHFH</option>
       </select>
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer;user-select:none">
+        <input type="checkbox" id="msApiToggle" onchange="localStorage.setItem('useMsApi', this.checked ? '1' : '0')" style="cursor:pointer">
+        MS reference
+      </label>
       <span id="dragHint">tap a card to edit</span>
     </span>
   </div>
@@ -353,6 +357,7 @@ let filter = 'all';
 let typeFilter = 'all';
 let sortMode = 'speed-desc';
 let arcView = localStorage.getItem('arcView') || 'RHBH';
+let useMsApi = localStorage.getItem('useMsApi') !== '0';
 let viewMode = 'cards';
 let bagFilter = sessionStorage.getItem('bagFilter') === '1';
 // Today's bag: persists across page refreshes within the same tab session
@@ -532,19 +537,21 @@ function showArcDetail(e, id) {
         <span style="color:var(--muted)">TRN <strong style="color:var(--text)">${d.turn}</strong></span>
         <span style="color:var(--muted)">FDE <strong style="color:var(--text)">${d.fade}</strong></span>
       </div>
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid var(--border)">
-        <line x1="0" y1="${g1y}" x2="${W}" y2="${g1y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-        <line x1="0" y1="${g2y}" x2="${W}" y2="${g2y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
-        <line x1="${p.cx}" y1="${f(p.sy+4)}" x2="${p.cx}" y2="${p.ey}" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="5 6"/>
-        <rect x="${f(p.cx-14)}" y="${f(p.sy-4)}" width="28" height="8" rx="3" fill="rgba(255,255,255,0.07)"/>
-        <path d="M ${p.sx},${p.sy} Q ${p.q0x},${p.q0y} ${p.mx},${p.my}" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="3" stroke-linecap="round"/>
-        <path d="M ${p.mx},${p.my} Q ${p.q2x},${p.q2y} ${p.endX},${p.ey}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round"/>
-        <circle cx="${p.sx}" cy="${p.sy}" r="5" fill="rgba(255,255,255,0.45)"/>
-        <circle cx="${p.endX}" cy="${p.ey}" r="5" fill="${color}"/>
-        <polyline points="${f(p.endX-p.nx*aw+px)},${f(p.ey-p.ny*aw+py)} ${p.endX},${p.ey} ${f(p.endX-p.nx*aw-px)},${f(p.ey-p.ny*aw-py)}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+      <div id="arcDetailSlot">
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid var(--border)">
+          <line x1="0" y1="${g1y}" x2="${W}" y2="${g1y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="0" y1="${g2y}" x2="${W}" y2="${g2y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="${p.cx}" y1="${f(p.sy+4)}" x2="${p.cx}" y2="${p.ey}" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="5 6"/>
+          <rect x="${f(p.cx-14)}" y="${f(p.sy-4)}" width="28" height="8" rx="3" fill="rgba(255,255,255,0.07)"/>
+          <path d="M ${p.sx},${p.sy} Q ${p.q0x},${p.q0y} ${p.mx},${p.my}" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="3" stroke-linecap="round"/>
+          <path d="M ${p.mx},${p.my} Q ${p.q2x},${p.q2y} ${p.endX},${p.ey}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="${p.sx}" cy="${p.sy}" r="5" fill="rgba(255,255,255,0.45)"/>
+          <circle cx="${p.endX}" cy="${p.ey}" r="5" fill="${color}"/>
+          <polyline points="${f(p.endX-p.nx*aw+px)},${f(p.ey-p.ny*aw+py)} ${p.endX},${p.ey} ${f(p.endX-p.nx*aw-px)},${f(p.ey-p.ny*aw-py)}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
       <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:5px;padding:0 2px">
-        <span>Tee</span><span>${arcView}</span><span>Landing</span>
+        <span>Tee</span><span id="arcDetailLabel">${arcView}</span><span>Landing</span>
       </div>
       <div class="modal-btns" style="margin-top:12px">
         <span class="spacer"></span>
@@ -553,6 +560,30 @@ function showArcDetail(e, id) {
       </div>
     </div>
   </div>`;
+
+  if (useMsApi && arcView === 'RHBH') loadMsPic(d, 220);
+}
+
+async function loadMsPic(d, width) {
+  try {
+    const r = await fetch(`/api/ms_pic?mfr=${encodeURIComponent(d.mfr||'')}&mold=${encodeURIComponent(d.mold||'')}`);
+    if (!r.ok) return;
+    const { pic } = await r.json();
+    if (!pic) return;
+    const slot = document.getElementById('arcDetailSlot');
+    if (!slot) return; // modal closed before fetch resolved
+    const img = new Image();
+    img.onload = () => {
+      slot.innerHTML = `<img src="${pic}" style="width:100%;border-radius:10px;border:1px solid var(--border)" alt="Marshall Street reference flight path">
+        <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:3px;opacity:0.6">Marshall Street reference — RHBH, full power, calm</div>`;
+      const label = document.getElementById('arcDetailLabel');
+      if (label) label.textContent = 'RHBH';
+    };
+    img.onerror = () => {}; // image failed to load — computed arc stays as-is
+    img.src = pic;
+  } catch (e) {
+    // network error — computed arc stays as-is
+  }
 }
 
 function renderFieldView(rows) {
@@ -1223,6 +1254,8 @@ function saveArcView(v) {
   }).catch(() => {});
 }
 
+document.getElementById('arcViewSelect').value = arcView;
+document.getElementById('msApiToggle').checked = useMsApi;
 load();
 </script>
 </body>

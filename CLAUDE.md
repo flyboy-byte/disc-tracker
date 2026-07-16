@@ -57,7 +57,7 @@ Pushes to GitHub, SSHs to `ubuntu@51.81.80.126`, pulls, syntax-checks, restarts 
 
 - **Backend:** Flask, Python 3, SQLite (`data/disc_tracker.db`)
 - **Frontend:** vanilla JS, no build step, no framework
-- **No external APIs**, no analytics, no auth
+- **One optional external API** — Marshall Street reference images via `discit-api.fly.dev` (see below); no analytics, no auth
 - **CSRF protection** on all POST routes via session token
 - The server runs on port 5757
 
@@ -68,6 +68,8 @@ Pushes to GitHub, SSHs to `ubuntu@51.81.80.126`, pulls, syntax-checks, restarts 
 | `/` | GET | main bag view |
 | `/api/data` | GET | export full user data as JSON |
 | `/api/data` | POST | import/replace full user data from JSON |
+| `/api/arcview` | POST | persist arc-view orientation preference |
+| `/api/ms_pic` | GET | look up cached Marshall Street reference image URL for a disc |
 | `/pick` | GET/POST | user switcher |
 | `/flightshape` | GET | flight shape tool |
 | `/discsuggestion` | GET | disc suggest tool |
@@ -75,10 +77,19 @@ Pushes to GitHub, SSHs to `ubuntu@51.81.80.126`, pulls, syntax-checks, restarts 
 ### SQLite schema
 
 ```sql
-users      (id, username)
-discs      (id, user_id, disc_id, mfr, mold, plastic, weight, speed, glide, turn, fade, use_desc, thr, notes, color, sort_order)
-user_meta  (user_id, next_id, sort_mode, arc_view)
+users         (id, username)
+discs         (id, user_id, disc_id, mfr, mold, plastic, weight, speed, glide, turn, fade, use_desc, thr, notes, color, sort_order)
+user_meta     (user_id, next_id, sort_mode, arc_view)
+ms_pic_cache  (lookup_key, pic)   -- cached DiscIt API lookups, keyed by "mfr|mold" lowercase
 ```
+
+### Marshall Street reference images (DiscIt API)
+
+- Live, on by default. Frontend calls `GET /api/ms_pic?mfr=&mold=`; server queries `discit-api.fly.dev`, matches by brand+name, and caches the result (including "not found") in `ms_pic_cache` so each disc is only looked up once.
+- Shown in two places, both **RHBH-only** (that's all the API provides) and both fail silently to the existing computed arc on any error, timeout, or missing match — the app never blocks on this API:
+  - Bag view disc detail modal (`showArcDetail` in `index.html`) — shown whenever available.
+  - Flight Shaper (`flightshape.html`) — shown only when sliders are at neutral defaults (hyzer/nose/wind = 0, arm/spin = 100%), since the MS image is a fixed full-power/calm-wind reference and can't reflect adjusted throw conditions. Moving any slider reverts to the computed arc.
+- User toggle "MS reference" (checkbox next to the arc-view selector in both views) persisted to `localStorage.useMsApi`, default on. When off, no request is made to the API at all.
 
 ---
 

@@ -368,21 +368,31 @@
     <!-- RIGHT: arc preview -->
     <div class="fs-right">
       <div class="tool-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;flex-wrap:wrap">
           <div class="section-label" style="margin-bottom:0">Flight shape</div>
-          <select id="arcViewSelect" onchange="arcView=this.value;localStorage.setItem('arcView',arcView);updateArc();document.getElementById('arcViewLabel').textContent=arcView;saveArcView(arcView);updateAngleRef()"
-                  style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
-            <option value="RHBH">RHBH</option>
-            <option value="RHFH">RHFH</option>
-            <option value="LHBH">LHBH</option>
-            <option value="LHFH">LHFH</option>
-          </select>
+          <div style="display:flex;align-items:center;gap:8px">
+            <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer;user-select:none">
+              <input type="checkbox" id="msApiToggle" onchange="localStorage.setItem('useMsApi', this.checked ? '1' : '0');updateArc()" style="cursor:pointer">
+              MS reference
+            </label>
+            <select id="arcViewSelect" onchange="arcView=this.value;localStorage.setItem('arcView',arcView);updateArc();document.getElementById('arcViewLabel').textContent=arcView;saveArcView(arcView);updateAngleRef()"
+                    style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
+              <option value="RHBH">RHBH</option>
+              <option value="RHFH">RHFH</option>
+              <option value="LHBH">LHBH</option>
+              <option value="LHFH">LHFH</option>
+            </select>
+          </div>
         </div>
         <div class="arc-preview">
-          <svg id="arcSVG" viewBox="0 0 280 420" class="arc-svg">
-            <text x="140" y="215" fill="rgba(255,255,255,0.2)" font-size="12"
-                  text-anchor="middle" font-family="system-ui,sans-serif">Select a disc above</text>
-          </svg>
+          <div id="arcSlot" style="width:100%">
+            <svg id="arcSVG" viewBox="0 0 280 420" class="arc-svg">
+              <text x="140" y="215" fill="rgba(255,255,255,0.2)" font-size="12"
+                    text-anchor="middle" font-family="system-ui,sans-serif">Select a disc above</text>
+            </svg>
+            <img id="msPicImg" style="display:none;width:100%;border-radius:12px;border:1px solid var(--border)" alt="Marshall Street reference flight path">
+          </div>
+          <div id="msPicNote" style="display:none;font-size:9px;color:var(--muted);text-align:center;margin-top:3px;opacity:0.6">Marshall Street reference — RHBH, full power, calm</div>
           <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);width:100%;padding:0 4px">
             <span>Tee</span><span id="arcViewLabel">RHBH</span><span>Landing</span>
           </div>
@@ -443,6 +453,7 @@ const MOD = {
 
 // ── Shared utilities (from index.html) ────────────────────────────────────────
 let arcView = localStorage.getItem('arcView') || 'RHBH';
+let useMsApi = localStorage.getItem('useMsApi') !== '0';
 
 function stab(d) {
   const net = (d.turn ?? 0) + (d.fade ?? 0);
@@ -694,12 +705,47 @@ function estimateDist(base, armSpeed, wind, glide, nose, hyzer) {
   return Math.round(baseFt * powerFactor * glideFactor * windFactor * noseFactor * hyzerFactor / 10) * 10;
 }
 
+// ── Marshall Street reference image ─────────────────────────────────────────
+let _msPicReqId = 0;
+function updateMsPic(sliders) {
+  const img = document.getElementById('msPicImg');
+  const svg = document.getElementById('arcSVG');
+  const note = document.getElementById('msPicNote');
+  const isNeutral = sliders.hyzer === 0 && sliders.nose === 0 && sliders.wind === 0
+                    && sliders.armSpeed === 100 && sliders.spin === 100;
+  const eligible = useMsApi && isNeutral && arcView === 'RHBH' && baseDisc && baseDisc.mold;
+  if (!eligible) {
+    img.style.display = 'none';
+    svg.style.display = '';
+    note.style.display = 'none';
+    return;
+  }
+  const reqId = ++_msPicReqId;
+  fetch(`/api/ms_pic?mfr=${encodeURIComponent(baseDisc.mfr||'')}&mold=${encodeURIComponent(baseDisc.mold||'')}`)
+    .then(r => r.ok ? r.json() : { pic: null })
+    .then(({ pic }) => {
+      if (reqId !== _msPicReqId || !pic) return; // stale request or no match — leave computed arc showing
+      const test = new Image();
+      test.onload = () => {
+        if (reqId !== _msPicReqId) return; // slider moved away from neutral while loading
+        img.src = pic;
+        img.style.display = '';
+        svg.style.display = 'none';
+        note.style.display = '';
+      };
+      test.onerror = () => {}; // image failed — computed arc stays as-is
+      test.src = pic;
+    })
+    .catch(() => {}); // network error — computed arc stays as-is
+}
+
 // ── Update cycle ─────────────────────────────────────────────────────────────
 function updateArc() {
   if (!baseDisc) return;
   const sliders = getSliderValues();
   const adj = applyModifiers(baseDisc, sliders);
   drawArc(adj, sliders);
+  updateMsPic(sliders);
 
   const sm = STAB_META[stab(adj)];
   document.getElementById('adj-badge').textContent = sm.short;
@@ -843,6 +889,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Apply localStorage arcView immediately so the select isn't wrong while server loads
   document.getElementById('arcViewSelect').value = arcView;
   document.getElementById('arcViewLabel').textContent = arcView;
+  document.getElementById('msApiToggle').checked = useMsApi;
   onSlider();
   loadBag();
 });

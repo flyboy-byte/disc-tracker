@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
+import json
 import os
 import re
 import secrets
 import sqlite3
+import urllib.parse
+import urllib.request
 from functools import wraps
 from flask import Flask, jsonify, request, render_template, session, redirect, url_for, abort
 
@@ -60,6 +63,10 @@ def init_db():
                 user_id   INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
                 next_id   INTEGER DEFAULT 100,
                 sort_mode TEXT DEFAULT 'speed-desc'
+            );
+            CREATE TABLE IF NOT EXISTS ms_pic_cache (
+                lookup_key TEXT PRIMARY KEY,
+                pic        TEXT NOT NULL DEFAULT ''
             );
         ''')
         # Migrations for columns added after initial deploy
@@ -280,6 +287,62 @@ def set_arcview():
             (session['user_id'], view)
         )
     return jsonify({'ok': True})
+
+
+# ── Marshall Street reference images (DiscIt API) ──────────────────────────────
+# Optional, read-only, best-effort. Never let a failure here affect the rest of
+# the app — any error just means no reference image is shown.
+
+MS_API_BASE = 'https://discit-api.fly.dev/disc'
+
+def _ms_lookup_key(mfr, mold):
+    return f"{mfr.strip().lower()}|{mold.strip().lower()}"
+
+def fetch_ms_pic(mfr, mold):
+    mfr, mold = (mfr or '').strip(), (mold or '').strip()
+    if not mold:
+        return None
+    key = _ms_lookup_key(mfr, mold)
+    with get_db() as db:
+        row = db.execute(
+            'SELECT pic FROM ms_pic_cache WHERE lookup_key = ?', (key,)
+        ).fetchone()
+        if row is not None:
+            return row['pic'] or None
+
+    pic = ''
+    try:
+        url = MS_API_BASE + '?' + urllib.parse.urlencode({'name': mold})
+        with urllib.request.urlopen(url, timeout=4) as resp:
+            results = json.loads(resp.read().decode('utf-8'))
+        for r in results:
+            if str(r.get('name', '')).strip().lower() != mold.lower():
+                continue
+            brand = str(r.get('brand', '')).strip().lower()
+            if mfr and mfr.lower() not in brand and brand not in mfr.lower():
+                continue
+            if r.get('pic'):
+                pic = r['pic']
+                break
+    except Exception:
+        pic = ''
+
+    with get_db() as db:
+        db.execute(
+            'INSERT INTO ms_pic_cache (lookup_key, pic) VALUES (?, ?) '
+            'ON CONFLICT(lookup_key) DO UPDATE SET pic = excluded.pic',
+            (key, pic)
+        )
+    return pic or None
+
+
+@app.route('/api/ms_pic', methods=['GET'])
+@login_required
+def get_ms_pic():
+    mfr  = request.args.get('mfr', '')
+    mold = request.args.get('mold', '')
+    pic = fetch_ms_pic(mfr, mold)
+    return jsonify({'pic': pic})
 
 
 # ── Master disc library ───────────────────────────────────────────────────────
