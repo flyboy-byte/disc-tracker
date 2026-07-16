@@ -19,7 +19,7 @@ echo "--- syntax check ---"
 python3 -m py_compile app.py && echo "app.py OK"
 
 echo "--- git push ---"
-git push origin master
+git push origin main
 
 # ── remote deploy ─────────────────────────────────────────────────────────────
 echo ""
