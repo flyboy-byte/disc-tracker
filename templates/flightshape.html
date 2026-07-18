@@ -277,6 +277,16 @@
             <span class="slider-unit">mph</span>
           </div>
 
+          <div class="slider-col" id="crosswind-col" style="display:none">
+            <span class="slider-label">Crosswind</span>
+            <span class="slider-value" id="val-crosswind" style="color:var(--muted)">calm</span>
+            <div class="slider-track">
+              <span class="slider-tick"></span>
+              <input class="v-slider" id="sl-crosswind" type="range" min="-20" max="20" value="0" step="1" oninput="onSlider()">
+            </div>
+            <span class="slider-unit">mph, physics sim only</span>
+          </div>
+
           <div class="slider-col">
             <span class="slider-label">Arm</span>
             <span class="slider-value" id="val-arm" style="color:var(--muted)">100%</span>
@@ -381,15 +391,18 @@
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
           <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer;user-select:none">
-            <input type="checkbox" id="physicsSimToggle" onchange="physicsSimOn=this.checked;document.getElementById('archetypeSelect').style.display=physicsSimOn?'':'none';updateArc()" style="cursor:pointer">
+            <input type="checkbox" id="physicsSimToggle" onchange="onPhysicsSimToggle()" style="cursor:pointer">
             Physics sim (research)
           </label>
-          <select id="archetypeSelect" onchange="simArchetype=this.value;updateArc()" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
+          <select id="archetypeSelect" onchange="simArchetypeManual=true;simArchetype=this.value;updateArc()" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
             <option value="fd2">Fairway driver</option>
             <option value="cd1">Control driver A</option>
             <option value="cd5">Control driver B</option>
             <option value="dd2" selected>Distance driver</option>
           </select>
+        </div>
+        <div id="sim-caveat" style="display:none;font-size:11px;color:#fbbf24;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:8px;padding:6px 10px;margin-bottom:12px">
+          No putter/midrange aero data exists upstream — this extrapolates from driver-class coefficients and will be much less accurate.
         </div>
         <div class="arc-preview">
           <svg id="arcSVG" viewBox="0 0 280 420" class="arc-svg">
@@ -451,32 +464,54 @@ let bagDiscs = [];
 let mode = 'bag';
 let physicsSimOn = false;
 let simArchetype = 'dd2';
+let simArchetypeManual = false;  // true once the user has manually picked from the dropdown
 let simRequestId = 0;
+
+// Server-authored, single source of truth — see app.py's ARCHETYPE_PROFILE comment for how
+// these characterization numbers were empirically derived from shotshaper's own unmodified code.
+const ARCHETYPE_PROFILE = {{ archetype_profile | tojson }};
+
+// Picks the vendored archetype whose characterized behavior best matches a real disc's
+// recorded PDGA numbers. Never touches vendor/shotshaper/ — just chooses among its 4
+// pre-built discs. See app.py ARCHETYPE_PROFILE for the empirical basis of each branch.
+function pickArchetype(d) {
+  const speed = d.speed ?? 7;
+  const net = (d.turn ?? 0) + (d.fade ?? 2);
+  if (speed < 9) return 'fd2';                 // fairway-and-below: shortest, most turn-prone archetype
+  if (net <= -1) return 'cd1';                  // understable driver — never fades back in characterization
+  if (speed >= 12) return 'dd2';                // fast + stable/overstable — longest, full S-curve
+  return 'cd5';                                 // control driver, overstable — partial fade-back
+}
 
 // ── Slider helpers ────────────────────────────────────────────────────────────
 function getSliderValues() {
   return {
-    hyzer:    parseInt(document.getElementById('sl-hyzer').value),
-    nose:     parseInt(document.getElementById('sl-nose').value),
-    wind:     parseInt(document.getElementById('sl-wind').value),
-    armSpeed: parseInt(document.getElementById('sl-arm').value),
-    spin:     parseInt(document.getElementById('sl-spin').value),
+    hyzer:     parseInt(document.getElementById('sl-hyzer').value),
+    nose:      parseInt(document.getElementById('sl-nose').value),
+    wind:      parseInt(document.getElementById('sl-wind').value),
+    crosswind: parseInt(document.getElementById('sl-crosswind').value),
+    armSpeed:  parseInt(document.getElementById('sl-arm').value),
+    spin:      parseInt(document.getElementById('sl-spin').value),
   };
 }
 
-const SLIDER_DEFAULTS = { 'val-hyzer':0, 'val-nose':0, 'val-wind':0, 'val-arm':100, 'val-spin':100 };
+const SLIDER_DEFAULTS = { 'val-hyzer':0, 'val-nose':0, 'val-wind':0, 'val-crosswind':0, 'val-arm':100, 'val-spin':100 };
 
 function sliderLabel(id, v) {
   if (id === 'val-wind') {
     if (v === 0) return 'calm';
     return v > 0 ? '+' + v + ' H' : Math.abs(v) + ' T';
   }
+  if (id === 'val-crosswind') {
+    if (v === 0) return 'calm';
+    return v > 0 ? '+' + v + ' R' : Math.abs(v) + ' L';
+  }
   if (id === 'val-arm' || id === 'val-spin') return v + '%';
   return (v > 0 ? '+' : '') + v + '°';
 }
 
 function onSlider() {
-  [['sl-hyzer','val-hyzer'],['sl-nose','val-nose'],['sl-wind','val-wind'],
+  [['sl-hyzer','val-hyzer'],['sl-nose','val-nose'],['sl-wind','val-wind'],['sl-crosswind','val-crosswind'],
    ['sl-arm','val-arm'],['sl-spin','val-spin']].forEach(([slId, valId]) => {
     const v = parseInt(document.getElementById(slId).value);
     const el = document.getElementById(valId);
@@ -551,6 +586,7 @@ function resetSliders() {
   document.getElementById('sl-hyzer').value = 0;
   document.getElementById('sl-nose').value  = 0;
   document.getElementById('sl-wind').value  = 0;
+  document.getElementById('sl-crosswind').value = 0;
   document.getElementById('sl-arm').value   = 100;
   document.getElementById('sl-spin').value  = 100;
   onSlider();
@@ -617,8 +653,8 @@ async function drawSimArc(sliders) {
       body: JSON.stringify({
         archetype: simArchetype,
         pdgaSpeed: baseDisc.speed,
-        hyzer: sliders.hyzer, nose: sliders.nose, wind: sliders.wind,
-        armSpeed: sliders.armSpeed, spin: sliders.spin, arcView,
+        hyzer: sliders.hyzer, nose: sliders.nose, wind: sliders.wind, crosswind: sliders.crosswind,
+        armSpeed: sliders.armSpeed, spin: sliders.spin, arcView, weightG: baseDisc.weightG,
       }),
     });
     if (myId !== simRequestId) return; // superseded by a newer request
@@ -679,14 +715,27 @@ function estimateDist(base, armSpeed, wind, glide, nose, hyzer) {
   return Math.round(baseFt * powerFactor * glideFactor * windFactor * noseFactor * hyzerFactor / 10) * 10;
 }
 
+function onPhysicsSimToggle() {
+  physicsSimOn = document.getElementById('physicsSimToggle').checked;
+  document.getElementById('archetypeSelect').style.display = physicsSimOn ? '' : 'none';
+  document.getElementById('crosswind-col').style.display = physicsSimOn ? '' : 'none';
+  updateArc();
+}
+
 // ── Update cycle ─────────────────────────────────────────────────────────────
 function updateArc() {
   if (!baseDisc) return;
   const sliders = getSliderValues();
   const adj = applyModifiers(baseDisc, sliders);
   if (physicsSimOn) {
+    if (!simArchetypeManual) {
+      simArchetype = pickArchetype(baseDisc);
+      document.getElementById('archetypeSelect').value = simArchetype;
+    }
+    document.getElementById('sim-caveat').style.display = (baseDisc.speed ?? 7) <= 8 ? '' : 'none';
     drawSimArc(sliders);
   } else {
+    document.getElementById('sim-caveat').style.display = 'none';
     drawArc(adj, sliders);
   }
 
@@ -712,9 +761,14 @@ function updateArc() {
 }
 
 // ── Disc selection ────────────────────────────────────────────────────────────
+function parseWeightG(w) {
+  const n = parseFloat(w);
+  return Number.isFinite(n) ? n : null;
+}
+
 function setBaseDisc(d) {
   baseDisc = { speed: +d.speed, glide: +d.glide, turn: +d.turn, fade: +d.fade,
-               mold: d.mold || '', mfr: d.mfr || '' };
+               mold: d.mold || '', mfr: d.mfr || '', weightG: parseWeightG(d.weight) };
   const el = document.getElementById('selected-disc');
   el.style.display = 'flex';
   el.innerHTML = d.mold
@@ -732,6 +786,7 @@ function selectBagDisc(id) {
   document.querySelectorAll('#bag-list .lib-item').forEach(el => {
     el.classList.toggle('selected', parseInt(el.dataset.id) === id);
   });
+  simArchetypeManual = false;  // a newly selected disc re-engages archetype auto-pick
   setBaseDisc(d);
 }
 

@@ -195,7 +195,8 @@ def flightshape():
     if not row:
         session.clear()
         return redirect(url_for('pick'))
-    return render_template('flightshape.html', username=row['username'], csrf_token=get_csrf_token())
+    return render_template('flightshape.html', username=row['username'], csrf_token=get_csrf_token(),
+                            archetype_profile=ARCHETYPE_PROFILE)
 
 
 @app.route('/api/data', methods=['GET'])
@@ -368,14 +369,15 @@ def get_ms_pic_img():
 
 # ── shotshaper physics simulation (Flight Shaper "Physics sim" mode) ───────────
 # Vendored rigid-body disc flight simulator (vendor/shotshaper/, GPLv3, see NOTICE.md there).
-# Only 3 archetypes have wind-tunnel/CFD aero coefficients upstream — no putter or midrange —
-# so this only covers driver-class discs. Everything here is research/experimental: launch
-# speed and spin are approximated from the PDGA speed number, not measured.
+# Only 4 archetypes have wind-tunnel/CFD aero coefficients upstream — no putter or midrange —
+# so a slow disc still runs against the nearest driver archetype (see ARCHETYPE_PROFILE)
+# as an extrapolation, not a real model of putter/midrange flight. Everything here is
+# research/experimental: launch speed and spin are approximated from the PDGA speed number,
+# not measured. Mass and wind (including crosswind) use real inputs to the same vendored API.
 
 import threading as _threading
 
 _shotshaper_lock = _threading.Lock()
-_shotshaper_discs = {}
 
 SHOTSHAPER_ARCHETYPES = {
     'fd2': 'Fairway driver',
@@ -384,11 +386,27 @@ SHOTSHAPER_ARCHETYPES = {
     'dd2': 'Distance driver',
 }
 
-def _get_shotshaper_disc(name):
-    if name not in _shotshaper_discs:
-        from vendor.shotshaper.projectile import DiscGolfDisc
-        _shotshaper_discs[name] = DiscGolfDisc(name)
-    return _shotshaper_discs[name]
+# Empirical characterization, not invented data: each archetype was run once through
+# shotshaper's own unmodified DiscGolfDisc.shoot(), using the exact throw parameters from
+# upstream's own examples/disc_golf_throw.py (speed=24.2, omega=116.8, pitch=15.5, roll=14.7).
+# Reproduce with the throwaway script referenced in the git history for this block if these
+# numbers ever need re-deriving. Results (distance, final lateral drift):
+#   cd1: 61.5m, +25.6m drift (drifts one way the whole flight, never fades back)
+#   fd2: 65.8m, +29.4m drift (same shape as cd1, shortest distance)
+#   cd5: 83.0m, -6.5m drift  (turns to -12m then fades back partway — mild S-curve)
+#   dd2: 81.9m, +4.1m drift  (turns to -6.3m then fades all the way past center — full S-curve)
+# This is used only to pick which of the 4 pre-built vendored discs best matches a real disc's
+# recorded flight numbers — it never changes any coefficient inside vendor/shotshaper/.
+ARCHETYPE_PROFILE = {
+    'cd1': {'label': 'Control driver A', 'speed_class': 'control',  'tendency': 'understable',
+            'char_dist_m': 61.5, 'char_drift_m': 25.6},
+    'fd2': {'label': 'Fairway driver',   'speed_class': 'fairway',  'tendency': 'understable',
+            'char_dist_m': 65.8, 'char_drift_m': 29.4},
+    'cd5': {'label': 'Control driver B', 'speed_class': 'control',  'tendency': 'overstable',
+            'char_dist_m': 83.0, 'char_drift_m': -6.5},
+    'dd2': {'label': 'Distance driver',  'speed_class': 'distance', 'tendency': 'overstable',
+            'char_dist_m': 81.9, 'char_drift_m': 4.1},
+}
 
 
 @app.route('/api/shotshaper_sim', methods=['POST'])
@@ -398,6 +416,7 @@ def shotshaper_sim():
     try:
         import numpy as np
         from vendor.shotshaper import environment
+        from vendor.shotshaper.projectile import DiscGolfDisc
     except ImportError:
         return jsonify({'error': 'physics sim dependencies not installed'}), 501
 
@@ -410,9 +429,11 @@ def shotshaper_sim():
     hyzer      = float(data.get('hyzer', 0))
     nose       = float(data.get('nose', 0))
     wind       = float(data.get('wind', 0))
+    crosswind  = float(data.get('crosswind', 0))
     arm_speed  = float(data.get('armSpeed', 100))
     spin_pct   = float(data.get('spin', 100))
     arc_view   = data.get('arcView', 'RHBH')
+    weight_g   = data.get('weightG')
 
     mirror = -1 if arc_view in ('RHFH', 'LHBH') else 1
 
@@ -420,14 +441,27 @@ def shotshaper_sim():
     base_launch_speed = 6.0 + pdga_speed * 1.3
     U = max(4.0, base_launch_speed * (arm_speed / 100.0))
 
+    # Real recorded disc weight as sim mass, same input upstream's own disc_gui2d.py exposes
+    # via a slider (range 0.140-0.200 kg is that slider's own validated range).
+    try:
+        mass_kg = float(weight_g) / 1000.0
+    except (TypeError, ValueError):
+        mass_kg = 0.175
+    mass_kg = max(0.140, min(0.200, mass_kg))
+
     with _shotshaper_lock:
-        disc = _get_shotshaper_disc(archetype)
+        disc = DiscGolfDisc(archetype, mass=mass_kg)
         omega = max(disc.empirical_spin(U) * (spin_pct / 100.0), 1.0)
 
         # environment module state is process-global; guarded by _shotshaper_lock since the
         # dev server is single-threaded anyway, but this keeps it correct if that ever changes.
-        environment.Uref = abs(wind) * 0.45  # slider units -> m/s, arbitrary scale
-        environment.winddir = np.array((1.0 if wind <= 0 else -1.0, 0.0, 0.0))
+        # headwind (wind>0) opposes +x travel, tailwind (wind<0) aids it; crosswind is the
+        # y-component of the same 3-axis winddir vector environment.py already exposes.
+        vx = abs(wind) * 0.45 * (1.0 if wind <= 0 else -1.0)
+        vy = abs(crosswind) * 0.45 * mirror * (1.0 if crosswind >= 0 else -1.0)
+        environment.Uref = (vx ** 2 + vy ** 2) ** 0.5
+        norm = environment.Uref or 1.0
+        environment.winddir = np.array((vx / norm, vy / norm, 0.0))
 
         try:
             shot = disc.shoot(
