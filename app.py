@@ -366,6 +366,85 @@ def get_ms_pic_img():
     return response
 
 
+# ── shotshaper physics simulation (Flight Shaper "Physics sim" mode) ───────────
+# Vendored rigid-body disc flight simulator (vendor/shotshaper/, GPLv3, see NOTICE.md there).
+# Only 3 archetypes have wind-tunnel/CFD aero coefficients upstream — no putter or midrange —
+# so this only covers driver-class discs. Everything here is research/experimental: launch
+# speed and spin are approximated from the PDGA speed number, not measured.
+
+import threading as _threading
+
+_shotshaper_lock = _threading.Lock()
+_shotshaper_discs = {}
+
+SHOTSHAPER_ARCHETYPES = {
+    'fd2': 'Fairway driver',
+    'cd1': 'Control driver A',
+    'cd5': 'Control driver B',
+    'dd2': 'Distance driver',
+}
+
+def _get_shotshaper_disc(name):
+    if name not in _shotshaper_discs:
+        from vendor.shotshaper.projectile import DiscGolfDisc
+        _shotshaper_discs[name] = DiscGolfDisc(name)
+    return _shotshaper_discs[name]
+
+
+@app.route('/api/shotshaper_sim', methods=['POST'])
+@login_required
+def shotshaper_sim():
+    check_csrf()
+    try:
+        import numpy as np
+        from vendor.shotshaper import environment
+    except ImportError:
+        return jsonify({'error': 'physics sim dependencies not installed'}), 501
+
+    data = request.get_json(force=True) or {}
+    archetype = data.get('archetype', 'dd2')
+    if archetype not in SHOTSHAPER_ARCHETYPES:
+        return jsonify({'error': 'unknown archetype'}), 400
+
+    pdga_speed = float(data.get('pdgaSpeed', 9))
+    hyzer      = float(data.get('hyzer', 0))
+    nose       = float(data.get('nose', 0))
+    wind       = float(data.get('wind', 0))
+    arm_speed  = float(data.get('armSpeed', 100))
+    spin_pct   = float(data.get('spin', 100))
+    arc_view   = data.get('arcView', 'RHBH')
+
+    mirror = -1 if arc_view in ('RHFH', 'LHBH') else 1
+
+    # Calibrated to shotshaper's own dd2 example: PDGA speed ~12 -> ~24.2 m/s launch speed.
+    base_launch_speed = 6.0 + pdga_speed * 1.3
+    U = max(4.0, base_launch_speed * (arm_speed / 100.0))
+
+    with _shotshaper_lock:
+        disc = _get_shotshaper_disc(archetype)
+        omega = max(disc.empirical_spin(U) * (spin_pct / 100.0), 1.0)
+
+        # environment module state is process-global; guarded by _shotshaper_lock since the
+        # dev server is single-threaded anyway, but this keeps it correct if that ever changes.
+        environment.Uref = abs(wind) * 0.45  # slider units -> m/s, arbitrary scale
+        environment.winddir = np.array((1.0 if wind <= 0 else -1.0, 0.0, 0.0))
+
+        try:
+            shot = disc.shoot(
+                speed=U, omega=omega, pitch=15.0,
+                position=np.array((0.0, 0.0, 1.3)),
+                nose_angle=nose, roll_angle=mirror * hyzer,
+            )
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+        finally:
+            environment.Uref = 0.0
+
+    x, y, z = shot.position
+    points = [[round(float(px), 2), round(float(py), 2)] for px, py in zip(x, y)]
+    return jsonify({'points': points, 'archetype': archetype})
+
+
 # ── Master disc library ───────────────────────────────────────────────────────
 
 _master_cache = None

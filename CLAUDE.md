@@ -21,7 +21,8 @@ disc_tracker/
 │   ├── discsuggestion.html   ← disc suggest tool
 │   └── pick.html             ← user picker
 ├── static/
-│   └── discs_master.json     ← 1,660+ disc library (bundled in app too)
+│   ├── discs_master.json     ← 1,660+ disc library (bundled in app too)
+│   └── physics.js            ← shared flight-arc math (bag view + Flight Shaper); pure functions, no DOM — extraction point for legacyPhysics.ts
 ├── data/                     ← SQLite DB + secret key (gitignored)
 ├── disc_tracker.service      ← systemd unit file
 ├── deploy.sh                 ← push to VPS and restart service
@@ -39,6 +40,12 @@ python3 -m venv venv && source venv/bin/activate
 pip install flask
 python app.py
 # → http://localhost:5757
+```
+
+Flight-arc physics regression tests (no build step, plain Node):
+
+```bash
+node static/physics.test.js
 ```
 
 ---
@@ -70,6 +77,7 @@ Pushes to GitHub, SSHs to `ubuntu@51.81.80.126`, pulls, syntax-checks, restarts 
 | `/api/data` | POST | import/replace full user data from JSON |
 | `/api/arcview` | POST | persist arc-view orientation preference |
 | `/api/ms_pic` | GET | look up cached Marshall Street reference image URL for a disc |
+| `/api/shotshaper_sim` | POST | run vendored shotshaper rigid-body simulation, return trajectory points |
 | `/pick` | GET/POST | user switcher |
 | `/flightshape` | GET | flight shape tool |
 | `/discsuggestion` | GET | disc suggest tool |
@@ -89,6 +97,13 @@ ms_pic_cache  (lookup_key, pic)   -- cached DiscIt API lookups, keyed by "mfr|mo
 - Shown only in the bag view disc detail modal (`showArcDetail` in `index.html`) — **RHBH-only** (that's all the API provides), falls back silently to the computed arc on any error, timeout, missing match, or when arc view isn't RHBH.
 - Deliberately **not** in Flight Shaper — that tool's whole purpose is interactively adjusting the arc via sliders, so a static reference image (even at neutral slider defaults) fights the tool's purpose rather than serving it.
 - User toggle "MS reference" (checkbox next to the arc-view selector) persisted to `localStorage.useMsApi`, default on. When off, no request is made to the API at all.
+
+### Physics simulation (Flight Shaper "Physics sim" mode)
+
+- Vendored copy of [shotshaper](https://github.com/kegiljarhus/shotshaper) (GPLv3) at `vendor/shotshaper/` — a real rigid-body disc flight simulator (NumPy/SciPy `solve_ivp`) using wind-tunnel/CFD-derived lift/drag/moment coefficients, backed by two papers in `app/references/`. See `vendor/shotshaper/NOTICE.md` for provenance and the one local modification (lazy matplotlib import).
+- **Off by default**, opt-in checkbox next to the arc-view selector in `flightshape.html` (`#physicsSimToggle`), with an archetype picker (`#archetypeSelect`) since only 3 driver-class archetypes exist upstream (`cd1`/`cd5` control drivers, `dd2` distance driver, `fd2` fairway driver) — **no putter or midrange data**.
+- Server-side only (`POST /api/shotshaper_sim` in `app.py`) — needs `numpy`, `scipy`, `pyyaml` (see `requirements.txt`). Launch speed and spin rate are approximated from the disc's PDGA speed number (calibrated against shotshaper's own validated example throw), not measured — this is a research/experimental mode, not a replacement for the legacy Bézier arc.
+- Renders actual simulated trajectory points (`renderSimPath` in `flightshape.html`) instead of the `arcPoints()` Bézier curve. Falls back to an inline error message on any failure; legacy mode is completely unaffected when the toggle is off.
 
 ---
 

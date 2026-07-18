@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flight Shaper — {{ username }}</title>
+<script src="/static/physics.js"></script>
 <style>
   :root {
     --bg: #0b0e1a;
@@ -378,6 +379,18 @@
             <option value="LHFH">LHFH</option>
           </select>
         </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer;user-select:none">
+            <input type="checkbox" id="physicsSimToggle" onchange="physicsSimOn=this.checked;document.getElementById('archetypeSelect').style.display=physicsSimOn?'':'none';updateArc()" style="cursor:pointer">
+            Physics sim (research)
+          </label>
+          <select id="archetypeSelect" onchange="simArchetype=this.value;updateArc()" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
+            <option value="fd2">Fairway driver</option>
+            <option value="cd1">Control driver A</option>
+            <option value="cd5">Control driver B</option>
+            <option value="dd2" selected>Distance driver</option>
+          </select>
+        </div>
         <div class="arc-preview">
           <svg id="arcSVG" viewBox="0 0 280 420" class="arc-svg">
             <text x="140" y="215" fill="rgba(255,255,255,0.2)" font-size="12"
@@ -422,80 +435,23 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Physics modifier constants ────────────────────────────────────────────────
-// Renderer uses standard flight-number sign convention:
-//   more negative turn  → arc turns right (understable) for RHBH
-//   higher positive fade → arc fades left  (overstable)  for RHBH
-// All modifiers are applied to turn/fade before passing to arcPoints().
-const MOD = {
-  hyzer_turn: +0.07,  // hyzer > 0: more positive turn → less understable (counters turn)
-  pitch_turn: -0.08,  // nose up > 0: more turn (higher AOA = more understable per gyroscopic precession; Kamaruddin/Potts)
-  wind_turn:  -0.08,  // headwind > 0: more negative turn → more understable (acts faster)
-  arm_turn:   +0.03,  // underArm > 0: more positive turn → less understable (can't reach speed)
-  spin_turn:  +0.008, // spinEffect: inverse formula amplifies low-spin more (p = M/IΩ → p doubles at 50% spin)
-
-  hyzer_fade: +0.06,  // hyzer > 0: more fade (disc finishes harder on hyzer)
-  pitch_fade: -0.03,  // nose up > 0: marginal fade reduction (disc flying more understable overall)
-  wind_fade:  +0.02,  // headwind > 0: slight fade increase (drag slows disc into fade sooner)
-  arm_fade:   +0.03,  // underArm > 0: more fade (underpowered disc fades earlier)
-  spin_fade:  -0.008, // spinEffect: inverse formula — less spin → slightly more fade
-};
+const CSRF_TOKEN = {{ csrf_token | tojson }};
 
 // ── Shared utilities (from index.html) ────────────────────────────────────────
 let arcView = localStorage.getItem('arcView') || 'RHBH';
-
-function stab(d) {
-  const net = (d.turn ?? 0) + (d.fade ?? 0);
-  if (net >= 1)  return 'overstable';
-  if (net <= -1) return 'understable';
-  return 'stable';
-}
-
-const STAB_META = {
-  overstable:  { short:'OS', cls:'stab-os', color:'#915EFF' },
-  stable:      { short:'ST', cls:'stab-st', color:'#4ade80' },
-  understable: { short:'US', cls:'stab-us', color:'#fbbf24' },
-};
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c =>
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function arcPoints(d, W, H) {
-  const cx = W / 2;
-  const pad = W * 0.1;
-  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-  const f = v => +v.toFixed(1);
-  const thr = arcView.toUpperCase();
-  const m = (thr === 'RHFH' || thr === 'LHBH') ? -1 : 1;
-  const sx = cx, sy = f(H * 0.925), ey = f(H * 0.075);
-  const sc = W / 50;
-  const HR = sy - ey;
-  const turnAmt = -(d.turn ?? 0);
-  const fadeAmt = d.fade ?? 2;   // ?? not || : fade=0 is valid and must not fall back to 2
-  const glide = d.glide ?? 5;
-  const hyzerLaunch = (d.hyzerAngle || 0) * 0.09;
-  const endX = f(clamp(cx + m*(turnAmt - fadeAmt*1.25)*sc, pad, W-pad));  // 1.25: empirical — fade lands farther opposite than 1:1 weight
-  const apexFrac = Math.min(0.55, 0.30 + glide*0.025);
-  const my = f(sy - HR*apexFrac);
-  const effTurn = Math.max(turnAmt, 0);  // overstable discs (turnAmt<0) apex at center, not turn-side
-  const mx = f(clamp(cx + m*effTurn*sc*3.5, pad, W-pad));
-  // Hyzer shifts initial launch toward the fade side (less turn bow at start)
-  const q0x = f(clamp(cx + m*effTurn*sc*1.3 - m*hyzerLaunch*sc, pad, W-pad));
-  const q0y = f(sy - HR*0.12);
-  // Smooth G1 joint at apex: q2 lies on the same tangent line as the segment 1 approach
-  const k = Math.min(1.5, fadeAmt*0.3 + glide*0.05 + turnAmt*0.08);
-  const q2x = f(clamp(mx + k*(mx - q0x), pad, W-pad));
-  const q2y = f(Math.max(ey + HR*0.03, my + k*(my - q0y)));
-  const dx = endX-q2x, dy = ey-q2y, len = Math.sqrt(dx*dx+dy*dy)||1;
-  return { sx,sy,ey,endX,mx,my,q0x,q0y,q2x,q2y,nx:dx/len,ny:dy/len,cx };
-}
-
 // ── State ────────────────────────────────────────────────────────────────────
 let baseDisc = null;
 let bagDiscs = [];
 let mode = 'bag';
+let physicsSimOn = false;
+let simArchetype = 'dd2';
+let simRequestId = 0;
 
 // ── Slider helpers ────────────────────────────────────────────────────────────
 function getSliderValues() {
@@ -600,46 +556,13 @@ function resetSliders() {
   onSlider();
 }
 
-// ── Physics engine ────────────────────────────────────────────────────────────
-function clampN(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-
-function applyModifiers(base, { hyzer, nose, wind, armSpeed, spin }) {
-  // Underpowering a fast disc hurts far more than underpowering a putter
-  const speedNorm = Math.max(0.5, (base.speed ?? 7) / 9);
-  // 50-100 slider range caps max underArm naturally — no artificial cap needed
-  // Speed-14 at 50% arm: 50 * 1.56 = 78 → turn shift 2.3 (severe underpowering is severe)
-  const underArm = Math.max(0, 100 - armSpeed) * speedNorm;
-  // Inverse spin formula from p = M/(I*Ω): halving spin doubles precession rate
-  // At 100%: spinEffect=0  At 75%: −33  At 50%: −100 (vs linear: −50)
-  const spinEffect = -(100 / Math.max(spin, 1) - 1) * 100;
-  const rawTurn = base.turn
-    + MOD.hyzer_turn * hyzer
-    + MOD.pitch_turn * nose
-    + MOD.wind_turn  * wind
-    + MOD.arm_turn   * underArm
-    + MOD.spin_turn  * spinEffect;
-  const rawFade = base.fade
-    + MOD.hyzer_fade * hyzer
-    + MOD.pitch_fade * nose
-    + MOD.wind_fade  * wind
-    + MOD.arm_fade   * underArm
-    + MOD.spin_fade  * spinEffect;
-  return {
-    speed: base.speed,
-    glide: base.glide,
-    turn:  Math.round(clampN(rawTurn, -6, 3) * 10) / 10,
-    fade:  Math.round(clampN(rawFade,  0, 7) * 10) / 10,
-    hyzerAngle: hyzer,  // raw angle for launch-direction effect in arcPoints
-  };
-}
-
 // ── Arc renderer ─────────────────────────────────────────────────────────────
 const ARC_W = 280, ARC_H = 420;
 
 function drawArc(adj, sliders) {
   const svg = document.getElementById('arcSVG');
   const color = STAB_META[stab(adj)].color;
-  const p = arcPoints(adj, ARC_W, ARC_H);
+  const p = arcPoints(adj, ARC_W, ARC_H, arcView);
   const f = v => +v.toFixed(1);
   const aw = 9, pxv = -p.ny * aw, pyv = p.nx * aw;
   const g1y = f(p.ey + (p.sy - p.ey) * 0.33);
@@ -649,7 +572,7 @@ function drawArc(adj, sliders) {
                     && sliders.armSpeed === 100 && sliders.spin === 100;
   let ghost = '';
   if (!isNeutral && baseDisc) {
-    const pb = arcPoints(baseDisc, ARC_W, ARC_H);
+    const pb = arcPoints(baseDisc, ARC_W, ARC_H, arcView);
     const gaw = 7, gpx = -pb.ny * gaw, gpy = pb.nx * gaw;
     ghost = `
       <path d="M ${pb.sx},${pb.sy} Q ${pb.q0x},${pb.q0y} ${pb.mx},${pb.my}"
@@ -678,6 +601,68 @@ function drawArc(adj, sliders) {
               fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
 }
 
+// ── Physics sim renderer (shotshaper, server-side) ──────────────────────────────
+// Renders shotshaper's actual trajectory points instead of the legacy Bézier arc.
+// Only 3 driver-class archetypes exist upstream (no putter/midrange) — see
+// vendor/shotshaper/NOTICE.md. Launch speed/spin are approximated from the PDGA
+// speed number, not measured, so treat this as illustrative, not authoritative.
+async function drawSimArc(sliders) {
+  const svg = document.getElementById('arcSVG');
+  const myId = ++simRequestId;
+  svg.innerHTML = `<text x="140" y="215" fill="rgba(255,255,255,0.25)" font-size="11" text-anchor="middle" font-family="system-ui,sans-serif">Simulating…</text>`;
+  try {
+    const r = await fetch('/api/shotshaper_sim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
+      body: JSON.stringify({
+        archetype: simArchetype,
+        pdgaSpeed: baseDisc.speed,
+        hyzer: sliders.hyzer, nose: sliders.nose, wind: sliders.wind,
+        armSpeed: sliders.armSpeed, spin: sliders.spin, arcView,
+      }),
+    });
+    if (myId !== simRequestId) return; // superseded by a newer request
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    renderSimPath(data.points);
+  } catch (e) {
+    if (myId !== simRequestId) return;
+    svg.innerHTML = `<text x="140" y="215" fill="rgba(248,113,113,0.6)" font-size="11" text-anchor="middle" font-family="system-ui,sans-serif">Simulation failed — try Legacy mode</text>`;
+  }
+}
+
+function renderSimPath(points) {
+  const svg = document.getElementById('arcSVG');
+  if (!points || points.length < 2) {
+    svg.innerHTML = `<text x="140" y="215" fill="rgba(255,255,255,0.25)" font-size="11" text-anchor="middle" font-family="system-ui,sans-serif">No trajectory returned</text>`;
+    return;
+  }
+  const W = ARC_W, H = ARC_H;
+  const pad = W * 0.1;
+  const sy = H * 0.925, ey = H * 0.075;
+  const cx = W / 2;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const maxDist = Math.max(...points.map(p => p[0]));
+  const pxPerM = 5.5; // fixed meters -> px lateral scale
+
+  const svgPts = points.map(([x, y]) => [
+    clamp(cx + y * pxPerM, pad, W - pad),
+    sy - (maxDist > 0 ? x / maxDist : 0) * (sy - ey),
+  ]);
+  const d = 'M ' + svgPts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' L ');
+  const [sx0, sy0] = svgPts[0];
+  const [ex, eyp] = svgPts[svgPts.length - 1];
+
+  svg.innerHTML = `
+    <line x1="${cx}" y1="${(sy+6).toFixed(1)}" x2="${cx}" y2="${ey}" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="6 8"/>
+    <text x="${cx}" y="${(sy+20).toFixed(1)}" fill="rgba(255,255,255,0.2)" font-size="10" text-anchor="middle" font-family="system-ui,sans-serif">TEE</text>
+    <path d="${d}" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${sx0.toFixed(1)}" cy="${sy0.toFixed(1)}" r="6" fill="rgba(255,255,255,0.45)"/>
+    <circle cx="${ex.toFixed(1)}" cy="${eyp.toFixed(1)}" r="6" fill="#38bdf8"/>
+    <text x="${cx}" y="12" fill="rgba(56,189,248,0.7)" font-size="9" text-anchor="middle" font-family="system-ui,sans-serif">shotshaper sim — ${maxDist.toFixed(0)}m</text>`;
+}
+
 // ── Distance estimate ─────────────────────────────────────────────────────────
 // baseFt: speed rating to rough ft ceiling (speed 4→180, speed 9→305, speed 14→430)
 // glideFactor: CL/CD proxy — paper confirms glide is primary distance driver
@@ -699,7 +684,11 @@ function updateArc() {
   if (!baseDisc) return;
   const sliders = getSliderValues();
   const adj = applyModifiers(baseDisc, sliders);
-  drawArc(adj, sliders);
+  if (physicsSimOn) {
+    drawSimArc(sliders);
+  } else {
+    drawArc(adj, sliders);
+  }
 
   const sm = STAB_META[stab(adj)];
   document.getElementById('adj-badge').textContent = sm.short;
