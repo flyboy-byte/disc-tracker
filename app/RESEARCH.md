@@ -107,9 +107,9 @@ Keep the multi-user schema for compatibility. But in v1, hide it: auto-create a 
 
 ---
 
-## 3. FOSS & MIT Licensing
+## 3. FOSS & GPLv3 Licensing
 
-**License:** MIT — most permissive, Play/App Store compatible, F-Droid compatible, no copyleft.
+**License:** GPLv3 — copyleft: any fork or derivative must also be released under GPLv3, source included. Play Store doesn't care about license at all; F-Droid is fine with GPL (most F-Droid apps are GPL). Chosen deliberately over MIT to guarantee forks of this app stay open too — reinforces the "auditable, no hidden SDKs" privacy claim below — and to allow porting/deriving code from GPLv3 prior art like `shotshaper` (see `app/references/`).
 
 ### Distribution Targets
 
@@ -120,7 +120,7 @@ Both Disc Tracker and DragTree target the same two channels:
 | Google Play Console | DragTree: live (closed testing) | Standard EAS production AAB |
 | F-Droid | DragTree: in progress | Requires no proprietary deps; self-hosted repo via `fdroidserver` |
 
-**F-Droid compatibility is a hard requirement, not optional.** This shapes every dependency choice: if a package pulls in Google Mobile Services (GMS) or any proprietary SDK, it breaks F-Droid distribution. All planned packages are MIT and GMS-free — verify this stays true as packages are added.
+**F-Droid compatibility is a hard requirement, not optional.** This shapes every dependency choice: if a package pulls in Google Mobile Services (GMS) or any proprietary SDK, it breaks F-Droid distribution. All planned packages are permissively-licensed (GPL-compatible) and GMS-free — verify this stays true as packages are added.
 
 ### F-Droid Distribution
 
@@ -139,7 +139,7 @@ Each app needs `metadata/com.disctracker.app.yml` in your F-Droid repo:
 ```yaml
 Categories:
   - Sports
-License: MIT
+License: GPL-3.0-or-later
 SourceCode: https://github.com/flyboy-byte/disc-tracker
 IssueTracker: https://github.com/flyboy-byte/disc-tracker/issues
 
@@ -161,19 +161,19 @@ cd android && ./gradlew app:dependencies | grep -i 'gms\|firebase\|play-services
 
 All current planned packages pass this check. `react-native-quick-crypto` (v1.1) uses OpenSSL — fine.
 
-### What MIT Licensing Gives You
+### What GPLv3 Licensing Gives You
 
-Open source means anyone can read the code and verify there's no hidden tracking — that's a real and meaningful privacy claim. The baseline MIT license is enough to honestly say "open source, auditable code, no hidden SDKs." F-Droid reinforces this: users can install from a fully open channel with no Google account required.
+Open source means anyone can read the code and verify there's no hidden tracking — that's a real and meaningful privacy claim. GPLv3 goes further than a permissive license here: anyone who forks the app and redistributes a modified version is legally required to publish their changes too, so the "auditable, no hidden SDKs" claim holds for every downstream fork, not just this repo. F-Droid reinforces this: users can install from a fully open channel with no Google account required.
 
 ### Dependency License Audit
 
-Run before every EAS production build:
+Run before every EAS production build. This checks that dependencies are compatible with the project's GPLv3 license (permissive deps like MIT/BSD/Apache are fine to depend on — GPL only requires the combined work you distribute to be GPL, not that every dependency also be GPL):
 
 ```bash
-npx license-checker --onlyAllow 'MIT;BSD-2-Clause;BSD-3-Clause;Apache-2.0;ISC;0BSD'
+npx license-checker --onlyAllow 'MIT;BSD-2-Clause;BSD-3-Clause;Apache-2.0;ISC;0BSD;GPL-3.0;GPL-3.0-or-later;LGPL-3.0'
 ```
 
-All planned packages are MIT. Add this to CI so it can't silently break.
+All planned packages pass this check. Add this to CI so it can't silently break.
 
 ---
 
@@ -229,7 +229,7 @@ Form answer for v1.1: declare optional data transmission to user-provided server
 This is the hard part. Anyone can claim "your data goes to your own server." Here's how to make that claim credible:
 
 **What we have:**
-- MIT source code — anyone can read the sync function and verify it only calls the URL the user configured
+- GPLv3 source code — anyone can read the sync function and verify it only calls the URL the user configured, and any fork of this verification tooling must stay open too
 - No third-party SDK in the network path — standard `fetch()`, nothing else
 - Flask endpoint is also open source in the same repo — server side is auditable too
 - No device identifiers, no analytics, no fingerprinting in the sync payload
@@ -354,6 +354,23 @@ export function flightPointsToSvgPath(points: FlightPoint[]): string { ... }
 | Low spin | Earlier fade, less smooth transition |
 | High spin | Smoother hold, later transition |
 
+**External validation:** Giljarhus, Gooding & Njærheim (2022), *Sports Engineering* 25:26 (CC BY 4.0,
+saved at `app/references/giljarhus-2022-disc-golf-trajectory-modelling.pdf`) combines CFD-derived
+aero coefficients with rigid-body flight simulation, validated against real tracked throws. Two
+things from it back up the design above rather than changing it:
+
+- The turn→fade phase mechanism is physically grounded, not just an empirical fit: high early-flight
+  speed → high lift → disc rises → angle of attack drops → negative roll rate → turn direction. As
+  speed bleeds off, lift drops → AoA rises → roll rate flips sign → fade direction. This is the same
+  speed-ratio-driven crossover as `phaseTransition` above.
+- Their roll-rate equation is `θ̇ = -M / (ω·(Ixy - Iz))` — inversely proportional to spin rate ω, the
+  same functional shape as `spin_turn`/`spinEffect` in `static/physics.js` (`MOD.spin_turn`). Independent
+  confirmation the inverse-spin formula is the right shape, not just plausible.
+
+Their model needs full CFD/wind-tunnel aero coefficient curves per disc (only 3 discs tested: DD/CD/CD2),
+which we don't have for the 1,660+ discs in `discs_master.json` — so it can't replace the flight-number-driven
+approach here, only inform tuning.
+
 ### Hidden Developer Screen
 
 During development, expose `DEFAULT_FLIGHT_TUNING` constants as sliders in a hidden screen (`/dev` route or long-press on version number). Throw a real disc, observe, adjust. Hardcode the tuned values before v1 release. Do not expose in normal UI.
@@ -385,7 +402,7 @@ Tune the model against **shape class correctness**, not exact distance. A model 
 
 ---
 
-## 8. Package List (all MIT)
+## 8. Package List (GPL-compatible)
 
 | Package | Purpose |
 |---------|---------|
@@ -407,13 +424,13 @@ Tune the model against **shape class correctness**, not exact distance. A model 
 
 ```
 disc_tracker/
-├── LICENSE                          ← MIT
+├── LICENSE                          ← GPLv3
 ├── app.py                           ← Flask backend (unchanged)
 ├── templates/                       ← Web app (unchanged)
 ├── static/
 │   └── discs_master.json            ← Master library (233 KB, 1660+ discs)
 └── app/                             ← Expo project root
-    ├── LICENSE                      ← MIT
+    ├── LICENSE                      ← GPLv3
     ├── RESEARCH.md                  ← This document
     ├── MOBILE_PORT_AUDIT.md         ← Website behavior inventory
     ├── PORT_PLAN.md                 ← Phased implementation plan
