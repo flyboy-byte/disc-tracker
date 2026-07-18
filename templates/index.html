@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ username }}'s Bag — Disc Tracker</title>
+<script src="/static/physics.js"></script>
 <style>
   :root {
     --bg: #0b0e1a;
@@ -365,30 +366,6 @@ let baggedIds = new Set(JSON.parse(sessionStorage.getItem('baggedIds') || '[]'))
 let dragEl = null, dragGhost = null, dragOffX = 0, dragOffY = 0;
 let _fieldPts = [], _fieldBalloonTimer = null;
 
-function stab(d) {
-  const net = (d.turn ?? 0) + (d.fade ?? 0);
-  if (net >= 1)  return 'overstable';
-  if (net <= -1) return 'understable';
-  return 'stable';
-}
-const STAB_META = {
-  overstable: { short:'OS', cls:'stab-os', color:'#915EFF' },
-  stable:     { short:'ST', cls:'stab-st', color:'#4ade80' },
-  understable:{ short:'US', cls:'stab-us', color:'#fbbf24' }
-};
-
-function discType(d) {
-  if (d.speed <= 3) return 'putter';
-  if (d.speed <= 5) return 'mid';
-  if (d.speed <= 8) return 'fairway';
-  return 'driver';
-}
-const TYPE_META = {
-  putter:  { short:'P',  label:'Putter',  word:'Putter'          },
-  mid:     { short:'M',  label:'Mid',     word:'Mid-range'        },
-  fairway: { short:'FD', label:'Fairway', word:'Fairway Driver'   },
-  driver:  { short:'D',  label:'Driver',  word:'Distance Driver'  },
-};
 const DISC_COLORS = [
   { hex:'',        cls:'cswatch-none' },
   { hex:'#ffffff', label:'White'      },
@@ -462,41 +439,10 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-function arcPoints(d, W, H) {
-  const cx = W / 2;
-  const pad = W * 0.1;
-  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-  const f = v => +v.toFixed(1);
-  const thr = arcView.toUpperCase();
-  const m = (thr === 'RHFH' || thr === 'LHBH') ? -1 : 1;
-  const sx = cx, sy = f(H * 0.925), ey = f(H * 0.075);
-  const sc = W / 50;
-  const HR = sy - ey;
-  const turnAmt = -(d.turn ?? 0);
-  const fadeAmt = d.fade ?? 2;   // ?? not || : fade=0 is valid and must not fall back to 2
-  const glide = d.glide ?? 5;
-  const endX = f(clamp(cx + m*(turnAmt - fadeAmt*1.25)*sc, pad, W-pad));  // 1.25: empirical — fade lands farther opposite than 1:1 weight
-  // Apex: where disc peaks in the turn direction
-  const apexFrac = Math.min(0.55, 0.30 + glide*0.025);
-  const my = f(sy - HR*apexFrac);
-  const effTurn = Math.max(turnAmt, 0);  // overstable discs (turnAmt<0) apex at center, not turn-side
-  const mx = f(clamp(cx + m*effTurn*sc*3.5, pad, W-pad));
-  // Segment 1 control: gentle ramp toward apex
-  const q0x = f(clamp(cx + m*effTurn*sc*1.3, pad, W-pad));
-  const q0y = f(sy - HR*0.12);
-  // Segment 2 control: placed on the same tangent line as the apex approach (G1 smooth joint)
-  // q2 = apex + k*(apex - q0): disc continues in the turn direction briefly before the fade hook
-  const k = Math.min(1.5, fadeAmt*0.3 + glide*0.05 + turnAmt*0.08);
-  const q2x = f(clamp(mx + k*(mx - q0x), pad, W-pad));
-  const q2y = f(Math.max(ey + HR*0.03, my + k*(my - q0y)));
-  const dx = endX-q2x, dy = ey-q2y, len = Math.sqrt(dx*dx+dy*dy)||1;
-  return { sx,sy,ey,endX,mx,my,q0x,q0y,q2x,q2y,nx:dx/len,ny:dy/len,cx };
-}
-
 function arcSVG(d) {
   const color = STAB_META[stab(d)].color;
   const W = 50, H = 80;
-  const p = arcPoints(d, W, H);
+  const p = arcPoints(d, W, H, arcView);
   const f = v => +v.toFixed(1);
   const aw = 3, px = -p.ny*aw, py = p.nx*aw;
   return `<svg class="arc" viewBox="0 0 ${W} ${H}" aria-hidden="true">
@@ -516,7 +462,7 @@ function showArcDetail(e, id) {
   const W = 220, H = 350;
   const color = STAB_META[stab(d)].color;
   const sm = STAB_META[stab(d)];
-  const p = arcPoints(d, W, H);
+  const p = arcPoints(d, W, H, arcView);
   const f = v => +v.toFixed(1);
   const aw = 7, px = -p.ny*aw, py = p.nx*aw;
   const g1y = f(p.ey + (p.sy-p.ey)*0.33);
@@ -586,7 +532,7 @@ function renderFieldView(rows) {
   const grid = document.getElementById('grid');
   const W = 400, H = 380;
   const f = v => +v.toFixed(1);
-  const pts = rows.map(d => ({ d, p: arcPoints(d, W, H), color: d.color || STAB_META[stab(d)].color }));
+  const pts = rows.map(d => ({ d, p: arcPoints(d, W, H, arcView), color: d.color || STAB_META[stab(d)].color }));
   _fieldPts = pts;
   const { sy: sy0, ey: ey0, cx: cx0 } = pts[0].p;
   const g1y = f(ey0 + (sy0-ey0)*0.33);

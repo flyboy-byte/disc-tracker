@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Disc Suggest — {{ username }}</title>
+<script src="/static/physics.js"></script>
 <style>
   :root {
     --bg: #0b0e1a;
@@ -409,14 +410,20 @@ function filterBag(sc) {
   return bagDiscs.filter(d => sc.bagTest(d));
 }
 
+// Master library's own type taxonomy (from discs_master.json) — distinct vocabulary from
+// physics.js's internal putter/mid/fairway/driver keys, so translate rather than duplicate.
+const MASTER_TYPE_LABEL = {
+  putter:  'Putt & Approach',
+  mid:     'Mid Range',
+  fairway: 'Control Driver',
+  driver:  'Distance Driver',
+};
+
 // Convert bag disc to library-compatible shape for display
 function bagToDisc(d) {
   return {
     name: d.mold, mfr: d.mfr,
-    type: d.speed <= 3 ? 'Putt & Approach'
-        : d.speed <= 5 ? 'Mid Range'
-        : d.speed <= 8 ? 'Control Driver'
-        : 'Distance Driver',
+    type: MASTER_TYPE_LABEL[discType(d)],
     stability: Math.round(((d.fade ?? 0) + (d.turn ?? 0)) * 10) / 10,
     speed: d.speed, glide: d.glide, turn: d.turn, fade: d.fade,
   };
