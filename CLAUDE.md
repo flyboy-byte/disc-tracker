@@ -108,6 +108,27 @@ ms_pic_cache  (lookup_key, pic)   -- cached DiscIt API lookups, keyed by "mfr|mo
 - Server-side only (`POST /api/shotshaper_sim` in `app.py`) — needs `numpy`, `scipy`, `pyyaml` (see `requirements.txt`). Launch speed and spin rate are approximated from the disc's PDGA speed number (calibrated against shotshaper's own validated example throw), not measured — this is a research/experimental mode, not a replacement for the legacy Bézier arc.
 - Renders actual simulated trajectory points (`renderSimPath` in `flightshape.html`) instead of the `arcPoints()` Bézier curve. Falls back to an inline error message on any failure; legacy mode is completely unaffected when the toggle is off.
 
+#### Model agreement diagnostic (documented, not built — same "idea only" state as the mobile app)
+
+A one-off comparison script (not committed — throwaway, run locally against a temp venv +
+`node`) normalized both engines' output curves (legacy's lateral offset scaled to its own peak,
+sim's likewise) and sampled both at 41 points along flight-fraction (0=tee, 1=landing) to compute
+an RMS shape delta per scenario. Finding: **the two engines disagree most at neutral baseline**
+(no wind, no hyzer) — every environmental input tested (headwind, tailwind, crosswind, hyzer)
+actually *narrowed* the normalized-shape gap relative to that baseline, since both curves become
+more one-directional under load and coincidentally converge in shape. Conclusion: physics-sim
+isn't a "more accurate" version of the legacy arc for the same disc — they're different first
+principles (empirical curve-fit vs. integrated CFD trajectory) and will keep disagreeing on shape
+regardless of input. Not a bug in either engine.
+
+**Nothing from this is wired into the app** — no route, no code, no page. If it's ever worth
+surfacing, the cheap path is *not* a new settings page: a hidden overlay toggle inside Flight
+Shaper's existing physics-sim panel (e.g. gated behind a `?dev=1` query param so it stays
+invisible normally) that draws both curves in the same `#arcSVG` at once with a live delta
+readout, reusing `arcPoints()` (already client-side) and `/api/shotshaper_sim` (already
+client-callable) — no new server logic needed. Deliberately not built yet; revisit only if there's
+a real reason to keep checking model agreement over time rather than the one-time answer above.
+
 ---
 
 ## Website features (all working)
