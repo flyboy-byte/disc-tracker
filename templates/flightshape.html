@@ -42,8 +42,8 @@
   .mode-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(145,94,255,0.1); }
 
   /* Vertical sliders */
-  .slider-bank { display: flex; justify-content: space-around; align-items: flex-start; }
-  .slider-col { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+  .slider-bank { display: flex; justify-content: space-around; align-items: flex-start; flex-wrap: wrap; gap: 10px 4px; }
+  .slider-col { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1 1 30%; min-width: 84px; }
   .slider-label { font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
   .slider-value { font-size: 12px; font-weight: 700; font-family: ui-monospace, monospace; min-width: 44px; text-align: center; transition: color 0.15s; }
   .slider-unit { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
@@ -105,6 +105,8 @@
     .slider-track { height: 140px; }
     .v-slider { width: 140px; }
     .slider-value { font-size: 11px; min-width: 36px; }
+    /* 2-per-row on phones instead of 3 — less cramped touch targets */
+    .slider-col { flex: 1 1 45%; }
   }
 </style>
 </head>
@@ -157,7 +159,7 @@
 
       <!-- Throw conditions -->
       <div class="tool-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div class="row-between" style="margin-bottom:16px">
           <div class="section-label" style="margin-bottom:0">Conditions</div>
           <button class="btn btn-ghost" onclick="resetSliders()" style="font-size:12px;padding:6px 12px">Reset</button>
         </div>
@@ -224,13 +226,7 @@
           </div>
 
         </div>
-        <div class="dir-hint">
-          <span id="hyzer-dir-hint">↑hyzer ↓anz</span>
-          <span>↑up ↓down</span>
-          <span>↑head ↓tail</span>
-          <span>↑more ↓less</span>
-          <span>↑more ↓less</span>
-        </div>
+        <div class="dir-hint" id="dirHints"></div>
 
         <!-- Release angle reference -->
         <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
@@ -295,7 +291,7 @@
     <!-- RIGHT: arc preview -->
     <div class="fs-right">
       <div class="tool-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="row-between" style="margin-bottom:14px">
           <div class="section-label" style="margin-bottom:0">Flight shape</div>
           <select id="arcViewSelect" onchange="arcView=this.value;localStorage.setItem('arcView',arcView);updateArc();document.getElementById('arcViewLabel').textContent=arcView;saveArcView(arcView);updateAngleRef()"
                   style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
@@ -341,7 +337,7 @@
           </div>
 
           <div id="dist-panel" style="display:none;width:100%;margin-top:10px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div class="row-between" style="margin-bottom:4px">
               <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700">Est. Distance</span>
               <span id="dist-val" style="font-size:13px;font-weight:700;color:var(--accent)">—</span>
             </div>
@@ -365,6 +361,11 @@
 
 <script>
 const CSRF_TOKEN = {{ csrf_token | tojson }};
+
+// Mirrors the semantic colors in static/style.css's :root — JS builds several SVG strings
+// dynamically and can't reference CSS custom properties directly, so this is the one place
+// those literal values live instead of being scattered across each template string.
+const COLORS = { accent: '#915EFF', os: '#915EFF', st: '#4ade80', us: '#fbbf24', danger: '#f87171', sim: '#38bdf8' };
 
 // ── Shared utilities (from index.html) ────────────────────────────────────────
 let arcView = localStorage.getItem('arcView') || 'RHBH';
@@ -413,6 +414,30 @@ function getSliderValues() {
 
 const SLIDER_DEFAULTS = { 'val-hyzer':0, 'val-nose':0, 'val-wind':0, 'val-crosswind':0, 'val-arm':100, 'val-spin':100 };
 
+// One hint per slider column, in DOM order. hyzer's is dynamic (depends on arcView), the
+// rest are static. crosswind's column is only in the DOM (visible) in physics-sim mode, so
+// its hint is skipped whenever #crosswind-col is hidden — keeps the hint count always
+// matching the visible slider count instead of drifting out of alignment.
+const SLIDERS = [
+  { key: 'hyzer' },                                   // dynamic, filled in by updateAngleRef
+  { key: 'nose', hint: '↑up ↓down' },
+  { key: 'wind', hint: '↑head ↓tail' },
+  { key: 'crosswind', hint: '↑R ↓L', colId: 'crosswind-col' },
+  { key: 'arm', hint: '↑more ↓less' },
+  { key: 'spin', hint: '↑more ↓less' },
+];
+
+function renderDirHints(hyzerHint) {
+  const html = SLIDERS.map(s => {
+    if (s.colId) {
+      const col = document.getElementById(s.colId);
+      if (!col || col.style.display === 'none') return '';
+    }
+    return `<span>${s.key === 'hyzer' ? hyzerHint : s.hint}</span>`;
+  }).join('');
+  document.getElementById('dirHints').innerHTML = html;
+}
+
 function sliderLabel(id, v) {
   if (id === 'val-wind') {
     if (v === 0) return 'calm';
@@ -448,15 +473,13 @@ function updateAngleRef() {
   const hyzerDir   = isFH ? '→ R' : '→ L';
   const anhyzerDir = isFH ? '→ L' : '→ R';
 
-  // Update dir-hint under hyzer slider
-  const hint = document.getElementById('hyzer-dir-hint');
-  if (hint) hint.textContent = `↑hyzer ${hyzerDir}  ↓anz ${anhyzerDir}`;
+  renderDirHints(`↑hyzer ${hyzerDir}  ↓anz ${anhyzerDir}`);
 
   // Back view: positive hyzer tilts clockwise for BH (right/outside edge down),
   // counterclockwise for FH (left/outside edge down)
   const hTilt = isFH ? -hyzer : hyzer;
   const hColor = hyzer === 0 ? 'rgba(255,255,255,0.25)'
-               : hyzer > 0   ? '#915EFF' : '#fbbf24';
+               : hyzer > 0   ? COLORS.os : COLORS.us;
   const dirLabel = hyzer === 0 ? '' : (hyzer > 0 ? ` ${hyzerDir}` : ` ${anhyzerDir}`);
   const hLabel = hyzer === 0 ? 'flat'
                : Math.abs(hyzer) + '° ' + (hyzer > 0 ? 'hyzer' : 'anhyzer') + dirLabel;
@@ -474,7 +497,7 @@ function updateAngleRef() {
   // Side view: positive nose = nose up (front tilts up), arrow points right
   const nTilt = -nose; // SVG rotates CW; nose up = negative angle
   const nColor = nose === 0 ? 'rgba(255,255,255,0.25)'
-               : nose > 0   ? '#4ade80' : '#f87171';
+               : nose > 0   ? COLORS.st : COLORS.danger;
   const nLabel = nose === 0 ? 'flat'
                : Math.abs(nose) + '° nose ' + (nose > 0 ? 'up' : 'down');
 
@@ -609,9 +632,9 @@ function renderSimPath(points) {
   svg.innerHTML = `
     <line x1="${cx}" y1="${(sy+6).toFixed(1)}" x2="${cx}" y2="${ey}" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="6 8"/>
     <text x="${cx}" y="${(sy+20).toFixed(1)}" fill="rgba(255,255,255,0.2)" font-size="10" text-anchor="middle" font-family="system-ui,sans-serif">TEE</text>
-    <path d="${d}" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${d}" fill="none" stroke="${COLORS.sim}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     <circle cx="${sx0.toFixed(1)}" cy="${sy0.toFixed(1)}" r="6" fill="rgba(255,255,255,0.45)"/>
-    <circle cx="${ex.toFixed(1)}" cy="${eyp.toFixed(1)}" r="6" fill="#38bdf8"/>
+    <circle cx="${ex.toFixed(1)}" cy="${eyp.toFixed(1)}" r="6" fill="${COLORS.sim}"/>
     <text x="${cx}" y="12" fill="rgba(56,189,248,0.7)" font-size="9" text-anchor="middle" font-family="system-ui,sans-serif">shotshaper sim — ${maxDist.toFixed(0)}m</text>`;
 }
 
@@ -636,6 +659,7 @@ function onPhysicsSimToggle() {
   document.getElementById('archetypeSelect').style.display = physicsSimOn ? '' : 'none';
   document.getElementById('crosswind-col').style.display = physicsSimOn ? '' : 'none';
   updateArc();
+  updateAngleRef();
 }
 
 // ── Update cycle ─────────────────────────────────────────────────────────────
