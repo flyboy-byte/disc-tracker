@@ -30,11 +30,13 @@
 git clone https://github.com/flyboy-byte/disc-tracker.git
 cd disc-tracker
 python3 -m venv venv && source venv/bin/activate
-pip install flask
+pip install -r requirements.txt
 python app.py
 ```
 
 Opens at `http://localhost:5757`. Database and secret key are created automatically in `data/` on first run.
+`numpy`/`scipy`/`pyyaml` are only needed for the optional Physics sim mode in Flight Shaper —
+everything else runs on Flask alone.
 
 ### Run as a systemd service
 
@@ -54,10 +56,15 @@ systemctl --user start disc_tracker
 | Hyzer | ±30° | Positive = hyzer angle, increases fade |
 | Nose | ±15° | Nose up = higher AOA, more understable |
 | Wind | ±20 mph | Headwind = more overstable; tailwind = more understable |
+| Crosswind | ±20 mph | Physics-sim mode only — lateral wind |
 | Arm | 50–100% | Under-power shifts fast discs understable |
 | Spin | 50–100% | Lower spin = reduced gyroscopic stability, more turn |
 
 Physics based on Kamaruddin, Potts & Crowther (2018) — *Aerodynamic Performance of Flying Discs*.
+
+There's also an opt-in **Physics sim** mode — a real rigid-body flight simulator
+([shotshaper](https://github.com/kegiljarhus/shotshaper), GPLv3) instead of the default curve
+model, for driver-class discs. Research/experimental, off by default.
 
 ---
 
@@ -85,4 +92,4 @@ All data lives in `data/` on your own machine or server. Nothing is transmitted 
 
 ## License
 
-MIT
+GPLv3 — see [`LICENSE`](LICENSE).
