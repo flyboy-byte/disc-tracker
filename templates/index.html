@@ -277,8 +277,8 @@ let arcView = localStorage.getItem('arcView') || 'RHBH';
 let useMsApi = localStorage.getItem('useMsApi') !== '0';
 let viewMode = 'cards';
 let bagFilter = sessionStorage.getItem('bagFilter') === '1';
-// Today's bag: persists across page refreshes within the same tab session
-let baggedIds = new Set(JSON.parse(sessionStorage.getItem('baggedIds') || '[]'));
+// Today's bag: each disc carries its own `inBag` flag, stored server-side per user
+// (round-trips via /api/data), so it's the same on every device that logs in.
 let dragEl = null, dragGhost = null, dragOffX = 0, dragOffY = 0;
 let _fieldPts = [], _fieldBalloonTimer = null;
 
@@ -516,7 +516,7 @@ function render() {
   const typeCounts = { all: discs.length, putter:0, mid:0, fairway:0, driver:0 };
   discs.forEach(d => { stabCounts[stab(d)]++; typeCounts[discType(d)]++; });
 
-  const bagCount = baggedIds.size;
+  const bagCount = discs.filter(d => d.inBag).length;
   document.getElementById('substat').textContent =
     `${discs.length} discs · ${typeCounts.driver}D · ${typeCounts.fairway}FD · ${typeCounts.mid}M · ${typeCounts.putter}P` +
     (bagCount ? ` · ${bagCount} in bag today` : '');
@@ -539,7 +539,7 @@ function render() {
     bfBtn.style.borderColor = bagFilter ? 'var(--accent)' : 'var(--border)';
     bfBtn.style.color = bagFilter ? 'var(--accent)' : 'var(--muted)';
     bfBtn.style.background = bagFilter ? 'rgba(145,94,255,0.1)' : 'transparent';
-    bfBtn.textContent = bagFilter ? `In bag (${baggedIds.size})` : 'In bag';
+    bfBtn.textContent = bagFilter ? `In bag (${bagCount})` : 'In bag';
   }
 
   // Grid
@@ -547,7 +547,7 @@ function render() {
     const matchS = filter === 'all' || stab(d) === filter;
     const matchT = typeFilter === 'all' || discType(d) === typeFilter;
     const matchQ = !q || (d.mfr + d.mold + d.plastic + d.use + (d.notes || '')).toLowerCase().includes(q);
-    const matchB = !bagFilter || baggedIds.has(d.id);
+    const matchB = !bagFilter || d.inBag;
     return matchS && matchT && matchQ && matchB;
   });
 
@@ -586,7 +586,7 @@ function render() {
       : '';
     const safeColor = /^#[0-9A-Fa-f]{6}$/.test(d.color) ? d.color : null;
     const colorStyle = safeColor ? `border-left:3px solid ${safeColor};` : '';
-    const isBagged = baggedIds.has(d.id);
+    const isBagged = !!d.inBag;
     return `<div class="card ${dragEnabled ? 'drag-on' : ''} ${isBagged ? 'bagged' : ''}" data-id="${d.id}" onclick="openEdit(${d.id})" style="${colorStyle}">
       <button class="bag-check ${isBagged ? 'checked' : ''}" onclick="toggleBagged(event,${d.id})" title="${isBagged ? 'Remove from today\'s bag' : 'Add to today\'s bag'}"><span class="bag-check-dot">${isBagged ? '✓' : ''}</span>in bag</button>
       ${grip}
@@ -622,11 +622,13 @@ function esc(s) {
 
 function toggleBagFilter() { bagFilter = !bagFilter; sessionStorage.setItem('bagFilter', bagFilter ? '1' : '0'); render(); }
 
-function toggleBagged(e, id) {
+async function toggleBagged(e, id) {
   e.stopPropagation();
-  if (baggedIds.has(id)) baggedIds.delete(id); else baggedIds.add(id);
-  sessionStorage.setItem('baggedIds', JSON.stringify([...baggedIds]));
+  const d = discs.find(x => x.id === id);
+  if (!d) return;
+  d.inBag = !d.inBag;
   render();
+  await persist();
 }
 
 function setFilter(f) { filter = f; render(); }
@@ -859,7 +861,7 @@ async function saveDisc(id, isNew) {
   if (isNew) discs.push(obj);
   else {
     const i = discs.findIndex(x => x.id === id);
-    if (i >= 0) discs[i] = obj;
+    if (i >= 0) { obj.inBag = discs[i].inBag; discs[i] = obj; }
   }
   closeModal();
   render();
@@ -898,14 +900,14 @@ function buildCSV(source) {
 
 function updateExportPreview() {
   const scope = document.querySelector('input[name="exportScope"]:checked')?.value || 'all';
-  const source = scope === 'bag' ? discs.filter(d => baggedIds.has(d.id)) : discs;
+  const source = scope === 'bag' ? discs.filter(d => d.inBag) : discs;
   window._csvData = buildCSV(source);
   const ta = document.getElementById('csvOut');
   if (ta) ta.value = window._csvData;
 }
 
 function exportCSV() {
-  const bagCount = baggedIds.size;
+  const bagCount = discs.filter(d => d.inBag).length;
   window._csvData = buildCSV();
   document.getElementById('modalRoot').innerHTML = `
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">

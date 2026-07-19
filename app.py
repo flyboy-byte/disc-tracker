@@ -73,6 +73,7 @@ def init_db():
         for col, ddl in [
             ('color',    "ALTER TABLE discs ADD COLUMN color TEXT DEFAULT ''"),
             ('arc_view', "ALTER TABLE user_meta ADD COLUMN arc_view TEXT DEFAULT 'RHBH'"),
+            ('in_bag',   "ALTER TABLE discs ADD COLUMN in_bag INTEGER DEFAULT 0"),
         ]:
             try:
                 db.execute(ddl)
@@ -211,7 +212,7 @@ def get_data():
             return jsonify(None), 404
         rows = db.execute(
             'SELECT disc_id, mfr, mold, plastic, weight, speed, glide, turn, fade, '
-            'use_desc, thr, notes, color FROM discs WHERE user_id = ? ORDER BY sort_order',
+            'use_desc, thr, notes, color, in_bag FROM discs WHERE user_id = ? ORDER BY sort_order',
             (user_id,)
         ).fetchall()
     discs = [
@@ -222,6 +223,7 @@ def get_data():
             'turn': r['turn'], 'fade': r['fade'],
             'use': r['use_desc'], 'thr': r['thr'], 'notes': r['notes'],
             'color': r['color'] or '',
+            'inBag': bool(r['in_bag']),
         }
         for r in rows
     ]
@@ -249,15 +251,16 @@ def set_data():
         db.execute('DELETE FROM discs WHERE user_id = ?', (user_id,))
         db.executemany(
             'INSERT INTO discs (user_id, disc_id, mfr, mold, plastic, weight, '
-            'speed, glide, turn, fade, use_desc, thr, notes, color, sort_order) '
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 (user_id, int(d.get('id') or 0), str(d.get('mfr') or '')[:80], str(d.get('mold') or '')[:80],
                  str(d.get('plastic') or '')[:80], str(d.get('weight') or '')[:20],
                  float(d.get('speed') or 0), float(d.get('glide') or 0),
                  float(d.get('turn') or 0), float(d.get('fade') or 0),
                  str(d.get('use') or '')[:200], str(d.get('thr') or '')[:10], str(d.get('notes') or '')[:1000],
-                 (c if re.match(r'^#[0-9A-Fa-f]{6}$', c := str(d.get('color') or '')) else ''), i)
+                 (c if re.match(r'^#[0-9A-Fa-f]{6}$', c := str(d.get('color') or '')) else ''), i,
+                 1 if d.get('inBag') else 0)
                 for i, d in enumerate(discs)
                 if str(d.get('mold') or '').strip()  # skip discs with no mold name
             ]
