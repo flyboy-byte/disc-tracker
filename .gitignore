@@ -12,3 +12,8 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Node (dev-only — Playwright UI smoke tests, see tests/)
+node_modules/
+test-results/
+playwright-report/

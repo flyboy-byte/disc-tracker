@@ -22,7 +22,10 @@ disc_tracker/
 │   └── pick.html             ← user picker
 ├── static/
 │   ├── discs_master.json     ← 1,660+ disc library (bundled in app too)
-│   └── physics.js            ← shared flight-arc math (bag view + Flight Shaper); pure functions, no DOM — extraction point for legacyPhysics.ts
+│   ├── physics.js            ← shared flight-arc math (bag view + Flight Shaper); pure functions, no DOM — extraction point for legacyPhysics.ts
+│   └── style.css             ← shared CSS tokens/primitives, linked from all 4 templates (see "Frontend CSS" below)
+├── tests/
+│   └── ui-smoke.spec.js      ← Playwright browser smoke tests (dev-only, see "Testing" below)
 ├── data/                     ← SQLite DB + secret key (gitignored)
 ├── disc_tracker.service      ← systemd unit file
 ├── deploy.sh                 ← push to VPS and restart service
@@ -30,6 +33,16 @@ disc_tracker/
     ├── PORT_PLAN.md          ← phased build plan for the mobile app (READ THIS)
     └── RESEARCH.md           ← framework, toolchain, F-Droid, DiscIt API research
 ```
+
+### Frontend CSS
+
+`static/style.css` holds design tokens (`:root`) and primitives (`.btn`, `.pill`, `.stab-badge`,
+`.top-nav`, `.grid`, form fields, etc.) shared across 2+ of the 4 templates, linked via
+`<link rel="stylesheet">` in each `<head>`. Each template's own `<style>` block only has what's
+genuinely page-specific. Breakpoints are hard-coded pixel values (CSS vars can't be used inside
+`@media`) — the canonical scale is documented in a comment at the top of `style.css`; grep all
+templates + that file before changing one. `discsuggestion.html` links the shared stylesheet too
+but hasn't otherwise been reworked (still simple, low priority).
 
 ---
 
@@ -47,6 +60,18 @@ Flight-arc physics regression tests (no build step, plain Node):
 ```bash
 node static/physics.test.js
 ```
+
+### Testing
+
+`static/physics.test.js` — pure-math regression tests, plain Node, no dependencies.
+
+`tests/ui-smoke.spec.js` — Playwright browser smoke tests covering the JS-dependency-contract
+items most at risk from CSS/markup changes: card `data-id` + drag-reorder, filter pills,
+physics-sim crosswind/dir-hint sync, CSV export/import round-trip. Dev-only — the shipped Flask
+app has no build step and doesn't depend on this. One-time setup: `npm install` (needs
+`package.json` at repo root), then `npx playwright install chromium`. Run with `npm run test:ui`
+(starts `python3 app.py` itself via `playwright.config.js`'s `webServer`, so have the Python venv
+active first). Each test run creates its own throwaway user, never touches real bag data.
 
 ---
 
