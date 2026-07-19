@@ -1,0 +1,123 @@
+/* Shared design tokens + primitives for Disc Tracker.
+   Linked via <link rel="stylesheet"> from every template's <head>, before that
+   template's own (page-local) <style> block, so page-local rules can override
+   by cascade order where a page genuinely needs to (e.g. pick.html's narrower
+   .wrap). Keep anything here that's identical or near-identical across 2+
+   pages; keep anything page-specific in that page's own <style> block.
+
+   Breakpoint scale — kept here as the single source of truth. CSS custom
+   properties cannot be referenced inside @media conditions, so every @media
+   rule in this file and in each template's own <style> block must hard-code
+   one of these exact pixel values. If a value here ever changes, grep all
+   templates + this file for the old value and update every occurrence.
+     480px  — phone / phone-vs-tablet boundary
+     640px  — index.html bag-grid dead-zone fix boundary
+     680px  — flightshape.html's 2-column desktop boundary (mobile-first:
+              write base styles unwrapped, enhance with min-width:680px)
+*/
+
+:root {
+  --bg: #0b0e1a;
+  --card: #141829;
+  --card-hover: #1a1f36;
+  --border: #252b45;
+  --text: #e8eaf2;
+  --muted: #8b91ad;
+  --accent: #915EFF;
+  --os: #915EFF;
+  --st: #4ade80;
+  --us: #fbbf24;
+  --danger: #f87171;
+  --sim: #38bdf8;
+  --op-1: 0.5;
+  --op-2: 0.7;
+  --op-3: 0.85;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+.wrap { max-width: 900px; margin: 0 auto; }
+
+.eyebrow { color: var(--accent); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+h1 { font-size: 26px; font-weight: 700; }
+.substat { color: var(--muted); font-size: 13px; margin-top: 6px; }
+
+.btn {
+  background: var(--accent); color: #fff; border: none; border-radius: 10px;
+  font-size: 14px; font-weight: 600; padding: 10px 16px; cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover { opacity: 0.9; }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--text); border-color: var(--muted); opacity: 1; }
+
+.pill {
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  border-radius: 999px; font-size: 12px; font-weight: 600; padding: 6px 14px; cursor: pointer;
+}
+.pill.active { border-color: var(--accent); color: var(--accent); background: rgba(145,94,255,0.1); }
+
+.stab-badge {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  border: 1px solid; flex-shrink: 0;
+}
+.stab-os { color: var(--os); border-color: rgba(145,94,255,0.4); background: rgba(145,94,255,0.08); }
+.stab-st { color: var(--st); border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.08); }
+.stab-us { color: var(--us); border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.08); }
+
+.field { margin-bottom: 10px; }
+.field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.field input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); font-size: 14px; padding: 9px 12px; outline: none;
+}
+.field input:focus { border-color: var(--accent); }
+.fn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+.fn-grid input { text-align: center; }
+
+.lib-item { padding: 9px 12px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; display: flex; align-items: center; gap: 10px; }
+.lib-item:hover { background: rgba(255,255,255,0.05); border-color: var(--border); }
+.lib-item-name { font-size: 14px; font-weight: 500; }
+.lib-item-mfr { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.lib-item-nums { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--card); border: 1px solid var(--accent); border-radius: 10px;
+  padding: 10px 18px; font-size: 13px; z-index: 100; opacity: 0; transition: opacity 0.25s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+.top-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 14px; margin-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap; gap: 6px;
+}
+.nav-links { display: flex; gap: 2px; flex-wrap: wrap; }
+.nav-link {
+  font-size: 13px; font-weight: 500; color: var(--muted);
+  text-decoration: none; padding: 5px 10px; border-radius: 7px;
+  white-space: nowrap; transition: color 0.15s, background 0.15s;
+}
+.nav-link:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+.nav-link.active { color: var(--text); font-weight: 600; background: rgba(255,255,255,0.07); }
+.nav-switch {
+  background: none; border: none; color: var(--muted); font-size: 13px;
+  cursor: pointer; padding: 5px 10px; border-radius: 7px; font-family: inherit;
+  white-space: nowrap; transition: color 0.15s;
+}
+.nav-switch:hover { color: var(--text); }
+
+/* Generic grid-of-cards primitive. Pages needing a different minimum card
+   width override just the --card-min variable in their own <style> block
+   (e.g. pick.html sets --card-min: 150px) instead of redefining the rule. */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--card-min, 200px), 1fr)); gap: 10px; }
