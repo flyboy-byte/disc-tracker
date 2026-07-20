@@ -2,23 +2,23 @@
 
 > Living reference document. Reviewed and corrected against a ChatGPT architecture audit (see `/home/ubuntu/updatereview.md`). Update this doc as decisions solidify. Not a build sprint — a foundation to build from when ready.
 >
-> **Prior art:** DragTree is the developer's other app — same stack (Expo EAS + TypeScript + local SQLite), already live on Play Console (closed testing) and targeting F-Droid. Its build pipeline, `android/` prebuild, `eas.json`, and `gradle.properties` are directly reusable here. Both apps share the same FOSS/F-Droid target.
+> **Prior art:** DragTree is the developer's other app — same stack (Expo + TypeScript + local SQLite, built entirely with local Gradle, no EAS), already live on Play Console (closed testing) and targeting F-Droid. Its build pipeline, `android/` prebuild, and `gradle.properties` are directly reusable here. Both apps share the same FOSS/F-Droid target.
 
 ---
 
-## 1. Framework Decision: Expo EAS
+## 1. Framework Decision: Expo + local Gradle
 
-| | Expo EAS | Flutter | Native Android |
+| | Expo | Flutter | Native Android |
 |---|---|---|---|
 | Language | TypeScript — direct JS port | Dart — new language | Kotlin — new language |
-| iOS path | ✅ same codebase | ✅ same codebase | ❌ Android only |
+| iOS path | Possible later, not pursued now | ✅ same codebase | ❌ Android only |
 | Prior experience | ✅ DragTree (developer's own app) live on Play Console | ❌ | ❌ |
 | JS logic reuse | ✅ copy-paste + types | ❌ full Dart rewrite | ❌ full Kotlin rewrite |
 | F-Droid | ✅ DragTree already has working F-Droid pipeline | ✅ possible | ✅ possible |
 
-**Chosen: Expo (framework) + local Gradle builds (pipeline).** The app is not performance-critical (UI + SVG, no 3D). All physics and scenario logic is pure JS — ports with type annotations only. iOS comes for free later.
+**Chosen: Expo (framework) + local Gradle builds only, no EAS.** The app is not performance-critical (UI + SVG, no 3D). All physics and scenario logic is pure JS — ports with type annotations only.
 
-EAS cloud builds are kept as a fallback (useful for iOS), but Android is built locally with `./gradlew` — this is what enables F-Droid reproducible builds and signing with your own keystore. EAS cloud-built binaries don't byte-match F-Droid's build server output, which blocks the official F-Droid index.
+EAS is dropped entirely, not kept as a fallback — DragTree proved local `./gradlew` is manageable as long as the codebase stays simple, and it's what enables F-Droid reproducible builds and signing with your own keystore anyway. EAS cloud-built binaries don't byte-match F-Droid's build server output, which blocks the official F-Droid index. iOS is out of scope for now; if it's ever pursued, evaluate build tooling at that point rather than carrying `eas.json`/cloud-build ceremony around unused until then.
 
 ---
 
@@ -117,7 +117,7 @@ Both Disc Tracker and DragTree target the same two channels:
 
 | Channel | Status | Notes |
 |---------|--------|-------|
-| Google Play Console | DragTree: live (closed testing) | Standard EAS production AAB |
+| Google Play Console | DragTree: live (closed testing) | Locally-built production AAB (`./gradlew bundleRelease`) |
 | F-Droid | DragTree: in progress | Requires no proprietary deps; self-hosted repo via `fdroidserver` |
 
 **F-Droid compatibility is a hard requirement, not optional.** This shapes every dependency choice: if a package pulls in Google Mobile Services (GMS) or any proprietary SDK, it breaks F-Droid distribution. All planned packages are permissively-licensed (GPL-compatible) and GMS-free — verify this stays true as packages are added.
@@ -167,7 +167,7 @@ Open source means anyone can read the code and verify there's no hidden tracking
 
 ### Dependency License Audit
 
-Run before every EAS production build. This checks that dependencies are compatible with the project's GPLv3 license (permissive deps like MIT/BSD/Apache are fine to depend on — GPL only requires the combined work you distribute to be GPL, not that every dependency also be GPL):
+Run before every production build. This checks that dependencies are compatible with the project's GPLv3 license (permissive deps like MIT/BSD/Apache are fine to depend on — GPL only requires the combined work you distribute to be GPL, not that every dependency also be GPL):
 
 ```bash
 npx license-checker --onlyAllow 'MIT;BSD-2-Clause;BSD-3-Clause;Apache-2.0;ISC;0BSD;GPL-3.0;GPL-3.0-or-later;LGPL-3.0'
@@ -258,25 +258,28 @@ Required even for local-only apps. Host on GitHub Pages. Minimum content:
 | Category | Sports |
 | Content rating | Everyone (IARC questionnaire) |
 | Target audience | All ages |
-| App signing | Google Play App Signing via EAS |
+| App signing | Google Play App Signing, uploaded AAB signed locally via `android/local.properties` keystore |
 
 ---
 
 ## 6. Expo Go vs Development Build
 
-> **Correction:** Expo Go works for early layout/UI work but **cannot run native modules** like `react-native-quick-crypto`. Once any package with native code is installed, testing requires an **EAS Development Build** (`eas build --profile development`), not Expo Go.
+> **Correction:** Expo Go works for early layout/UI work but **cannot run native modules** (e.g. `expo-sqlite`, `react-native-svg`'s native bindings). Once any package with native code is installed, testing requires a **development build** — built locally via `./gradlew`, not EAS.
 
-For v1 (no crypto, no native-only packages): Expo Go is fine for early testing.
-For v1.1 (encrypted backup adds `react-native-quick-crypto`): switch to dev build before testing backup.
+For pure-JS/layout work: Expo Go is fine for early testing.
+Once native modules are in the dependency tree (expected from Phase 1 onward — `expo-sqlite` alone requires it): switch to a locally-built dev client.
 
 ```bash
-# v1 testing (Expo Go compatible)
+# Early layout-only work (Expo Go compatible)
 npx expo start
 
-# v1.1+ (native modules — requires dev build)
-eas build --platform android --profile development
-# Install the APK, then `npx expo start` connects to it
+# Once native modules are added — local dev build, no EAS
+npx expo run:android
+# This builds and installs a dev client via local Gradle; `npx expo start` then
+# connects to it the same way it would to Expo Go.
 ```
+
+Note: Path D's sync (§2) is plain HTTPS + a bearer token, not client-side encryption — no crypto native module is needed for it.
 
 ---
 
@@ -435,7 +438,6 @@ disc_tracker/
     ├── MOBILE_PORT_AUDIT.md         ← Website behavior inventory
     ├── PORT_PLAN.md                 ← Phased implementation plan
     ├── app.json                     ← Expo config (SDK 54+, API 35)
-    ├── eas.json                     ← EAS build profiles
     ├── package.json
     ├── package-lock.json            ← Committed lockfile
     ├── tsconfig.json
@@ -479,7 +481,7 @@ Two reasons, both proven on DragTree:
 
 2. **Transparency:** `./gradlew assembleRelease` is something you own and can debug. EAS is a black box that adds ceremony (cloud queue, CLI auth, pnpm workspace issues in DragTree's case) on top of something Gradle can do directly.
 
-Expo the **framework** stays (expo-sqlite, expo-router, react-native-svg, all packages). EAS the **cloud build service** is optional/fallback — kept for iOS only.
+Expo the **framework** stays (expo-sqlite, expo-router, react-native-svg, all packages). EAS the **cloud build service** is dropped entirely — Android builds only ever go through local Gradle. iOS is not being pursued right now; if that changes later, revisit build tooling then.
 
 ### Required toolchain
 
@@ -584,20 +586,6 @@ org.gradle.workers.max=2
 4. Upload signed APK to GitHub releases as `disc-tracker-v1.0.0.apk`
 5. Add `Binaries:` entry to fdroiddata YAML pointing at the GitHub release URL
 6. F-Droid builds from source, strips signing, compares output to your reference APK
-
-### EAS — iOS only, fallback
-
-Keep `eas.json` in the repo. Android never uses it in normal workflow. Use EAS for iOS (requires macOS/Xcode otherwise) or as an emergency fallback if local builds break.
-
-```json
-{
-  "build": {
-    "development": { "developmentClient": true, "distribution": "internal" },
-    "preview": { "android": { "buildType": "apk" } },
-    "production": { "android": { "buildType": "app-bundle" } }
-  }
-}
-```
 
 ### Reference project: DragTree
 

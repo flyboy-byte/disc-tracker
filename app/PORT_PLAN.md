@@ -139,7 +139,7 @@ git add android/
 
 **Required toolchain:** JDK 21 OpenJDK (not Temurin), Android SDK 36, NDK 27.1.12297006.
 
-**EAS:** keep `eas.json` in the repo for iOS fallback, but Android builds run locally via Gradle.
+**No EAS.** All builds — dev client and release — run through local Gradle (`./gradlew`), matching DragTree's setup. No `eas.json`. iOS is out of scope for now.
 
 **Do not yet:** write any disc logic, DB calls, or screen content.
 
@@ -305,11 +305,11 @@ setMeta(userId: number, updates: Partial<UserMeta>): Promise<void>
 
 **Goal:** Real APK on a physical device, all screens verified. This phase ends at a working APK — Play Console and F-Droid submission are distribution tasks that follow, not part of this phase.
 
-### 8A — EAS Preview Build (sideload testing)
+### 8A — Local Preview Build (sideload testing)
 
 ```bash
-eas build --platform android --profile preview
-# Download APK from EAS dashboard → install via adb or direct download
+cd android && ./gradlew assembleRelease
+# APK is at android/app/build/outputs/apk/release/ — install via adb or direct transfer
 ```
 
 **Smoke test checklist:**
@@ -465,7 +465,7 @@ Keep v1 focused — these can be revisited after shipping:
 - `PRAGMA foreign_keys = ON` on every SQLite connection — or CASCADE deletes silently fail
 - Target API 35 — Play Store requirement as of Aug 31 2025; Expo SDK 54 handles it
 - No GMS dependencies — required for F-Droid; check `./gradlew app:dependencies` before submitting
-- EAS dev build (not Expo Go) once any native module is added
+- Local dev build (`npx expo run:android`, not Expo Go, no EAS) once any native module is added
 - Port `applyModifiers()` and `arcPoints()` exactly — improve via `physicsV2.ts`, not by editing the port
 - Resolve sync privacy/Data Safety wording before v1.1 Play Store submission
 

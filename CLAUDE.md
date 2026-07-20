@@ -193,7 +193,8 @@ a real reason to keep checking model agreement over time rather than the one-tim
 
 ### Build pipeline:
 - Android builds: `./gradlew assembleRelease` (local, not EAS cloud)
-- EAS kept in `eas.json` as iOS fallback only
+- No EAS at all — dropped entirely (DragTree proved local Gradle stays manageable as long as
+  the codebase stays simple). No `eas.json`. iOS is out of scope for now.
 - Signing: `android/local.properties` with null-guard pattern (never committed)
 - F-Droid strips signing via `sed -i '/signingConfig /d'` — expected behavior
 
