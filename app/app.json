@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Disc Tracker",
+    "slug": "disc-tracker",
+    "scheme": "disctracker",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.disctracker.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0f0f14",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-router",
+      "expo-sharing"
+    ]
+  }
+}

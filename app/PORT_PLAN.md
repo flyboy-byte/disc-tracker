@@ -56,17 +56,24 @@ Run each test case on the website, capture the exact output, record it here.
 
 Test `estimateDist()` with known inputs. Capture from the website's distance bar.
 
+> **Correction (verified 2026-07-20 against `estimateDist()` in `flightshape.html` directly —
+> pure function, no server round-trip needed, so computing it is equivalent to reading it off
+> the site):** the previous "~" values were unrounded approximations that didn't match what the
+> function actually returns (it rounds to the nearest 10ft at the end). Most were off by 5-10ft;
+> the hyzer row was off by 32ft (342 vs the real 310) — a real arithmetic error, not just
+> rounding. Values below are exact, not approximate.
+
 | Disc (speed) | Arm% | Wind | Glide | Nose° | Hyzer° | Expected dist (ft) |
 |-------------|------|------|-------|-------|--------|-------------------|
-| Aviar (spd 2) | 100 | 0 | 3 | 0 | 0 | ~130 |
-| Leopard3 (spd 7) | 100 | 0 | 5 | 0 | 0 | ~255 |
-| Destroyer (spd 12) | 100 | 0 | 5 | 0 | 0 | ~380 |
-| Destroyer (spd 12) | 50 | 0 | 5 | 0 | 0 | ~190 |
-| Destroyer (spd 12) | 100 | +15 | 5 | 0 | 0 | ~334 (headwind −12%) |
-| Destroyer (spd 12) | 100 | 0 | 5 | +10 | 0 | ~323 (nose up −15%) |
-| Destroyer (spd 12) | 100 | 0 | 5 | 0 | +30 | ~342 (hyzer −18%) |
+| Aviar (spd 2) | 100 | 0 | 3 | 0 | 0 | 120 |
+| Leopard3 (spd 7) | 100 | 0 | 5 | 0 | 0 | 260 |
+| Destroyer (spd 12) | 100 | 0 | 5 | 0 | 0 | 380 |
+| Destroyer (spd 12) | 50 | 0 | 5 | 0 | 0 | 190 |
+| Destroyer (spd 12) | 100 | +15 | 5 | 0 | 0 | 330 (headwind) |
+| Destroyer (spd 12) | 100 | 0 | 5 | +10 | 0 | 320 (nose up) |
+| Destroyer (spd 12) | 100 | 0 | 5 | 0 | +30 | 310 (hyzer) |
 
-**Formula to verify:** `baseFt*(arm/100)*(0.85+glide*0.03)*(1-wind*0.008)*(noseFactor)*(hyzerFactor)`
+**Formula (verified against source):** `Math.round(baseFt*(arm/100)*(0.85+glide*0.03)*(1-wind*0.008)*noseFactor*hyzerFactor/10)*10`, where `baseFt = 80 + speed*25`. The final round-to-nearest-10 step is easy to miss when hand-deriving fixtures — port it exactly, don't drop it.
 
 ### 0C — Arc Path Shape Fixtures
 
@@ -94,16 +101,22 @@ Test discs:
 
 | Scenario | Expect A | Expect B | Expect C | Expect D | Expect E |
 |----------|----------|----------|----------|----------|----------|
-| Dead Straight | ❌ (speed<4? No, spd=2<4) | ✅ | ✅ (net=-1 boundary) | ❌ net>1 | ❌ net<-1 |
-| Reliable Hyzer | ❌ fade=1 | ❌ fade=2 | ❌ fade=1 | ✅ fade=3,turn≥-1 | ❌ turn=-4 |
-| Max Distance | ❌ spd<11 | ❌ spd<11 | ❌ spd<11 | ✅ spd≥11,fade≤3,turn≤-0.5 | ❌ spd<11? No, spd=9<11 |
+| Dead Straight | ❌ speed<4 | ✅ | ✅ (net=-1 boundary) | ❌ net>1 | ❌ net<-1 |
+| Reliable Hyzer | ❌ fade=1 | ❌ fade=2 | ❌ fade=1 | ✅ fade=3,turn≥-1 | ❌ fade=1,turn=-4 |
+| Max Distance | ❌ spd<11 | ❌ spd<11 | ❌ spd<11 | ✅ spd≥11,fade≤3,turn≤-0.5 | ❌ spd=9<11 |
 | Tailwind | ❌ spd<9 | ❌ spd<9 | ❌ spd<9 | ❌ net=+2, fails net≤0 | ✅ spd≥9,turn≤-1,net≤0 |
-| Turnover | ❌ | ❌ | ❌ turn=-2 but net=-1 OK? Check: turn≤-2 ✅ fade≤2 ✅ net≤-1 ✅ | ❌ | ✅ turn=-4,fade=1,net=-3 |
-| Roller | ❌ | ❌ | ❌ turn=-2 not ≤-3 | ❌ | ✅ turn=-4,fade=1≤1 |
+| Turnover | ❌ turn=0 | ❌ turn=-1 | ✅ turn=-2,fade=1,net=-1 | ❌ turn=-1 | ✅ turn=-4,fade=1,net=-3 |
+| Roller | ❌ turn=0 | ❌ turn=-1 | ❌ turn=-2 not ≤-3 | ❌ turn=-1 | ✅ turn=-4,fade=1≤1 |
 
-> Verify these against the running website. Correct any wrong cells above before porting.
+> Verified 2026-07-20 against the real `bagTest` predicates in `discsuggestion.html`'s
+> `SCENARIOS` array (12 scenarios exist there; this table samples 6, which is fine for parity
+> coverage).
 
 > **Correction:** Destroyer's Tailwind rejection was previously noted as "turn=-1 not ≤-1" which is mathematically false (-1 ≤ -1 is true). The real reason Destroyer fails Tailwind is `net = +2`, which fails `net ≤ 0`. The comment bug matters — if copied into code or test comments it would describe the wrong condition.
+
+> **Correction:** Leopard3's Turnover cell was marked ❌ despite the table's own reasoning
+> proving all three conditions true (`turn=-2 ≤ -2` ✅, `fade=1 ≤ 2` ✅, `net=-1 ≤ -1` ✅) —
+> the symbol just hadn't been updated to match. Leopard3 **does** match Turnover; fixed above.
 
 ---
 
