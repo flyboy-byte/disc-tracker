@@ -122,6 +122,10 @@ ms_pic_cache  (lookup_key, pic)   -- cached DiscIt API lookups, keyed by "mfr|mo
 - Shown only in the bag view disc detail modal (`showArcDetail` in `index.html`) — **RHBH-only** (that's all the API provides), falls back silently to the computed arc on any error, timeout, missing match, or when arc view isn't RHBH.
 - Deliberately **not** in Flight Shaper — that tool's whole purpose is interactively adjusting the arc via sliders, so a static reference image (even at neutral slider defaults) fights the tool's purpose rather than serving it.
 - User toggle "MS reference" (checkbox next to the arc-view selector) persisted to `localStorage.useMsApi`, default on. When off, no request is made to the API at all.
+- `/api/ms_pic_img` (the actual image proxy) only fetches a cached `pic` URL server-side if it
+  starts with `https://` — the URL comes from the third-party API response, so this is a
+  deliberate guard against that response ever being used to make the server fetch an arbitrary
+  scheme/host (`file://`, an internal `http://` service, etc).
 
 ### Physics simulation (Flight Shaper "Physics sim" mode)
 
@@ -158,14 +162,21 @@ a real reason to keep checking model agreement over time rather than the one-tim
 
 ## Website features (all working)
 
-- Drag reorder, stability/type filters, color picker
-- "In bag" today's bag checkmarks + filtered CSV export
-- `bagFilter` and `baggedIds` persisted to `sessionStorage`
+- Drag reorder (single-column layout only during an active drag — toggled in
+  `startDrag`/`endDrag`, not for the whole custom-sort session, so multi-card browsing stays
+  the default view even when sort mode is "custom"), stability/type filters, color picker
+- "In bag" today's bag checkmarks — persisted server-side per disc (`discs.in_bag`), synced via
+  the same `/api/data` GET/POST as everything else, not session-local — plus a "Clear bag" bulk
+  action and filtered CSV export
+- `bagFilter` (the *filter toggle*, not the bag data itself) persisted to `sessionStorage`
+- CSV import dedupes against the existing bag + duplicates within the pasted file, caps at
+  `MAX_IMPORT` (500) rows
 - `arcView` (RHBH/RHFH/LHBH/LHFH) persisted to both server and `localStorage`
 - Flight Shape: hyzer/nose/wind/arm/spin sliders, distance estimate, arc visualization
 - Disc Suggest: 12 scenario filters (Roller, Max Distance, Reliable Hyzer, etc.)
 - iOS vertical slider fix: CSS `transform: rotate(-90deg)` on standard horizontal input
 - Mobile: single-column card layout at ≤480px, absolute-positioned "in bag" button
+- Server runs `threaded=True` so a slow third-party image lookup can't block every other user
 
 ---
 
