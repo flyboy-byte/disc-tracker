@@ -182,9 +182,22 @@ Files created (all in `src/utils/`):
 
 ---
 
-## Phase 3 — SQLite Schema and CRUD
+## Phase 3 — SQLite Schema and CRUD ⚠️ code done, not verified on-device (2026-07-20)
 
 **Goal:** Database layer identical to Flask backend behavior.
+
+> `src/db/migrations.ts` and `src/db/db.ts` are written and typecheck clean, matching
+> `app.py`'s `init_db()` schema and migration list exactly — including `in_bag`, which this
+> plan's schema section didn't have before now (a real gap, closed here). `saveDiscs()` is a
+> full delete+reinsert, deliberately the same "replace this user's entire disc set" shape a
+> future sync push/pull would need (see the comment at the top of `db.ts` and RESEARCH.md §2)
+> — nothing about local-only v1 blocks adding sync later without a rewrite.
+>
+> **What's not done:** the verification checklist below (open → create user → save 3 discs →
+> read back → delete-cascade) was written as a test but had to be deleted — `expo-sqlite` is a
+> native module with no real SQL behavior under plain Node/Jest, so a test file that "passes"
+> there wouldn't actually be testing anything. This needs an Android emulator or physical
+> device to verify for real, which wasn't run this pass. Do that before starting Phase 4.
 
 **Package:** `expo-sqlite` v14+ (built into Expo SDK 54) — native async/await, no community package needed.
 
