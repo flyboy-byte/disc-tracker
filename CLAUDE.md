@@ -6,7 +6,7 @@ Two things in one repo:
 
 1. **A live Flask web app** — personal disc golf bag tracker running on a VPS at `51.81.80.126`. Multi-user, local SQLite, no cloud, no accounts. The website is the canonical version and the spec for everything else.
 
-2. **An Android/iOS app port in progress** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. No app code exists yet — we're still in Phase 0.
+2. **An Android/iOS app port in progress** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Real app code now exists — Phases 0-3 done (parity fixtures verified, Expo scaffold building real signed APKs, pure logic ported with passing tests, SQLite schema/CRUD written). Not yet functional as an app — no screen has real content yet.
 
 ---
 
@@ -171,7 +171,15 @@ a real reason to keep checking model agreement over time rather than the one-tim
 
 ## Mobile app — current state
 
-**No app code written yet.** We are at Phase 0 (parity fixtures).
+**Phases 0-3 done, no functional screens yet.** Parity fixtures verified against the live
+website (and two real bugs in the plan's fixture tables caught and fixed along the way), a
+working Expo scaffold that builds real signed local-Gradle APKs, the pure disc/physics/scenario/
+CSV logic ported to TypeScript with 48/48 tests passing, and a SQLite schema/CRUD layer
+matching `app.py`'s exactly (including `in_bag`) — designed so a future opt-in sync (v1.1) can
+reuse it directly, since local-only v1 never blocks adding sync later. That SQLite layer's
+CRUD behavior is untested on a real device/emulator so far (native module, can't verify under
+plain Jest) — do that before Phase 4. Bag / Flight Shaper / Disc Suggest tabs currently just
+show placeholder text; no disc list, DB wiring, or physics UI exists yet.
 
 ### Read these files before touching anything app-related:
 - `app/PORT_PLAN.md` — full phased build plan, minimum credible v1 milestone, parity fixtures
@@ -205,7 +213,10 @@ a real reason to keep checking model agreement over time rather than the one-tim
 - Never run D1/D2/D3 in parallel
 
 ### Next immediate step:
-Phase 0 — run parity fixture tests against the live website and fill in the tables in `PORT_PLAN.md`. Then Phase 1: Expo scaffold with `npx create-expo-app app --template blank-typescript`.
+Verify the Phase 3 SQLite layer on a real Android emulator or device (this machine has a
+working toolchain + AVDs already — see `app/PORT_PLAN.md` Phase 3's note). Then Phase 4: the
+first real screen (Bag view), wiring `src/db/db.ts` and `src/utils/` into actual UI. Full
+device/emulator test runs are being batched for later rather than done phase-by-phase.
 
 ---
 
