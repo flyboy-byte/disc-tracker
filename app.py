@@ -6,6 +6,7 @@ import secrets
 import sqlite3
 import urllib.parse
 import urllib.request
+from contextlib import contextmanager
 from functools import wraps
 from flask import Flask, jsonify, request, render_template, session, redirect, url_for, abort
 
@@ -28,11 +29,23 @@ else:
 
 # ── Database ──────────────────────────────────────────────────────────────────
 
+@contextmanager
 def get_db():
+    # sqlite3.Connection's own context manager only commits/rolls back — it never closes the
+    # connection, leaving that to CPython's refcounting. Harmless under the old single-threaded
+    # server, but threaded=True means many connections can be live at once now, so close
+    # explicitly rather than relying on GC timing.
     db = sqlite3.connect(DB_FILE)
     db.row_factory = sqlite3.Row
     db.execute('PRAGMA foreign_keys = ON')
-    return db
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
 def init_db():
@@ -101,7 +114,7 @@ def get_csrf_token():
 
 def check_csrf():
     token = request.form.get('_csrf') or request.headers.get('X-CSRF-Token')
-    if not token or token != session.get('csrf_token'):
+    if not token or not secrets.compare_digest(token, session.get('csrf_token', '')):
         abort(403)
 
 
@@ -231,6 +244,13 @@ def get_data():
                     'arcView': meta['arc_view'] or 'RHBH'})
 
 
+def _to_num(v, cast, default=0):
+    try:
+        return cast(v)
+    except (TypeError, ValueError):
+        return default
+
+
 @app.route('/api/data', methods=['POST'])
 @login_required
 def set_data():
@@ -240,7 +260,9 @@ def set_data():
         abort(400)
     user_id   = session['user_id']
     discs     = payload.get('discs', [])
-    next_id   = max(1, min(int(payload.get('nextId') or 100), 999_999_999))
+    if not isinstance(discs, list):
+        discs = []
+    next_id   = max(1, min(_to_num(payload.get('nextId'), int, 100), 999_999_999))
     sort_mode = payload.get('sortMode', 'speed-desc')
     arc_view  = payload.get('arcView', 'RHBH')
     if arc_view not in ('RHBH', 'RHFH', 'LHBH', 'LHFH'):
@@ -254,15 +276,15 @@ def set_data():
             'speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag) '
             'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
-                (user_id, int(d.get('id') or 0), str(d.get('mfr') or '')[:80], str(d.get('mold') or '')[:80],
+                (user_id, _to_num(d.get('id'), int, 0), str(d.get('mfr') or '')[:80], str(d.get('mold') or '')[:80],
                  str(d.get('plastic') or '')[:80], str(d.get('weight') or '')[:20],
-                 float(d.get('speed') or 0), float(d.get('glide') or 0),
-                 float(d.get('turn') or 0), float(d.get('fade') or 0),
+                 _to_num(d.get('speed'), float, 0), _to_num(d.get('glide'), float, 0),
+                 _to_num(d.get('turn'), float, 0), _to_num(d.get('fade'), float, 0),
                  str(d.get('use') or '')[:200], str(d.get('thr') or '')[:10], str(d.get('notes') or '')[:1000],
                  (c if re.match(r'^#[0-9A-Fa-f]{6}$', c := str(d.get('color') or '')) else ''), i,
                  1 if d.get('inBag') else 0)
                 for i, d in enumerate(discs)
-                if str(d.get('mold') or '').strip()  # skip discs with no mold name
+                if isinstance(d, dict) and str(d.get('mold') or '').strip()  # skip discs with no mold name
             ]
         )
         db.execute(
@@ -357,7 +379,10 @@ def get_ms_pic_img():
     mfr  = request.args.get('mfr', '')
     mold = request.args.get('mold', '')
     pic = fetch_ms_pic(mfr, mold)
-    if not pic:
+    # pic comes from the third-party DiscIt API response, cached verbatim — never fetch it
+    # server-side unless it's actually an https image URL, so a compromised/misbehaving
+    # upstream can't turn this proxy into an SSRF vector (file://, internal http hosts, etc).
+    if not pic or not pic.startswith('https://'):
         abort(404)
     try:
         with urllib.request.urlopen(pic, timeout=4) as resp:
@@ -428,13 +453,13 @@ def shotshaper_sim():
     if archetype not in SHOTSHAPER_ARCHETYPES:
         return jsonify({'error': 'unknown archetype'}), 400
 
-    pdga_speed = float(data.get('pdgaSpeed', 9))
-    hyzer      = float(data.get('hyzer', 0))
-    nose       = float(data.get('nose', 0))
-    wind       = float(data.get('wind', 0))
-    crosswind  = float(data.get('crosswind', 0))
-    arm_speed  = float(data.get('armSpeed', 100))
-    spin_pct   = float(data.get('spin', 100))
+    pdga_speed = _to_num(data.get('pdgaSpeed'), float, 9)
+    hyzer      = _to_num(data.get('hyzer'), float, 0)
+    nose       = _to_num(data.get('nose'), float, 0)
+    wind       = _to_num(data.get('wind'), float, 0)
+    crosswind  = _to_num(data.get('crosswind'), float, 0)
+    arm_speed  = _to_num(data.get('armSpeed'), float, 100)
+    spin_pct   = _to_num(data.get('spin'), float, 100)
     arc_view   = data.get('arcView', 'RHBH')
     weight_g   = data.get('weightG')
 
@@ -477,7 +502,7 @@ def shotshaper_sim():
         finally:
             environment.Uref = 0.0
 
-    x, y, z = shot.position
+    x, y, _z = shot.position
     points = [[round(float(px), 2), round(float(py), 2)] for px, py in zip(x, y)]
     return jsonify({'points': points, 'archetype': archetype})
 

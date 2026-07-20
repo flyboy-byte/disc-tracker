@@ -124,4 +124,7 @@ h1 { font-size: 26px; font-weight: 700; }
 /* Generic grid-of-cards primitive. Pages needing a different minimum card
    width override just the --card-min variable in their own <style> block
    (e.g. pick.html sets --card-min: 150px) instead of redefining the rule. */
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--card-min, 200px), 1fr)); gap: 10px; transition: grid-template-columns 0.25s ease; }
+/* No transition on grid-template-columns: browsers only interpolate it when both states
+   resolve to the same track count, and auto-fill's count is variable — a transition here
+   would be a silent no-op, not a bug fix, so it's deliberately left off. */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--card-min, 200px), 1fr)); gap: 10px; }

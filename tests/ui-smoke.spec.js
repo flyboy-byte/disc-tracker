@@ -73,6 +73,19 @@ test.describe('bag view (index.html)', () => {
     expect(idsAfter).not.toEqual(ids);
   });
 
+  test('drag is disabled while the "in bag" filter is active, even in custom sort', async ({ page }) => {
+    // Regression test: dragEnabled previously didn't check bagFilter, so with sort=custom
+    // and "In bag" toggled on, grips still rendered on the filtered (partial) card list —
+    // dragging then scrambled the full array, since every non-visible disc's indexOf() was
+    // -1 and sorted before every bagged disc. Grips must not render at all in this state.
+    await page.click('.bag-check');
+    await page.selectOption('#sortSel', 'custom');
+    await page.waitForTimeout(100);
+    await page.click('#bagFilterBtn');
+    await page.waitForTimeout(100);
+    await expect(page.locator('.grip')).toHaveCount(0);
+  });
+
   test('stability filter pills change visible card count', async ({ page }) => {
     const allCount = await page.locator('.card').count();
     // Alpha (turn -1, fade 3, net 2) is 'overstable'; Beta (turn -3, fade 1, net -2) is

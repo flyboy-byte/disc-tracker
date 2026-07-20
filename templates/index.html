@@ -133,6 +133,12 @@
     color: var(--text); font-size: 14px; padding: 10px 12px; outline: none; cursor: pointer;
   }
   select.sort:focus { border-color: var(--accent); }
+  .filter-btn {
+    background: transparent; border: 1px solid var(--border); border-radius: 10px;
+    color: var(--muted); font-size: 14px; font-weight: 600; padding: 10px 16px;
+    cursor: pointer; white-space: nowrap;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
   .grip {
     display: flex; align-items: center; justify-content: center; align-self: stretch;
     width: 28px; min-width: 28px; flex-shrink: 0; cursor: grab; touch-action: none;
@@ -253,8 +259,8 @@
     <button class="btn btn-ghost" id="fieldBtn">Field view</button>
     <button class="btn btn-ghost" id="importBtn">Import CSV</button>
     <button class="btn btn-ghost" id="exportBtn">Export CSV</button>
-    <button id="bagFilterBtn" onclick="toggleBagFilter()" style="background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:14px;font-weight:600;padding:10px 16px;cursor:pointer;white-space:nowrap;transition:border-color 0.15s,color 0.15s,background 0.15s">In bag</button>
-    <button id="clearBagBtn" onclick="confirmClearBag(this)" style="display:none;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:14px;font-weight:600;padding:10px 16px;cursor:pointer;white-space:nowrap;transition:border-color 0.15s,color 0.15s,background 0.15s">Clear bag</button>
+    <button id="bagFilterBtn" class="filter-btn" onclick="toggleBagFilter()">In bag</button>
+    <button id="clearBagBtn" class="filter-btn" onclick="confirmClearBag(this)" style="display:none">Clear bag</button>
   </div>
 
   <div class="pills" id="pills"></div>
@@ -590,12 +596,12 @@ function render() {
   else if (sortMode === 'mfr')        rows.sort((a,b) => (a.mfr + a.mold).localeCompare(b.mfr + b.mold));
   // 'custom' = leave in array order
 
-  const dragEnabled = sortMode === 'custom' && filter === 'all' && typeFilter === 'all' && !q && viewMode !== 'field';
+  const dragEnabled = sortMode === 'custom' && filter === 'all' && typeFilter === 'all' && !q && !bagFilter && viewMode !== 'field';
   const hint = document.getElementById('dragHint');
   if (viewMode === 'field') {
     hint.textContent = 'field view · filters apply';
   } else if (sortMode === 'custom') {
-    hint.textContent = dragEnabled ? 'drag ⠿ to reorder' : 'clear search/filter to drag-reorder';
+    hint.textContent = dragEnabled ? 'drag ⠿ to reorder' : 'clear search/filters to drag-reorder';
   } else {
     hint.textContent = 'tap arc to expand · tap card to edit';
   }
