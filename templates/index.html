@@ -121,6 +121,10 @@
   }
   .grip:hover { color: var(--text); background: rgba(255,255,255,0.05); }
   .grip:active { cursor: grabbing; }
+  /* Reorder mode: force a single column so drag-to-reorder is a plain vertical
+     list, not a 2D grid — nearest-card math on a wrapping grid is what made
+     dragging feel unpredictable. */
+  .grid.reorder-mode { grid-template-columns: 1fr; }
   @media (max-width: 640px) {
     .grid { grid-template-columns: 1fr; }
   }
@@ -280,6 +284,7 @@ let bagFilter = sessionStorage.getItem('bagFilter') === '1';
 // Today's bag: each disc carries its own `inBag` flag, stored server-side per user
 // (round-trips via /api/data), so it's the same on every device that logs in.
 let dragEl = null, dragGhost = null, dragOffX = 0, dragOffY = 0;
+let dragPX = 0, dragPY = 0, dragRAF = null;
 let _fieldPts = [], _fieldBalloonTimer = null;
 
 const DISC_COLORS = [
@@ -570,6 +575,7 @@ function render() {
   if (fb) fb.textContent = viewMode === 'field' ? 'Card view' : 'Field view';
 
   const grid = document.getElementById('grid');
+  grid.classList.toggle('reorder-mode', dragEnabled);
   if (!rows.length) {
     grid.innerHTML = '<div class="empty">No discs match.</div>';
     return;
@@ -637,6 +643,11 @@ function setTypeFilter(t) { typeFilter = t; render(); }
 function setSort(mode) { sortMode = mode; persist(); render(); }
 
 // ── Drag-to-reorder (ghost-based pointer drag, works on touch + mouse) ──
+// Reorder mode forces the grid to a single column (see .reorder-mode CSS),
+// so this is a plain vertical list drag — reorder math only needs to compare
+// vertical midpoints, and runs once per animation frame (not per pointermove)
+// so it doesn't thrash layout on long bags. Auto-scrolls near the viewport
+// edges so dragging past the visible list actually works.
 function startDrag(e, id) {
   if (sortMode !== 'custom') return;
   e.preventDefault();
@@ -646,6 +657,8 @@ function startDrag(e, id) {
   const rect = el.getBoundingClientRect();
   dragOffX = e.clientX - rect.left;
   dragOffY = e.clientY - rect.top;
+  dragPX = e.clientX;
+  dragPY = e.clientY;
   dragGhost = el.cloneNode(true);
   Object.assign(dragGhost.style, {
     position: 'fixed', width: rect.width + 'px', height: rect.height + 'px',
@@ -659,24 +672,43 @@ function startDrag(e, id) {
   dragEl = el;
   document.addEventListener('pointermove', onDrag);
   document.addEventListener('pointerup', endDrag, { once: true });
+  dragRAF = requestAnimationFrame(dragLoop);
 }
 
 function onDrag(e) {
-  if (!dragGhost || !dragEl) return;
-  // Ghost follows cursor
-  dragGhost.style.top  = (e.clientY - dragOffY) + 'px';
-  dragGhost.style.left = (e.clientX - dragOffX) + 'px';
-  // Live DOM reorder — dimmed card acts as a slot showing the landing position
-  const others = [...document.querySelectorAll('.card')].filter(c => c !== dragEl);
+  if (!dragEl) return;
+  dragPX = e.clientX;
+  dragPY = e.clientY;
+}
+
+function dragLoop() {
+  if (!dragEl) return;
+  applyDragPosition();
+  dragRAF = requestAnimationFrame(dragLoop);
+}
+
+// Ghost follow, auto-scroll, and live reorder for the current dragPX/dragPY.
+// Called from the rAF loop while dragging, and once more synchronously from
+// endDrag() to commit the final position even if no animation frame happened
+// to fire between the last pointermove and pointerup (e.g. a fast/synthetic drag).
+function applyDragPosition() {
+  dragGhost.style.top  = (dragPY - dragOffY) + 'px';
+  dragGhost.style.left = (dragPX - dragOffX) + 'px';
+
+  const EDGE = 70, MAX_SPEED = 16;
+  if (dragPY < EDGE) window.scrollBy(0, -MAX_SPEED * (1 - dragPY / EDGE));
+  else if (dragPY > window.innerHeight - EDGE) window.scrollBy(0, MAX_SPEED * (1 - (window.innerHeight - dragPY) / EDGE));
+
+  const others = [...document.querySelectorAll('#grid .card')].filter(c => c !== dragEl);
   let closest = null, best = Infinity;
   for (const c of others) {
     const r = c.getBoundingClientRect();
-    const dist = (e.clientX - (r.left + r.width/2)) ** 2 + (e.clientY - (r.top + r.height/2)) ** 2;
+    const dist = Math.abs(dragPY - (r.top + r.height / 2));
     if (dist < best) { best = dist; closest = c; }
   }
   if (closest) {
     const r = closest.getBoundingClientRect();
-    const after = e.clientY > r.top + r.height / 2;
+    const after = dragPY > r.top + r.height / 2;
     const grid = document.getElementById('grid');
     if (after) grid.insertBefore(dragEl, closest.nextSibling);
     else grid.insertBefore(dragEl, closest);
@@ -685,11 +717,13 @@ function onDrag(e) {
 
 async function endDrag() {
   document.removeEventListener('pointermove', onDrag);
+  if (dragRAF) { cancelAnimationFrame(dragRAF); dragRAF = null; }
+  if (dragEl && dragGhost) applyDragPosition();
   if (dragGhost) { dragGhost.remove(); dragGhost = null; }
   if (!dragEl) return;
   dragEl.style.opacity = '';
   dragEl = null;
-  const order = [...document.querySelectorAll('.card')].map(c => parseInt(c.dataset.id));
+  const order = [...document.querySelectorAll('#grid .card')].map(c => parseInt(c.dataset.id));
   discs.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   await persist();
   toast('Order saved');

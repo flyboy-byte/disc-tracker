@@ -487,6 +487,7 @@ def shotshaper_sim():
 _master_cache = None
 
 @app.route('/api/master')
+@login_required
 def get_master():
     global _master_cache
     if _master_cache is None:

@@ -48,12 +48,15 @@ test.describe('bag view (index.html)', () => {
   test('cards render with data-id, drag reorders the DOM', async ({ page }) => {
     const cards = page.locator('.card');
     await expect(cards).toHaveCount(3);
-    const ids = await cards.evaluateAll(els => els.map(e => e.dataset.id));
-    expect(ids.every(id => id && !Number.isNaN(Number(id)))).toBe(true);
+    const idsInitial = await cards.evaluateAll(els => els.map(e => e.dataset.id));
+    expect(idsInitial.every(id => id && !Number.isNaN(Number(id)))).toBe(true);
 
-    // sort mode must be 'custom' for drag to be enabled — set via the sort select
+    // sort mode must be 'custom' for drag to be enabled — set via the sort select.
+    // Snapshot the baseline order *after* switching, since custom order (raw array
+    // order) can differ from whatever sort was active before (e.g. speed-desc).
     await page.selectOption('#sortSel', 'custom');
     await page.waitForTimeout(100);
+    const ids = await cards.evaluateAll(els => els.map(e => e.dataset.id));
 
     const grips = page.locator('.grip');
     await expect(grips).toHaveCount(3);
