@@ -166,38 +166,19 @@ git add android/
 
 ---
 
-## Phase 2 — Port Pure Utility Functions
+## Phase 2 — Port Pure Utility Functions ✅ done (2026-07-20)
 
 **Goal:** All pure logic functions in TypeScript, tested against Phase 0 fixtures.
 
-Files to create:
-- `src/utils/disc.ts` — `stab()`, `stabClass()`, `stabShort()`, `bagToDisc()`, `typeShort()`
-- `src/utils/legacyPhysics.ts` — `MOD`, `applyModifiers()`, `arcPoints()`, `estimateDist()` (exact port, no changes)
-- `src/utils/scenarios.ts` — `SCENARIOS` array, `filterBag()`, `filterLibrary()`
-- `src/utils/csv.ts` — `exportCSV()`, `importCSV()`
+Files created (all in `src/utils/`):
+- `disc.ts` — `stab()`, `discType()`, `stabClass()`, `stabShort()`, `bagToDisc()`, `typeShort()`, `MASTER_TYPE_LABEL`
+- `legacyPhysics.ts` — `MOD`, `applyModifiers()`, `arcPoints()`, `estimateDist()` — exact port, no changes
+- `scenarios.ts` — the real 12-entry `SCENARIOS` array (not a subset) + `filterBag()`, `filterLibrary()`
+- `csv.ts` — `buildCSV()`, `parseCSV()`, `discKey()`, `previewImport()` (dedupe + `MAX_IMPORT` cap, matching the website's current behavior — this didn't exist yet when this phase was originally scoped, so it's slightly more than the plan's original `exportCSV()`/`importCSV()` naming, but same behavior)
 
-**Verification:** Write TypeScript unit tests (Jest or Vitest) that take the Phase 0 fixture inputs and assert the expected outputs. These tests must pass before moving to Phase 3.
+**Verification:** Jest (`ts-jest`, `jest.config.js` at the `app/` root) with `*.test.ts` files beside each module, asserting the exact Phase 0 fixture inputs/outputs from PORT_PLAN.md §0A-§0D — including the corrected distance values and the Leopard3/Turnover fix. `npm test` — **48/48 passing**, matched the live website's math on the first real run with zero discrepancies (Phase 0's verification-before-porting approach paid for itself here).
 
-```typescript
-// Example parity test
-it('Destroyer stability is OS', () => {
-  expect(stab({ turn: -1, fade: 3 })).toBe('overstable');
-  expect(stabShort(2)).toBe('OS');
-});
-
-it('estimateDist Destroyer full power calm', () => {
-  const d = { speed: 12, glide: 5 };
-  expect(estimateDist(d, 100, 0, 5, 0, 0)).toBe(380);
-});
-
-it('Roadrunner matches Tailwind scenario', () => {
-  const roadrunner = { speed: 9, glide: 5, turn: -4, fade: 1 };
-  const sc = SCENARIOS.find(s => s.id === 'tailwind');
-  expect(sc.bagTest(roadrunner)).toBe(true);
-});
-```
-
-**Do not yet:** connect to any screen or database.
+**Not done yet, correctly deferred:** connecting any of this to a screen or a database — that's Phases 3+.
 
 ---
 
