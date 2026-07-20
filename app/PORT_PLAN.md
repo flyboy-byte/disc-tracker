@@ -120,9 +120,17 @@ Test discs:
 
 ---
 
-## Phase 1 — Expo Scaffold
+## Phase 1 — Expo Scaffold ✅ done (2026-07-20)
 
 **Goal:** Blank Expo project with navigation, theme, and bundled assets. No business logic yet.
+
+> All deliverables below verified end-to-end on this machine's existing toolchain (JDK 21,
+> Android SDK 36, NDK 27.1.12297006 — already installed, no setup needed): `./gradlew
+> assembleDebug` produced a real signed APK (`com.disctracker.app`, target SDK 36), confirmed
+> zero GMS/Firebase/Play Services dependencies via `./gradlew app:dependencies`. Expo SDK 57
+> (satisfies "54+"), expo-router for the bottom tab shell, `src/theme.ts` ported from
+> `static/style.css`'s real token values. No EAS anywhere in the pipeline. Next: Phase 2 (port
+> pure utility functions), verified against the Phase 0 fixtures above.
 
 ```bash
 cd /home/ubuntu/disc_tracker
