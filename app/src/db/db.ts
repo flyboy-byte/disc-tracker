@@ -39,8 +39,17 @@ export async function getOrCreateDefaultUser(): Promise<number> {
   const db = await openDatabase();
   const existing = await db.getFirstAsync<{ id: number }>('SELECT id FROM users WHERE username = ?', [DEFAULT_USERNAME]);
   if (existing) return existing.id;
-  const result = await db.runAsync('INSERT INTO users (username) VALUES (?)', [DEFAULT_USERNAME]);
-  const userId = result.lastInsertRowId;
+  let userId: number;
+  try {
+    const result = await db.runAsync('INSERT INTO users (username) VALUES (?)', [DEFAULT_USERNAME]);
+    userId = result.lastInsertRowId;
+  } catch {
+    // Two concurrent first-launch calls can both miss the SELECT above and race on the
+    // UNIQUE(username) constraint — re-select rather than crash on the loser.
+    const created = await db.getFirstAsync<{ id: number }>('SELECT id FROM users WHERE username = ?', [DEFAULT_USERNAME]);
+    if (!created) throw new Error('Failed to create or find default user');
+    return created.id;
+  }
   await db.runAsync('INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view) VALUES (?, 100, ?, ?)', [
     userId,
     'speed-desc',
@@ -93,14 +102,19 @@ export async function getDiscs(userId: number): Promise<Disc[]> {
 }
 
 // Bulk replace — same semantics as Flask's POST /api/data (delete all, reinsert in order).
+// Uses withExclusiveTransactionAsync (not withTransactionAsync — per expo-sqlite's own docs,
+// a plain transaction "is not exclusive and can be interrupted by other async queries," which
+// would be a real bug here: this is the write path every future screen mutation calls, so a
+// concurrent getDiscs() could read mid-delete. All queries below run on `txn`, not `db` —
+// that's required for the exclusivity to actually apply.
 export async function saveDiscs(userId: number, discs: Disc[]): Promise<void> {
   const db = await openDatabase();
-  await db.withTransactionAsync(async () => {
-    await db.runAsync('DELETE FROM discs WHERE user_id = ?', [userId]);
+  await db.withExclusiveTransactionAsync(async (txn) => {
+    await txn.runAsync('DELETE FROM discs WHERE user_id = ?', [userId]);
     let sortOrder = 0;
     for (const d of discs) {
       if (!d.mold?.trim()) continue; // skip discs with no mold name, matches app.py
-      await db.runAsync(
+      await txn.runAsync(
         `INSERT INTO discs (user_id, disc_id, mfr, mold, plastic, weight,
            speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
