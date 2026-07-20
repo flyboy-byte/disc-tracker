@@ -317,7 +317,7 @@ def fetch_ms_pic(mfr, mold):
     pic = ''
     try:
         url = MS_API_BASE + '?' + urllib.parse.urlencode({'name': mold})
-        with urllib.request.urlopen(url, timeout=4) as resp:
+        with urllib.request.urlopen(url, timeout=2.5) as resp:
             results = json.loads(resp.read().decode('utf-8'))
         for r in results:
             if str(r.get('name', '')).strip().lower() != mold.lower():
@@ -360,7 +360,7 @@ def get_ms_pic_img():
     if not pic:
         abort(404)
     try:
-        with urllib.request.urlopen(pic, timeout=5) as resp:
+        with urllib.request.urlopen(pic, timeout=4) as resp:
             data = resp.read()
             ctype = resp.headers.get('Content-Type', 'image/webp')
     except Exception:
@@ -517,4 +517,8 @@ def discsuggestion():
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=5757, debug=False)
+    # threaded=True so a slow upstream call (e.g. the Marshall Street lookup, up to
+    # a few seconds on an uncached disc) doesn't block every other user's request —
+    # shotshaper's process-global environment state is already guarded by
+    # _shotshaper_lock for exactly this case.
+    app.run(host='127.0.0.1', port=5757, debug=False, threaded=True)

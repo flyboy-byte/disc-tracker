@@ -74,11 +74,12 @@ h1 { font-size: 26px; font-weight: 700; }
 
 .field { margin-bottom: 10px; }
 .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-.field input {
+.field input, .field select, .field textarea {
   width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-  color: var(--text); font-size: 14px; padding: 9px 12px; outline: none;
+  color: var(--text); font-size: 14px; padding: 9px 12px; outline: none; font-family: inherit;
 }
-.field input:focus { border-color: var(--accent); }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+.field textarea { resize: vertical; }
 .fn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
 .fn-grid input { text-align: center; }
 
@@ -123,4 +124,4 @@ h1 { font-size: 26px; font-weight: 700; }
 /* Generic grid-of-cards primitive. Pages needing a different minimum card
    width override just the --card-min variable in their own <style> block
    (e.g. pick.html sets --card-min: 150px) instead of redefining the rule. */
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--card-min, 200px), 1fr)); gap: 10px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--card-min, 200px), 1fr)); gap: 10px; transition: grid-template-columns 0.25s ease; }

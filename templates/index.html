@@ -92,6 +92,25 @@
   }
   .btn-danger:hover { background: rgba(248,113,113,0.1); }
   .spacer { flex: 1; }
+  .lib-cta {
+    width: 100%; background: rgba(145,94,255,0.1); border: 1px solid rgba(145,94,255,0.35);
+    border-radius: 10px; padding: 11px 14px; margin-bottom: 14px; cursor: pointer;
+    color: var(--accent); font-size: 13px; font-weight: 600; font-family: inherit; text-align: left;
+  }
+  .lib-cta-arrow { font-size: 16px; line-height: 1; }
+  .divider { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 11px; }
+  .divider-line { flex: 1; height: 1px; background: var(--border); }
+  .modal-hint { font-size: 12px; margin-bottom: 10px; }
+  .textarea-mono {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: ui-monospace, monospace; font-size: 11px;
+    padding: 10px; resize: vertical; outline: none; box-sizing: border-box;
+  }
+  .export-scope { display: flex; gap: 8px; margin-bottom: 14px; }
+  .export-scope label {
+    flex: 1; display: flex; align-items: center; gap: 8px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; cursor: pointer;
+  }
   .lib-list { max-height: 360px; overflow-y: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 3px; }
   .lib-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 28px 0; }
   .field-balloon {
@@ -235,6 +254,7 @@
     <button class="btn btn-ghost" id="importBtn">Import CSV</button>
     <button class="btn btn-ghost" id="exportBtn">Export CSV</button>
     <button id="bagFilterBtn" onclick="toggleBagFilter()" style="background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:14px;font-weight:600;padding:10px 16px;cursor:pointer;white-space:nowrap;transition:border-color 0.15s,color 0.15s,background 0.15s">In bag</button>
+    <button id="clearBagBtn" onclick="confirmClearBag(this)" style="display:none;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:14px;font-weight:600;padding:10px 16px;cursor:pointer;white-space:nowrap;transition:border-color 0.15s,color 0.15s,background 0.15s">Clear bag</button>
   </div>
 
   <div class="pills" id="pills"></div>
@@ -546,6 +566,14 @@ function render() {
     bfBtn.style.background = bagFilter ? 'rgba(145,94,255,0.1)' : 'transparent';
     bfBtn.textContent = bagFilter ? `In bag (${bagCount})` : 'In bag';
   }
+  const cbBtn = document.getElementById('clearBagBtn');
+  if (cbBtn) {
+    cbBtn.style.display = bagCount ? 'inline-block' : 'none';
+    cbBtn.textContent = 'Clear bag';
+    cbBtn.style.borderColor = 'var(--border)';
+    cbBtn.style.color = 'var(--muted)';
+    cbBtn.setAttribute('onclick', 'confirmClearBag(this)');
+  }
 
   // Grid
   let rows = discs.filter(d => {
@@ -635,6 +663,20 @@ async function toggleBagged(e, id) {
   d.inBag = !d.inBag;
   render();
   await persist();
+}
+
+function confirmClearBag(btn) {
+  btn.textContent = 'Confirm clear?';
+  btn.style.borderColor = 'var(--danger)';
+  btn.style.color = 'var(--danger)';
+  btn.setAttribute('onclick', 'clearBag()');
+}
+
+async function clearBag() {
+  discs.forEach(d => { d.inBag = false; });
+  render();
+  await persist();
+  toast("Today's bag cleared");
 }
 
 function setFilter(f) { filter = f; render(); }
@@ -755,9 +797,8 @@ function openLibrary() {
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal">
       <h2>Disc library</h2>
-      <input id="lib-search" type="text" placeholder="Search by name or manufacturer…"
-             style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px;outline:none;box-sizing:border-box"
-             oninput="renderLibrary(this.value)" autofocus>
+      <div class="field"><input id="lib-search" type="text" placeholder="Search by name or manufacturer…"
+             oninput="renderLibrary(this.value)" autofocus></div>
       <div class="lib-list" id="lib-list"><div class="lib-empty">Start typing to search…</div></div>
       <div class="modal-btns"><span class="spacer"></span>
         <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
@@ -811,20 +852,11 @@ function showModal(d, isNew) {
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal">
       <h2>${isNew ? 'Add disc' : 'Edit disc'}</h2>
-      ${isNew ? `<button type="button" onclick="closeModal();openLibrary()" style="
-        display:flex;align-items:center;justify-content:space-between;
-        width:100%;background:rgba(145,94,255,0.1);border:1px solid rgba(145,94,255,0.35);
-        border-radius:10px;padding:11px 14px;margin-bottom:14px;cursor:pointer;
-        color:var(--accent);font-size:13px;font-weight:600;font-family:inherit;text-align:left;
-      ">
+      ${isNew ? `<button type="button" class="lib-cta row-between" onclick="closeModal();openLibrary()">
         <span>Autofill from disc library</span>
-        <span style="font-size:16px;line-height:1">&#8250;</span>
+        <span class="lib-cta-arrow">&#8250;</span>
       </button>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-        <span style="font-size:11px;color:var(--muted)">or enter manually</span>
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-      </div>` : ''}
+      <div class="divider"><span class="divider-line"></span><span class="text-muted">or enter manually</span><span class="divider-line"></span></div>` : ''}
       <div class="field"><label>Manufacturer</label><input id="f-mfr" value="${esc(d.mfr)}" placeholder="e.g. Innova"></div>
       <div class="field"><label>Mold</label><input id="f-mold" value="${esc(d.mold)}" placeholder="e.g. Buzzz"></div>
       <div class="field"><label>Plastic</label><input id="f-plastic" value="${esc(d.plastic)}" placeholder="e.g. Star, Cosmic Neutron"></div>
@@ -837,11 +869,11 @@ function showModal(d, isNew) {
       </div>
       <div class="field"><label>Primary use</label><input id="f-use" value="${esc(d.use)}" placeholder="e.g. Overstable utility"></div>
       <div class="field"><label>Throw style</label>
-        <select id="f-thr" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px;outline:none">
+        <select id="f-thr">
           ${['RHBH','RHFH','LHBH','LHFH'].map(t => `<option value="${t}" ${(d.thr||'RHBH')===t?'selected':''}>${t}</option>`).join('')}
         </select>
       </div>
-      <div class="field"><label>Notes</label><textarea id="f-notes" placeholder="Seasoning, condition, where you got it, flight tweaks…" style="width:100%;min-height:70px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:9px 12px;outline:none;resize:vertical;font-family:inherit">${esc(d.notes || '')}</textarea></div>
+      <div class="field"><label>Notes</label><textarea id="f-notes" placeholder="Seasoning, condition, where you got it, flight tweaks…" style="min-height:70px">${esc(d.notes || '')}</textarea></div>
       <div class="field">
         <label>Disc color</label>
         <div class="color-row">
@@ -948,18 +980,18 @@ function exportCSV() {
     <div class="modal">
       <h2>Export CSV</h2>
       ${bagCount ? `
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <label style="flex:1;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer">
+      <div class="export-scope">
+        <label>
           <input type="radio" name="exportScope" value="all" checked onchange="updateExportPreview()">
-          <span style="font-size:13px">All discs <span style="color:var(--muted)">(${discs.length})</span></span>
+          <span style="font-size:13px">All discs <span class="text-muted">(${discs.length})</span></span>
         </label>
-        <label style="flex:1;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;cursor:pointer">
+        <label>
           <input type="radio" name="exportScope" value="bag" onchange="updateExportPreview()">
-          <span style="font-size:13px">Today's bag <span style="color:var(--muted)">(${bagCount})</span></span>
+          <span style="font-size:13px">Today's bag <span class="text-muted">(${bagCount})</span></span>
         </label>
       </div>` : ''}
-      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Tap Copy, or select the text and copy manually. Download works in some browsers.</p>
-      <textarea id="csvOut" readonly style="width:100%;height:200px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:ui-monospace,monospace;font-size:11px;padding:10px;resize:vertical;outline:none">${esc(window._csvData)}</textarea>
+      <p class="text-muted modal-hint">Tap Copy, or select the text and copy manually. Download works in some browsers.</p>
+      <textarea id="csvOut" readonly class="textarea-mono" style="height:200px">${esc(window._csvData)}</textarea>
       <div class="modal-btns">
         <button class="btn btn-ghost" onclick="downloadCSV()">Download</button>
         <span class="spacer"></span>
@@ -1009,16 +1041,16 @@ function importCSV() {
   <div class="modal-bg" onclick="if(event.target===this)closeModal()">
     <div class="modal">
       <h2>Import CSV</h2>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Upload a .csv file or paste CSV text. Expected columns: Manufacturer, Mold, Plastic, Weight, Speed, Glide, Turn, Fade, Primary Use, Notes.</p>
+      <p class="text-muted modal-hint">Upload a .csv file or paste CSV text. Expected columns: Manufacturer, Mold, Plastic, Weight, Speed, Glide, Turn, Fade, Primary Use, Notes.</p>
       <div class="field">
         <label>Upload file</label>
-        <input type="file" id="csvFile" accept=".csv,text/csv" style="color:var(--text);font-size:13px;width:100%">
+        <input type="file" id="csvFile" accept=".csv,text/csv" style="background:none;border:none;padding:0;color:var(--text);font-size:13px">
       </div>
       <div class="field" style="margin-top:8px">
         <label>Or paste CSV</label>
-        <textarea id="csvIn" placeholder="Paste CSV here…" style="width:100%;height:130px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:11px;font-family:ui-monospace,monospace;padding:10px;outline:none;resize:vertical"></textarea>
+        <textarea id="csvIn" class="textarea-mono" placeholder="Paste CSV here…" style="height:130px"></textarea>
       </div>
-      <div id="importPreview" style="font-size:12px;color:var(--muted);margin-top:8px;min-height:18px"></div>
+      <div id="importPreview" class="text-muted" style="font-size:12px;margin-top:8px;min-height:18px"></div>
       <div class="modal-btns">
         <span class="spacer"></span>
         <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
@@ -1086,18 +1118,41 @@ function parseCSV(text) {
   return result;
 }
 
+const MAX_IMPORT = 500;
+
+function discKey(d) {
+  return [d.mfr, d.mold, d.plastic, d.weight].map(s => String(s || '').trim().toLowerCase()).join('|');
+}
+
 function previewImport() {
-  const parsed = parseCSV(document.getElementById('csvIn').value);
+  const rawParsed = parseCSV(document.getElementById('csvIn').value);
+  const existingKeys = new Set(discs.map(discKey));
+  const seen = new Set();
+  let dupes = 0;
+  let parsed = rawParsed.filter(d => {
+    const key = discKey(d);
+    if (existingKeys.has(key) || seen.has(key)) { dupes++; return false; }
+    seen.add(key);
+    return true;
+  });
+  const truncated = parsed.length > MAX_IMPORT;
+  if (truncated) parsed = parsed.slice(0, MAX_IMPORT);
+
   window._importedDiscs = parsed;
   const preview = document.getElementById('importPreview');
   const btn = document.getElementById('importConfirmBtn');
   if (!parsed.length) {
     const hasText = document.getElementById('csvIn').value.trim();
-    preview.textContent = hasText ? 'No valid discs found — check column headers.' : '';
+    preview.textContent = !hasText ? '' : dupes
+      ? 'All discs in this file are already in your bag.'
+      : 'No valid discs found — check column headers.';
     preview.style.color = 'var(--muted)';
     btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = 'Import';
   } else {
-    preview.textContent = `Found ${parsed.length} disc${parsed.length !== 1 ? 's' : ''} — will append to your bag.`;
+    let msg = `Found ${parsed.length} disc${parsed.length !== 1 ? 's' : ''} — will append to your bag.`;
+    if (dupes) msg += ` (${dupes} duplicate${dupes !== 1 ? 's' : ''} skipped)`;
+    if (truncated) msg += ` Capped at ${MAX_IMPORT} per import.`;
+    preview.textContent = msg;
     preview.style.color = 'var(--st)';
     btn.disabled = false; btn.style.opacity = '1';
     btn.textContent = `Import ${parsed.length}`;

@@ -92,14 +92,50 @@ test.describe('bag view (index.html)', () => {
     await page.click('.modal-btns .btn-ghost:has-text("Close")');
 
     const before = await page.locator('.card').count();
+
+    // Re-importing the exact CSV just exported is an all-duplicates case — import
+    // dedupes against the existing bag, so the count must NOT change and the confirm
+    // button must stay disabled.
     await page.click('#importBtn');
     await page.fill('#csvIn', csv);
     await page.waitForTimeout(150);
+    await expect(page.locator('#importConfirmBtn')).toBeDisabled();
+    await expect(page.locator('#importPreview')).toContainText('already in your bag');
+    await page.click('.modal-btns .btn-ghost:has-text("Cancel")');
+    await expect(page.locator('.card')).toHaveCount(before);
+
+    // A genuinely new row in the same CSV should still import normally.
+    const csvWithNewDisc = csv + '\nTest Mfr,Zeta,,,10,4,-2,2,,,\n';
+    await page.click('#importBtn');
+    await page.fill('#csvIn', csvWithNewDisc);
+    await page.waitForTimeout(150);
+    await expect(page.locator('#importConfirmBtn')).toBeEnabled();
+    await expect(page.locator('#importPreview')).toContainText('duplicate');
     await page.click('#importConfirmBtn');
     await page.waitForTimeout(300);
-    // Importing the just-exported CSV re-appends every disc that was in it (the full bag
-    // at export time, "before" discs), so the total should exactly double.
-    await expect(page.locator('.card')).toHaveCount(before * 2);
+    await expect(page.locator('.card')).toHaveCount(before + 1);
+  });
+
+  test('"in bag" persists across reload and clear-bag resets it', async ({ page }) => {
+    const firstCheck = page.locator('.bag-check').first();
+    await firstCheck.click();
+    await expect(firstCheck).toHaveClass(/checked/);
+    await page.waitForTimeout(150); // let persist() finish before reload
+
+    await page.reload();
+    await expect(page.locator('.bag-check').first()).toHaveClass(/checked/);
+
+    const clearBtn = page.locator('#clearBagBtn');
+    await expect(clearBtn).toBeVisible();
+    await clearBtn.click();
+    await expect(clearBtn).toHaveText('Confirm clear?');
+    await clearBtn.click();
+    await expect(page.locator('.bag-check.checked')).toHaveCount(0);
+    await expect(clearBtn).toBeHidden();
+
+    await page.waitForTimeout(150);
+    await page.reload();
+    await expect(page.locator('.bag-check.checked')).toHaveCount(0);
   });
 });
 
