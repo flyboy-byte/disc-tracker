@@ -61,10 +61,15 @@ test.describe('bag view (index.html)', () => {
     const grips = page.locator('.grip');
     await expect(grips).toHaveCount(3);
     const firstBox = await grips.nth(0).boundingBox();
-    const secondBox = await grips.nth(1).boundingBox();
 
     await page.mouse.move(firstBox.x + firstBox.width / 2, firstBox.y + firstBox.height / 2);
     await page.mouse.down();
+    // The grid only collapses to a single column once the drag actually starts (see
+    // .reorder-mode — it's toggled in startDrag/endDrag now, not for the whole custom-sort
+    // session), so the second card's real drop-target position has to be measured *after*
+    // that reflow, not from its pre-drag (multi-column) coordinates.
+    await expect(page.locator('#grid')).toHaveClass(/reorder-mode/);
+    const secondBox = await page.locator('.card').nth(1).boundingBox();
     await page.mouse.move(secondBox.x + secondBox.width / 2, secondBox.y + secondBox.height / 2 + 40, { steps: 8 });
     await page.mouse.up();
     await page.waitForTimeout(200);

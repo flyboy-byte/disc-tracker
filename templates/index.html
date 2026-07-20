@@ -609,7 +609,10 @@ function render() {
   if (fb) fb.textContent = viewMode === 'field' ? 'Card view' : 'Field view';
 
   const grid = document.getElementById('grid');
-  grid.classList.toggle('reorder-mode', dragEnabled);
+  // Single-column layout only applies while a drag is actually in progress (toggled in
+  // startDrag/endDrag) — not for the whole time sort=custom, so the multi-card grid stays
+  // the normal browsing view even when custom sort is selected.
+  if (!dragEnabled) grid.classList.remove('reorder-mode');
   if (!rows.length) {
     grid.innerHTML = '<div class="empty">No discs match.</div>';
     return;
@@ -716,6 +719,10 @@ function startDrag(e, id) {
     transition: 'none', margin: '0'
   });
   document.body.appendChild(dragGhost);
+  // Collapse to single-column *after* the ghost is positioned (fixed, so unaffected by the
+  // reflow) — the visual anchor under the cursor/finger doesn't move, only the dimmed
+  // original card and the rest of the grid do, which is far less noticeable.
+  document.getElementById('grid').classList.add('reorder-mode');
   el.style.opacity = '0.2';
   dragEl = el;
   document.addEventListener('pointermove', onDrag);
@@ -772,6 +779,7 @@ async function endDrag() {
   dragEl.style.opacity = '';
   dragEl = null;
   const order = [...document.querySelectorAll('#grid .card')].map(c => parseInt(c.dataset.id));
+  document.getElementById('grid').classList.remove('reorder-mode');
   discs.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   await persist();
   toast('Order saved');
