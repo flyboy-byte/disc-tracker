@@ -323,9 +323,18 @@ setMeta(userId: number, updates: Partial<UserMeta>): Promise<void>
 ### 8A — Local Preview Build (sideload testing)
 
 ```bash
-cd android && ./gradlew assembleRelease
+cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
 # APK is at android/app/build/outputs/apk/release/ — install via adb or direct transfer
 ```
+
+`-PreactNativeArchitectures=arm64-v8a,armeabi-v7a` overrides `gradle.properties`'
+default (all 4 ABIs, kept for local emulator debug builds — this machine's AVDs are
+x86_64) for real-device release builds only: real phones are arm64-v8a or, on older
+hardware, armeabi-v7a — x86/x86_64 are emulator/Chromebook-only and just dead weight in
+a release/sideload APK. Also cuts release build time roughly in proportion to the
+number of native targets dropped. `android.enableMinifyInReleaseBuilds` and
+`android.enableShrinkResourcesInReleaseBuilds` are also on now (`gradle.properties`) —
+R8 + resource shrinking for release only, debug is unaffected.
 
 **Smoke test checklist:**
 - [ ] App opens cold — no crash
@@ -362,9 +371,12 @@ cd android && ./gradlew app:dependencies | grep -i 'gms\|firebase\|play-services
 
 ```bash
 # Local AAB build (not EAS)
-cd android && ./gradlew bundleRelease
+cd android && ./gradlew bundleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
 # Upload AAB to Play Console → Internal testing → Closed testing
 ```
+
+Same ABI override as 8A — Play generates per-device split APKs from the AAB itself, so
+there's no reason to ship x86/x86_64 native code in it either.
 
 Resolve all Play Console requirements before touching F-Droid:
 - Target SDK declaration
@@ -383,7 +395,7 @@ F-Droid setup took significantly longer than Play Console on DragTree — differ
 Local builds are the prerequisite — EAS cloud builds never matched F-Droid's Debian sandbox. Local builds close the gap as much as possible (same JDK flavor, same NDK version, flat npm). However: no React Native/Expo app is *known* to have achieved a full F-Droid byte-match. The goal is to get close enough that F-Droid's reviewer accepts it, not to guarantee a perfect bit-for-bit match.
 
 **Reference APK workflow:**
-1. Build locally with production keystore: `cd android && ./gradlew assembleRelease`
+1. Build locally with production keystore: `cd android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a`
 2. Verify signing: `apksigner verify --print-certs app-release.apk` — SHA256 must match `AllowedAPKSigningKeys` in fdroiddata YAML
 3. Tag: `git tag v1.0.0 && git push --tags`
 4. Upload signed APK to GitHub releases as `disc-tracker-v1.0.0.apk`
