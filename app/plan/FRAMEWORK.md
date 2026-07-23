@@ -75,7 +75,9 @@ Maps directly onto `PORT_PLAN.md`'s own phases:
       `scenarios.ts`, `csv.ts` — 48/48 tests passing)
 - [x] Phase 3 (SQLite schema/CRUD written, typechecks clean, on-device CRUD verified
       2026-07-23 — see Phase 2 above)
-- [ ] Phase 4 (Bag screen — first real screen with actual content)
+- [x] Phase 4 (Bag screen — display, add-from-library, edit, delete, sort, search/
+      filter, color picker all verified on-device 2026-07-23; drag-reorder built but
+      not yet drag-gesture-tested — see `../PORT_PLAN.md` Phase 4 status note)
 - [ ] Phase 5 (Flight Shape screen)
 - [ ] Phase 6 (Disc Suggest screen)
 - [ ] Phase 7 (Import/Export)
@@ -85,7 +87,8 @@ Maps directly onto `PORT_PLAN.md`'s own phases:
 
 **Gate to Phase 4 (of this framework):** one working version that does the core thing
 end-to-end — i.e. `PORT_PLAN.md` Phase 8's smoke-test checklist passing on a real
-device. **Not yet met** — no screen has real content yet.
+device. **Not yet met** — the Bag screen exists and works, but Flight Shaper, Disc
+Suggest, and Import/Export are still placeholder.
 
 ### Phase 4 — Verify
 
@@ -106,6 +109,9 @@ device. **Not yet met** — no screen has real content yet.
 
 ## Current status (update this line as phases advance)
 
-**Phase 2's SQLite blocker is cleared (2026-07-23, on-device CRUD verified — see above).
-Phase 3 is otherwise unblocked. The next action is `PORT_PLAN.md` Phase 4: the first
-real screen (Bag view), wiring `src/db/db.ts` and `src/utils/` into actual UI.**
+**The Bag screen (`PORT_PLAN.md` Phase 4) is built and verified on-device (2026-07-23)
+— display, add-from-library, edit, delete, sort, search/filter, and color picker all
+confirmed working by hand on a real emulator, including SQLite persistence across app
+kills. One open item: drag-reorder is wired up but not yet tested with a real drag
+gesture (only tap-based emulator input was available this session). Next action is
+`PORT_PLAN.md` Phase 5 (Flight Shape screen).**

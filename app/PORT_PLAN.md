@@ -232,16 +232,18 @@ setMeta(userId: number, updates: Partial<UserMeta>): Promise<void>
 **Goal:** Full disc bag view matching `index.html` behavior.
 
 **Features in priority order:**
-1. Display disc list (cards with stability chip, flight numbers, color swatch)
-2. Add disc from master library search
-3. Edit disc (all fields)
-4. Delete disc (confirm)
-5. Sort modes (speed-desc, speed-asc, name, mfr, custom)
-6. Drag-reorder (`react-native-draggable-flatlist`)
-7. Search / filter by stability class or disc type
-8. Color picker
-9. CSV export
-10. CSV import
+1. Display disc list (cards with stability chip, flight numbers, color swatch) — **done**
+2. Add disc from master library search — **done**
+3. Edit disc (all fields) — **done**
+4. Delete disc (confirm) — **done**
+5. Sort modes (speed-desc, speed-asc, name, mfr, custom) — **done**
+6. Drag-reorder (`react-native-draggable-flatlist`) — **built, not yet verified on-device**
+   (custom sort mode wires it up; needs a real drag gesture test, not just a tap-based
+   emulator check — `adb shell input swipe` or a physical device)
+7. Search / filter by stability class or disc type — **done**
+8. Color picker — **done**
+9. CSV export — not started (moved to Phase 7, which owns the CSV parity check)
+10. CSV import — not started (moved to Phase 7, which owns the CSV parity check)
 
 **Web behavior to match:**
 - Card shows: mfr, mold, plastic, weight, speed/glide/turn/fade, use_desc, notes, color, stability chip
@@ -250,6 +252,20 @@ setMeta(userId: number, updates: Partial<UserMeta>): Promise<void>
 - Custom sort order persisted to `discs.sort_order`
 
 **Skip for v1:** Welcome modal (one-time tooltip shown to new users).
+
+**Status (2026-07-23):** Items 1–5, 7, 8 built and verified end-to-end on a real Android
+emulator (`src/components/DiscCard.tsx`, `DiscFormModal.tsx`, `DiscLibraryModal.tsx`,
+`src/utils/masterLibrary.ts`, `src/utils/discColors.ts`, `app/(tabs)/index.tsx`) —
+display, add-from-library (with a real bug found and fixed: the form modal didn't
+remount between a blank add and a library-prefilled add, so prefill silently no-opped;
+fixed via an explicit remount-key counter), edit, delete-with-confirm, and SQLite
+persistence across app kills all confirmed by hand on-device, not just typechecked.
+Item 6 (drag-reorder) is wired up (`DraggableFlatList`, `GestureHandlerRootView` added
+to `app/_layout.tsx`) but not yet drag-tested for real — `adb shell input tap` can't
+simulate a drag gesture, so this needs a follow-up pass with a real swipe/drag input or
+a physical device. CSV (9–10) intentionally deferred to Phase 7 below, which already
+owns the CSV parity check against the website — building it here would be working
+ahead of that phase's own verification step.
 
 ---
 
