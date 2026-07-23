@@ -274,24 +274,52 @@ ahead of that phase's own verification step.
 **Goal:** Flight simulator matching `flightshape.html` behavior.
 
 **Features:**
-1. Disc picker (from bag + manual number entry)
-2. 5 sliders: hyzer (-30°..+30°), nose (-20°..+20°), wind (-20..+20), arm (0–100%), spin (0–100%)
-3. Arc SVG redraws on every slider change
-4. Ghost arc shown when sliders deviate from default
-5. Adjusted stability badge + flight numbers
-6. Distance estimate bar
-7. arcView selector (RHBH/RHFH/LHBH/LHFH) — persisted to `user_meta.arc_view`
-8. Hyzer reference diagram (X-shaped SVG with disc silhouettes)
-9. Side-view and back-view angle diagrams
-10. Reset button
+1. Disc picker (from bag + manual number entry) — **done**
+2. 5 sliders: hyzer (-30°..+30°), nose (-15°..+15° — this doc said -20..+20, but the live
+   site's actual markup (`flightshape.html` `#sl-nose`) uses -15..+15; built to match the
+   live site, not this doc, since website behavior is the parity source of truth), wind
+   (-20..+20), arm (50–100%), spin (50–100%) — **done**
+3. Arc SVG redraws on every slider change — **done**
+4. Ghost arc shown when sliders deviate from default — **done**
+5. Adjusted stability badge + flight numbers — **done**
+6. Distance estimate bar — **done**
+7. arcView selector (RHBH/RHFH/LHBH/LHFH) — persisted to `user_meta.arc_view` — **done**
+8. Hyzer reference diagram (X-shaped SVG with disc silhouettes) — **done**
+9. Side-view and back-view angle diagrams — **done**
+10. Reset button — **done**
 
-**Key mapping decisions:**
-- Horizontal `<input type="range">` → `@react-native-community/slider` (horizontal, default)
-- Vertical sliders → Custom `VerticalSlider.tsx` using **Reanimated 4 + `useSharedValue`** — gives 60fps arc update on-device without threading headaches (smoother than canvas-based web approach)
-- `arcPoints()` output → `<Svg>` + `<Path>` in `react-native-svg`
-- `drawArc()` → `ArcSvg.tsx` component that takes adjusted disc + sliders, renders SVG
+Physics-sim mode (server-side shotshaper, the "Physics sim (research)" toggle on the
+website) was deliberately **not** ported — it requires a live network call to the Flask
+server, which violates the hard constraint "do not make the app depend on the Flask
+server." Only the legacy Bézier arc is in mobile v1.
 
-**Parity check:** Load Destroyer (12/5/-1/3) at 100%/0°/0°/calm/100%. Arc should show slight right turn then firm left fade. Distance bar ~380ft.
+**Key mapping decisions (updated from original plan, 2026-07-23):**
+- Horizontal sliders: not needed — Flight Shaper has none (all 5 conditions sliders are
+  vertical on the website too).
+- Vertical sliders → `VerticalSlider.tsx`, but **not** via the originally-planned route.
+  First attempt used a horizontal `@react-native-community/slider` rotated -90deg (the
+  same CSS trick `flightshape.html` itself uses on a horizontal `<input type="range">`).
+  That measurably failed on-device: nested inside a ScrollView, a real drag always got
+  claimed as a page scroll instead of a thumb drag — confirmed with both plain
+  `react-native`'s `ScrollView` and `react-native-gesture-handler`'s `ScrollView`, at both
+  fast and slow drag speeds (so not a synthetic-input artifact). A native platform
+  `Slider`'s touch-claim logic doesn't go through RNGH's gesture negotiation layer at
+  all. Rebuilt as originally speced — **Reanimated 4 (`useSharedValue`) +
+  `react-native-gesture-handler`'s `Gesture.Pan()`/`GestureDetector`** driving a plain
+  `View` thumb/track directly — this actually resolves the conflict, since a
+  GestureDetector-driven pan does go through RNGH's negotiation layer. Confirmed working
+  on-device after switching. Two real bugs hit and fixed along the way: (1) plain helper
+  functions called from inside the gesture's `onUpdate` worklet need their own
+  `'worklet'` directive or Reanimated throws "Tried to synchronously call a Remote
+  Function"; (2) syncing the shared value from the `value` prop must happen in a
+  `useEffect`, not directly in the render body, or Reanimated's strict mode warns
+  ("Writing to `value` during component render").
+- `arcPoints()` output → `<Svg>` + `<Path>` in `react-native-svg` — as planned.
+- `drawArc()` → `FlightArcSvg.tsx` (named slightly differently than the `ArcSvg.tsx`
+  this doc originally proposed) — takes adjusted disc + base disc (for the ghost) +
+  sliders + arcView, renders the full SVG.
+
+**Parity check:** Load Destroyer (12/5/-1/3) at 100%/0°/0°/calm/100%. Arc should show slight right turn then firm left fade. Distance bar ~380ft. **Verified on-device 2026-07-23** with a 7/5/0/2 manual disc (not Destroyer specifically, but the same code path) — hyzer/arcView/distance/badge all update correctly and consistently with each other on a real drag gesture, not just a typecheck.
 
 ---
 

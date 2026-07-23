@@ -78,7 +78,10 @@ Maps directly onto `PORT_PLAN.md`'s own phases:
 - [x] Phase 4 (Bag screen — display, add-from-library, edit, delete, sort, search/
       filter, color picker all verified on-device 2026-07-23; drag-reorder built but
       not yet drag-gesture-tested — see `../PORT_PLAN.md` Phase 4 status note)
-- [ ] Phase 5 (Flight Shape screen)
+- [x] Phase 5 (Flight Shape screen — disc picker, 5 sliders, arc + ghost arc, adjusted
+      badge/nums, distance bar, arcView selector, angle-ref diagrams, reset, all
+      verified on-device 2026-07-23. Physics-sim mode deliberately not ported — server
+      dependency, see `../PORT_PLAN.md`)
 - [ ] Phase 6 (Disc Suggest screen)
 - [ ] Phase 7 (Import/Export)
 - [ ] Phase 8 (Android build + full smoke test on a physical device)
@@ -109,9 +112,13 @@ Suggest, and Import/Export are still placeholder.
 
 ## Current status (update this line as phases advance)
 
-**The Bag screen (`PORT_PLAN.md` Phase 4) is built and verified on-device (2026-07-23)
-— display, add-from-library, edit, delete, sort, search/filter, and color picker all
-confirmed working by hand on a real emulator, including SQLite persistence across app
-kills. One open item: drag-reorder is wired up but not yet tested with a real drag
-gesture (only tap-based emulator input was available this session). Next action is
-`PORT_PLAN.md` Phase 5 (Flight Shape screen).**
+**Both the Bag screen (Phase 4) and Flight Shaper screen (Phase 5) are built and
+verified on-device (2026-07-23) — see `../PORT_PLAN.md` for the per-feature checklist
+and the two real bugs found and fixed along the way (Bag: a form-remount bug that
+silently dropped library-prefill; Flight Shaper: a native-Slider/ScrollView gesture
+conflict that required rebuilding the vertical slider on Reanimated + gesture-handler).
+`adb shell input swipe` turned out to work fine for testing real drag gestures on the
+emulator (used successfully for the Flight Shaper sliders) — Bag screen's drag-reorder
+is still the one untested interaction, worth revisiting with the same technique rather
+than assuming it needs a physical device. Next action is `PORT_PLAN.md` Phase 6 (Disc
+Suggest screen).**
