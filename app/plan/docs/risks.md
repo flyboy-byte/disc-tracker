@@ -29,10 +29,14 @@
   on-device. If this is ever wanted on mobile it would need either a from-scratch port
   of a GPLv3 rigid-body simulator to run natively, or a network call back to the VPS —
   both are real scope additions, not currently planned (see `notes.md`).
-- **F-Droid's reproducibility bar for RN apps** is a real unknown (see
-  `research-handoff.md`) — if it turns out no realistic amount of effort gets a byte
-  match, the fallback (reference-APK workflow, `Binaries:` entry in fdroiddata) is
-  already the documented plan, so this risk is bounded, not open-ended.
+- ~~F-Droid's reproducibility bar for RN apps is a real unknown~~ — **resolved
+  2026-07-23**: the developer's DragTree app already achieved a full `Binaries:` byte
+  match and got merged into F-Droid's index, proving it's achievable for this exact
+  stack (Expo/RN, local Gradle, no EAS). The concrete playbook — four root causes and
+  their fixes, reviewer's actual requirements, the two-run signing process — is in
+  `fdroid-reference.md`. Remaining risk is narrower now: applying that playbook
+  correctly to this app's specific dependency set when D2 actually starts, not whether
+  it's possible at all.
 
 ## Legal / licensing risk
 

@@ -36,6 +36,7 @@ read — doesn't re-argue the framing.
 | --- | --- |
 | [`infrastructure.md`](./infrastructure.md) | What tools/stack/constraints to actually work within |
 | [`risks.md`](./risks.md) *(technical/operational sections)* | What breaks in practice and how it's guarded against |
+| [`fdroid-reference.md`](./fdroid-reference.md) | F-Droid submission playbook distilled from DragTree's real, completed submission — relevant at D2/D3, not before |
 
 | [`../PORT_PLAN.md`](../../PORT_PLAN.md) | The actual phased build plan (Phases 0–8 + distribution track), parity fixtures, per-phase deliverables — lives one directory up, outside this packet |
 | [`../RESEARCH.md`](../../RESEARCH.md) | Framework/toolchain decisions, sync design, F-Droid notes — same, one directory up |

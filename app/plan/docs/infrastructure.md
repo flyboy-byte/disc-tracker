@@ -111,9 +111,17 @@ config, not code:
   a plain Gradle project property rather than something configurable per build variant
   in `build.gradle`) — see the updated commands in `../../PORT_PLAN.md` Phase 8 and D1.
   Real phones are arm64-v8a or (older hardware) armeabi-v7a; x86/x86_64 are
-  emulator/Chromebook-only and pure dead weight in anything that ships. **Not yet
-  verified with a real build** — the override needs a real `assembleRelease` run to
-  confirm it doesn't break anything before it's trusted.
+  emulator/Chromebook-only and pure dead weight in anything that ships.
+  **Verified with a real build (2026-07-23)**: ran a full `assembleRelease` with this
+  override and unzipped the result — it contains only `lib/arm64-v8a/` and
+  `lib/armeabi-v7a/`, no `x86`/`x86_64`. Worth knowing: this mechanism sets the same
+  underlying `ndk.abiFilters` config that the developer's other Expo/RN app (DragTree)
+  found to *silently fail* on an older Expo/RN/AGP combination (it produced disguised
+  universal APKs — see `fdroid-reference.md`). It measurably works here on this
+  project's newer toolchain, but re-run the `unzip -l app-release.apk | grep lib/`
+  check after any future Expo/RN/AGP bump rather than assuming it stays fixed — the
+  known-working fallback if it ever regresses is `android.splits.abi`, documented in
+  `fdroid-reference.md`.
 - **Play Store size is already handled separately from this**: `bundleRelease`
   produces an AAB, and Play generates per-device split APKs from it automatically —
   minify/shrink still help (smaller AAB, less to transfer/analyze), but ABI bloat
