@@ -69,8 +69,13 @@ suggestions:
   no real SQL behavior under plain Node/Jest (confirmed by an actual failed attempt:
   `SyntaxError: Unexpected token 'export'` trying to transform its ESM build output). A
   test file was written and deleted rather than kept as a misleading "pass." Real
-  verification needs an Android emulator or physical device — deliberately deferred,
-  not silently skipped (see `FRAMEWORK.md` Phase 2 and `risks.md`).
+  verification needed an Android emulator — **done 2026-07-23**: built a fresh AVD
+  (none of the two pre-existing `.avd` directories were actually functional — no
+  `config.ini`, no system image, not real AVDs despite the directories existing; a new
+  one was created from the system images already on disk), installed a real debug APK,
+  and ran the full CRUD path (open → create user → save/read discs → meta round-trip →
+  bulk-replace → cascade delete) via a temporary harness swapped into the Bag tab and
+  reverted afterward. All passed — see `FRAMEWORK.md` Phase 2.
 - **Bundling verification**: `npx expo export --platform android` — this is the only
   check that actually catches JS-pre-bundling breaks (a real regression happened once
   this way: a silently-pruned `react-native-worklets` dependency broke every
@@ -114,6 +119,18 @@ config, not code:
   minify/shrink still help (smaller AAB, less to transfer/analyze), but ABI bloat
   specifically only matters for the F-Droid reference-APK workflow and direct sideload
   installs, which use a universal APK with all compiled ABIs.
+
+## Known build gotcha: stale `.cxx` cache after dependency changes
+
+Hit during the 2026-07-23 on-device verification build: `reanimated`'s and
+`expo-modules-core`'s native builds failed with `ninja: error: '.../libworklets.so ...
+missing and no known rule to make it'`, pointing at a stale CMake-generated hash
+directory for `react-native-worklets` that no longer matched worklets' actual current
+build output hash. Not a code bug — a stale `node_modules/*/android/.cxx` config cache
+left over from an earlier dependency state. Fix: `rm -rf` the `.cxx` directories under
+`node_modules/react-native-worklets/android`, `node_modules/react-native-reanimated/
+android`, `node_modules/expo-modules-core/android`, and `android/app`, then rebuild.
+Worth knowing before assuming a real native regression if this error resurfaces.
 
 ## What's notably absent (gaps to fill)
 

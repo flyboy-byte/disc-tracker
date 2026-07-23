@@ -57,11 +57,10 @@
 
 ## Technical risk
 
-- **The SQLite CRUD layer is unverified on real native code** — the single largest
-  concrete technical risk right now, called out repeatedly in `PORT_PLAN.md` and this
-  packet's `FRAMEWORK.md`. It typechecks and the logic mirrors `app.py`'s schema
-  exactly, but "the code looks right" and "the code works under real native SQLite
-  concurrency" are different claims, and only the first has been checked so far.
+- ~~The SQLite CRUD layer is unverified on real native code~~ — **resolved 2026-07-23**.
+  Verified end-to-end on a real Android emulator (open → create user → save/read discs
+  → meta round-trip → bulk-replace → cascade delete), all passed. See `FRAMEWORK.md`
+  Phase 2. No longer a risk; kept here as a historical note until the next edit pass.
 - **The custom vertical-slider component** (Reanimated + `useSharedValue`, no direct
   RN built-in equivalent) is planned but unbuilt (Phase 5) — real on-device performance
   for a 60fps arc-redraw-on-drag interaction is unverified until it exists.

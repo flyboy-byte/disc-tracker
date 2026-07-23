@@ -31,10 +31,10 @@ Update this file as answers come in from real tests or research.
 
 ## Sequencing — a reasonable next stretch of work
 
-1. Boot an AVD, run the deferred Phase 3 SQLite verification (open → create user → save
-   3 discs → read back → delete-cascade) for real — this is the single blocking item
-   before any further build work, per `FRAMEWORK.md`.
-2. `PORT_PLAN.md` Phase 4 (Bag screen) — the first real screen with actual content.
+1. ~~Boot an AVD, run the deferred Phase 3 SQLite verification~~ — **done 2026-07-23,
+   all passed.** See `FRAMEWORK.md` Phase 2.
+2. `PORT_PLAN.md` Phase 4 (Bag screen) — the first real screen with actual content. This
+   is now the next unblocking action.
 3. Phases 5–7 (Flight Shape, Disc Suggest, Import/Export) in the order `PORT_PLAN.md`
    already lays out — each has its own parity check against the live website.
 4. Phase 8 full smoke test on a physical device, then the distribution track (D1 before

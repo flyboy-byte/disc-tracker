@@ -50,17 +50,21 @@ Capture   ──►   Scoping  ──►   Validation ──►  Build   ──�
 
 - [ ] Run the `docs/research-handoff.md` queue (F-Droid RN reproducible-build reality,
       Play Console Data Safety form for a zero-network app, expo-sqlite API stability)
-- [ ] **Verify the Phase 3 SQLite layer on a real Android emulator/device** — this is
-      the concrete blocker called out in `PORT_PLAN.md` Phase 3: `db.test.ts` had to be
-      deleted because `expo-sqlite` has no real SQL behavior under plain Jest, so this
-      has never actually been run against real native code
-- [ ] Decide, based on the above, whether the SQLite CRUD design (delete+reinsert
-      `saveDiscs()`, exclusive-transaction pattern) holds up under real device I/O
+- [x] **Verify the Phase 3 SQLite layer on a real Android emulator/device** — done
+      2026-07-23 on a fresh `verify_test` AVD (API 37, x86_64, 4GB RAM). Built and
+      installed a real debug APK, ran `openDatabase` → `getOrCreateDefaultUser` →
+      `saveDiscs`(3 discs) → `getDiscs` (order + `in_bag` integrity) → `setMeta`/
+      `getMeta` round-trip → `saveDiscs` bulk-replace (delete+reinsert) →
+      `deleteUser` cascade (confirms `PRAGMA foreign_keys = ON` actually works) via a
+      temporary harness swapped into the Bag tab, screenshotted, then reverted —
+      **ALL PASS**, no code changes needed.
+- [x] Decide, based on the above, whether the SQLite CRUD design (delete+reinsert
+      `saveDiscs()`, exclusive-transaction pattern) holds up under real device I/O —
+      **it holds up**, verified end-to-end above.
 
 **Gate to Phase 3:** at least one real signal that the SQLite layer works on-device —
-**not yet met**. Per an earlier explicit instruction, this is intentionally *not* being
-chased proactively phase-by-phase — it's the one deferred item, batched for a dedicated
-verification pass rather than done ad hoc.
+**met** (2026-07-23). The research-handoff queue is still open but isn't build-blocking
+(see `docs/research-handoff.md`) — safe to proceed to Phase 4 (Bag screen) in parallel.
 
 ### Phase 3 — Build
 
@@ -69,8 +73,8 @@ Maps directly onto `PORT_PLAN.md`'s own phases:
 - [x] Phase 0 (parity fixtures) + Phase 1 (Expo scaffold, real signed debug APK, no EAS)
 - [x] Phase 2 (pure logic ported to TypeScript — `disc.ts`, `legacyPhysics.ts`,
       `scenarios.ts`, `csv.ts` — 48/48 tests passing)
-- [x] Phase 3 (SQLite schema/CRUD written, typechecks clean) — **code done, on-device
-      behavior not verified (see Phase 2 above)**
+- [x] Phase 3 (SQLite schema/CRUD written, typechecks clean, on-device CRUD verified
+      2026-07-23 — see Phase 2 above)
 - [ ] Phase 4 (Bag screen — first real screen with actual content)
 - [ ] Phase 5 (Flight Shape screen)
 - [ ] Phase 6 (Disc Suggest screen)
@@ -102,8 +106,6 @@ device. **Not yet met** — no screen has real content yet.
 
 ## Current status (update this line as phases advance)
 
-**Phase 1 (Scoping) just completed via this packet. The real blocker is Phase 2
-(Validation): verify the Phase 3 SQLite CRUD layer on a real Android emulator or
-device — everything in `PORT_PLAN.md` Phase 4 onward (the first real screen) depends on
-that layer actually working, not just typechecking. That's the single highest-leverage
-next action.**
+**Phase 2's SQLite blocker is cleared (2026-07-23, on-device CRUD verified — see above).
+Phase 3 is otherwise unblocked. The next action is `PORT_PLAN.md` Phase 4: the first
+real screen (Bag view), wiring `src/db/db.ts` and `src/utils/` into actual UI.**
