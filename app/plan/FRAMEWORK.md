@@ -114,11 +114,16 @@ Suggest, and Import/Export are still placeholder.
 
 **Both the Bag screen (Phase 4) and Flight Shaper screen (Phase 5) are built and
 verified on-device (2026-07-23) — see `../PORT_PLAN.md` for the per-feature checklist
-and the two real bugs found and fixed along the way (Bag: a form-remount bug that
+and three real bugs found and fixed along the way (Bag: a form-remount bug that
 silently dropped library-prefill; Flight Shaper: a native-Slider/ScrollView gesture
-conflict that required rebuilding the vertical slider on Reanimated + gesture-handler).
-`adb shell input swipe` turned out to work fine for testing real drag gestures on the
-emulator (used successfully for the Flight Shaper sliders) — Bag screen's drag-reorder
-is still the one untested interaction, worth revisiting with the same technique rather
-than assuming it needs a physical device. Next action is `PORT_PLAN.md` Phase 6 (Disc
-Suggest screen).**
+conflict that required rebuilding the vertical slider on Reanimated + gesture-handler;
+Flight Shaper again, found by the user in the wild after `mobile-preview-0.2` shipped:
+a mount-only `useEffect` meant the bag list never refreshed after switching tabs — fixed
+in `mobile-preview-0.3` with `useFocusEffect`, and this exact pattern needs to be
+applied proactively in Phase 6, not rediscovered). `adb shell input swipe` works fine
+for testing real drag gestures on the emulator (used successfully for the Flight Shaper
+sliders) — Bag screen's drag-reorder is still the one untested interaction, worth
+revisiting with the same technique rather than assuming it needs a physical device.
+Three debug-signed preview APKs (`mobile-preview-0.1`–`0.3`) are on GitHub Releases for
+hands-on testing — no production keystore or Play/F-Droid submission yet. Next action
+is `PORT_PLAN.md` Phase 6 (Disc Suggest screen).**
