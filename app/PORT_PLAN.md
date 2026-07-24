@@ -21,9 +21,12 @@
 The full v1 feature set shipped as `mobile-preview-0.4`; Phase 9 (the post-`0.4` polish +
 gap-closing pass, plus a new Settings tab) shipped as **`mobile-preview-0.5`**. Several
 real bugs were found and fixed by actually running the app (Phase 4/5/7/9 sections below) —
-which is why every phase gets an on-device pass, not just a green build. As of 2026-07-24
-the *only* unmet Minimum-Milestone item is a physical-device cold start; everything else,
-including drag-reorder, is verified on the emulator.
+which is why every phase gets an on-device pass, not just a green build. **`0.5` was
+sideloaded and confirmed working on a real physical Android device (2026-07-24) — so every
+Minimum Credible v1 Milestone item is now met. v1 is functionally complete.** The next real
+work is the Distribution Track (below). One UX issue surfaced from real-device use: the
+**Flight Shaper workflow needs a rework** (see the note after Phase 9) — a v1.x polish item,
+not a blocker.
 
 **What actually works right now, if you install a build:**
 - **Bag tab** — full CRUD (add manual or from the 1,660+ disc library, edit, delete,
@@ -54,11 +57,12 @@ true R8-minified release config.
   `adb input motionevent` hold-then-move; persists across restart.
 - ~~"database is locked" under concurrent read/write~~ — **fixed** (Phase 9): DB ops
   serialized in `db.ts`.
-- **No physical device has run this app yet** — everything so far is emulator-only
-  (x86_64 AVD `verify_test`). The shipped preview APKs are arm64/armeabi and have not
-  been installed on real hardware by anyone but the end user downloading them blind. This
-  is now the single remaining Minimum-Milestone gap.
-- No production keystore — see Distribution Track D1 below.
+- ~~No physical device has run this app~~ — **resolved 2026-07-24**: `0.5` sideloaded and
+  confirmed working on a real Android phone. Minimum Milestone fully met.
+- **Flight Shaper UX workflow** — flagged from real-device use as needing a rework
+  (v1.x polish, not a blocker). See the note after Phase 9.
+- No production keystore — see Distribution Track D1 below (needed for the store track,
+  not for v1 itself).
 
 **The pattern that caused the one shipped bug so far, and will bite again if repeated:**
 `expo-router` keeps tab screens mounted when you switch away from them. Any screen that
@@ -69,10 +73,10 @@ noticed discs added later from the Bag tab. **Disc Suggest (Phase 6) will read t
 bag data and needs the same `useFocusEffect` refresh from the start** — don't rebuild
 this bug a second time.
 
-**Next action:** a physical-device cold start (the only remaining Minimum-Milestone gap —
-install `mobile-preview-0.5` on a real phone). After that, the Distribution Track
-(D1/D2/D3, below) is the next real chunk of work. Feature-wise the app is at a complete,
-polished v1; further additions (VPS sync, Marshall Street images) are explicitly v1.1.
+**Next action:** two independent tracks, pick either — (a) the **Flight Shaper UX rework**
+(the one rough edge from real use; note after Phase 9), or (b) the **Distribution Track**
+(D1 Play Console groundwork, below). Feature-wise the app is a complete, polished v1;
+further *features* (VPS sync, Marshall Street images) are explicitly v1.1.
 
 ---
 
@@ -80,8 +84,8 @@ polished v1; further additions (VPS sync, Marshall Street images) are explicitly
 
 > This is the real finish line for v1. Not Play Store. Not F-Droid. Not Physics V2.
 
-- [x] Expo app opens cold on a real device without crashing — **verified emulator-only
-      so far; not yet confirmed on a physical device**, see "Known open issues" above
+- [x] Expo app opens cold on a real device without crashing — **confirmed on a real
+      physical Android phone (`0.5`, 2026-07-24)**, not just the emulator
 - [x] SQLite persists a bag across app kills — verified repeatedly on-device
 - [x] Stability labels on disc cards match the website for the same disc — verified via
       Phase 0 fixtures, 48/48 Jest tests passing
@@ -585,6 +589,42 @@ is the worst of both — half-built. Two clean resolutions:
 
 Both are best knocked out in the same sitting as the first real-device install, which is
 also the last unchecked item on the Minimum Credible v1 Milestone.
+
+**Update 2026-07-24: both done.** Drag-reorder verified via `adb input motionevent`
+(above); `0.5` sideloaded and confirmed working on a real physical Android phone. The
+Minimum Milestone is fully met.
+
+---
+
+## Flight Shaper UX Rework — NOT STARTED (v1.x, flagged from real-device use 2026-07-24)
+
+> Feedback from actually using `0.5` on a phone: **the Flight Shaper's UI workflow is
+> poor.** The screens are all *correct* (physics, arc, sliders all match the website) —
+> this is purely a layout/interaction problem, not a logic one. Capturing it now; the
+> specifics of the redesign still need the developer's input before building.
+
+**Likely core problem (candidate diagnosis, confirm before reworking):** the screen is one
+long vertical scroll in the order **disc picker → 5 sliders → two reference diagrams →
+arc + distance**. The arc is the *output* you're trying to shape, but it sits at the very
+bottom, below the sliders and both reference diagrams — so **while you drag a slider you
+can't see the arc change** without scrolling. Cause and effect aren't co-visible, which
+undercuts the whole point of an interactive shaper. Contributing factors: the inline "My
+Bag" list eats vertical space at the top; the angle-reference + hyzer-reference diagrams
+push the arc further down; the custom vertical sliders are small.
+
+**Candidate directions (not decided):**
+- Make the **arc always visible while adjusting** — e.g. a sticky/pinned arc panel at the
+  top or bottom, or a two-pane split (sliders on one side, arc on the other in landscape),
+  or collapse the disc picker + reference diagrams into expandable sections so sliders and
+  arc share one screen.
+- Reconsider the reference diagrams: useful, but maybe collapsible / behind a toggle so
+  they don't separate the sliders from the arc.
+- Revisit the disc picker (a compact dropdown/sheet instead of an inline list).
+
+**Constraint:** this is a *layout* rework only — do **not** change the physics
+(`legacyPhysics.ts`), the arc geometry, or the slider semantics. Same hard rule as the
+original port: the model is correct, only the presentation changes. Get the developer's
+read on what specifically feels worst before committing to a direction.
 
 ---
 

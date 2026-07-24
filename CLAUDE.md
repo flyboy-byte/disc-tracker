@@ -246,11 +246,17 @@ start. See `app/PORT_PLAN.md` Phase 9.
 - Never run D1/D2/D3 in parallel
 
 ### Next immediate step:
-`mobile-preview-0.5` is released (today's-bag, Settings tab, drag-reorder, tab icons, DB
-fix, a11y — smoke-tested in the R8-minified release config). The one remaining
-Minimum-Milestone gap is a **physical-device cold start** — install `0.5` on a real phone.
-After that: Distribution Track D1 (Play Console). Feature-wise this is a complete v1;
-further additions (VPS sync, Marshall Street images) are explicitly v1.1. To cut a future
+**v1 is functionally complete** — `mobile-preview-0.5` is released and confirmed working
+on a real physical Android phone (2026-07-24), so every Minimum Credible v1 Milestone item
+is met. Two independent next tracks (pick either):
+- **Flight Shaper UX rework** — the one rough edge from real use: the arc isn't visible
+  while you adjust the sliders (long vertical scroll: disc picker → sliders → diagrams →
+  arc). A *layout-only* rework (do NOT touch physics/arc geometry/slider semantics); get
+  the developer's read on specifics first. See `app/PORT_PLAN.md` "Flight Shaper UX Rework".
+- **Distribution Track D1** (Play Console) — needs a production keystore, Data Safety form,
+  privacy-policy URL, content rating. Then D2 F-Droid.
+
+Further *features* (VPS sync, Marshall Street images) are explicitly v1.1. To cut a
 release: build the arm64/armeabi APK (`JAVA_HOME=/usr/lib/jvm/java-21-openjdk`, `./gradlew
 assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a`), then `gh release
 create`.

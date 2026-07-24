@@ -86,11 +86,11 @@ Maps directly onto `PORT_PLAN.md`'s own phases:
       on-device 2026-07-24, see `../PORT_PLAN.md`)
 - [x] Phase 7 (Import/Export — CSV share sheet + document picker, verified on-device
       2026-07-24, see `../PORT_PLAN.md`)
-- [~] Phase 8 (Android build + smoke test) — build pipeline run for real (4 preview
-      APKs, `0.1`–`0.4`); the release APK smoke-tested in its true R8-minified config on
-      the emulator; checklist all passes including drag-reorder (verified 2026-07-24 via
-      `adb input motionevent` hold-then-move, persisted across restart). **One item left,
-      and it genuinely needs hardware:** a physical-device cold start.
+- [x] Phase 8 (Android build + smoke test) — build pipeline run for real (5 preview APKs,
+      `0.1`–`0.5`); release APKs smoke-tested in true R8-minified config on the emulator;
+      checklist passes including drag-reorder (`adb input motionevent` hold-then-move,
+      persisted across restart); **`0.5` sideloaded and confirmed working on a real
+      physical Android phone (2026-07-24).**
 - [x] Phase 9 (v1 polish & gap-closing) — built + emulator-verified 2026-07-24. Finished
       today's-bag (toggle/filter/count/clear + live export scope), fixed the cosmetics
       (headerShown:false + custom svg tab icons), the P3 polish (double-fetch, bar
@@ -102,10 +102,10 @@ Maps directly onto `PORT_PLAN.md`'s own phases:
       designed in `RESEARCH.md` §2 but deliberately not started (see `docs/notes.md`)
 
 **Gate to Phase 4 (of this framework):** one working version that does the core thing
-end-to-end — i.e. `PORT_PLAN.md` Phase 8's smoke-test checklist passing on a real
-device. **Nearly met** — all four screens are built and verified on the emulator and the
-full v1 feature set shipped as `mobile-preview-0.4`; what's left is a real-device run and
-the Phase 9 polish pass, not any missing feature.
+end-to-end on a real device. **Met (2026-07-24)** — all four screens built, Phase 9 polish
+done, shipped as `mobile-preview-0.5`, and confirmed running on a real phone. Remaining
+work is the Distribution Track and a (non-blocking) Flight Shaper UX rework, not any
+missing feature.
 
 ### Phase 4 — Verify
 
@@ -157,6 +157,9 @@ true R8-minified config. **Phase 9 is built, emulator-verified, and shipped as `
 tab (default throw view, data backup/import/delete, About, v1.1 sync placeholder), tab
 icons + no double title, P3 polish, and a found-while-testing DB serialization fix for a
 real "database is locked" concurrency bug — all smoke-tested in the true R8-minified
-release config. The one remaining Minimum-Milestone gap is a physical-device cold start
-(genuinely needs real hardware); after that, Distribution Track D1. No production keystore
-or Play/F-Droid submission yet.**
+release config, then **sideloaded and confirmed working on a real physical Android phone
+(2026-07-24) — the Minimum Credible v1 Milestone is now fully met.** One UX issue surfaced
+from real use: the **Flight Shaper workflow needs a layout rework** (arc isn't visible
+while adjusting sliders) — logged as a v1.x item in `../PORT_PLAN.md`, not a blocker. Next
+work is either that rework or the Distribution Track (D1 Play Console). No production
+keystore or Play/F-Droid submission yet.**
