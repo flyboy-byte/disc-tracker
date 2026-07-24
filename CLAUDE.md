@@ -246,12 +246,14 @@ start. See `app/PORT_PLAN.md` Phase 9.
 - Never run D1/D2/D3 in parallel
 
 ### Next immediate step:
-Cut `mobile-preview-0.5` — it bundles all of Phase 9 (today's-bag, tab icons, DB fix,
-a11y), which is committed but not yet released. Build the real arm64/armeabi release APK
-(`JAVA_HOME=/usr/lib/jvm/java-21-openjdk`, `./gradlew assembleRelease
--PreactNativeArchitectures=arm64-v8a,armeabi-v7a`), then `gh release create
-mobile-preview-0.5`. The one remaining Minimum-Milestone gap is a physical-device cold
-start (needs real hardware). After that: Distribution Track D1.
+`mobile-preview-0.5` is released (today's-bag, Settings tab, drag-reorder, tab icons, DB
+fix, a11y — smoke-tested in the R8-minified release config). The one remaining
+Minimum-Milestone gap is a **physical-device cold start** — install `0.5` on a real phone.
+After that: Distribution Track D1 (Play Console). Feature-wise this is a complete v1;
+further additions (VPS sync, Marshall Street images) are explicitly v1.1. To cut a future
+release: build the arm64/armeabi APK (`JAVA_HOME=/usr/lib/jvm/java-21-openjdk`, `./gradlew
+assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a`), then `gh release
+create`.
 
 Emulator + toolchain on this machine: AVD `verify_test` (x86_64, API 37); `emulator` at
 `~/Android/Sdk/emulator/emulator`. To load live code changes on the emulator you must

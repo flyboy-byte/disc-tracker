@@ -19,7 +19,7 @@
 
 **Phases 0–9 are done and verified on a real Android emulator (not just typechecked).**
 The full v1 feature set shipped as `mobile-preview-0.4`; Phase 9 (the post-`0.4` polish +
-gap-closing pass) is built and verified but **not yet released — a `0.5` is due.** Several
+gap-closing pass, plus a new Settings tab) shipped as **`mobile-preview-0.5`**. Several
 real bugs were found and fixed by actually running the app (Phase 4/5/7/9 sections below) —
 which is why every phase gets an on-device pass, not just a green build. As of 2026-07-24
 the *only* unmet Minimum-Milestone item is a physical-device cold start; everything else,
@@ -40,11 +40,11 @@ including drag-reorder, is verified on the emulator.
 - Tab bar has real icons; no duplicate screen titles; DB access is serialized (no
   "database is locked" under concurrent read/write).
 
-**What's released:** four debug-signed preview APKs on GitHub Releases
-(`mobile-preview-0.1` → `0.4`), for hands-on testing only — not Play Store, not
-F-Droid, no production keystore yet. `0.4` is the newest **released** build; **Phase 9's
-work (today's-bag, tab icons, DB fix, a11y) is committed but not yet in a release — cut
-`0.5` next.**
+**What's released:** five debug-signed preview APKs on GitHub Releases
+(`mobile-preview-0.1` → `0.5`), for hands-on testing only — not Play Store, not F-Droid,
+no production keystore yet. **`0.5` is current** — bundles all of Phase 9 (today's-bag,
+Settings tab, drag-reorder, tab icons, DB lock fix, a11y) and was smoke-tested in its
+true R8-minified release config.
 
 **Known open issues (most Phase 9 items are now RESOLVED — see Phase 9 for details):**
 - ~~Today's-bag has no UI toggle~~ — **fixed** (Phase 9 P1): toggle + filter + count +
@@ -69,10 +69,10 @@ noticed discs added later from the Bag tab. **Disc Suggest (Phase 6) will read t
 bag data and needs the same `useFocusEffect` refresh from the start** — don't rebuild
 this bug a second time.
 
-**Next action:** cut `mobile-preview-0.5` (bundles all of Phase 9 — today's-bag, tab
-icons, DB serialization fix, a11y). The only remaining Minimum-Milestone gap is a
-physical-device cold start (genuinely needs hardware). After that, the Distribution Track
-(D1/D2/D3, below) is the next real chunk of work.
+**Next action:** a physical-device cold start (the only remaining Minimum-Milestone gap —
+install `mobile-preview-0.5` on a real phone). After that, the Distribution Track
+(D1/D2/D3, below) is the next real chunk of work. Feature-wise the app is at a complete,
+polished v1; further additions (VPS sync, Marshall Street images) are explicitly v1.1.
 
 ---
 
@@ -456,7 +456,7 @@ dependency added since then pulled something in transitively.
 
 ### Interim preview releases (not part of the formal 8A/8B checklist)
 
-Four debug-signed APKs pushed to GitHub Releases for hands-on testing, ahead of any
+Five debug-signed APKs pushed to GitHub Releases for hands-on testing, ahead of any
 real signing/distribution setup:
 
 | Tag | What changed |
@@ -465,6 +465,7 @@ real signing/distribution setup:
 | `mobile-preview-0.2` | + Flight Shaper tab |
 | `mobile-preview-0.3` | Fix: Flight Shaper showing stale bag data (see Phase 5) |
 | `mobile-preview-0.4` | + Disc Suggest tab, + CSV import/export (see Phases 6-7) |
+| `mobile-preview-0.5` | + today's-bag, + Settings tab, drag-reorder verified, tab icons, DB lock fix (Phase 9) |
 
 These are **debug-signed** (no production keystore exists yet — see Distribution
 Track D1 below), and the repo is public, so releases are visible to anyone, not just

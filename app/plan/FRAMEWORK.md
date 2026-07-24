@@ -95,8 +95,9 @@ Maps directly onto `PORT_PLAN.md`'s own phases:
       today's-bag (toggle/filter/count/clear + live export scope), fixed the cosmetics
       (headerShown:false + custom svg tab icons), the P3 polish (double-fetch, bar
       rounding, a11y), and — found while testing — fixed a real "database is locked"
-      concurrency bug by serializing DB ops. See `../PORT_PLAN.md` Phase 9. Not yet
-      released; a `0.5` bundles it.
+      concurrency bug by serializing DB ops. Also added a **Settings tab** (default throw
+      view, data backup/import/delete, About, v1.1 sync placeholder). Shipped as
+      **`mobile-preview-0.5`**. See `../PORT_PLAN.md` Phase 9.
 - [ ] Phase 10 (VPS Sync, v1.1) — explicitly out of scope until v1 APK is proven; fully
       designed in `RESEARCH.md` §2 but deliberately not started (see `docs/notes.md`)
 
@@ -151,10 +152,11 @@ than further scripted attempts — until the working technique was found (`adb i
 motionevent` hold-then-move), which verified drag-reorder on the emulator after all, order
 persisting across a kill+relaunch. Four debug-signed preview APKs (`mobile-preview-0.1`–
 `0.4`) are on GitHub Releases; `0.4` covers all four screens + CSV, smoke-tested in its
-true R8-minified config. **Phase 9 is now built and emulator-verified** (2026-07-24):
-today's-bag (toggle/filter/count/clear + live export scope), tab icons + no double title,
-P3 polish, and a found-while-testing DB serialization fix for a real "database is locked"
-concurrency bug. It's committed but not yet released. Next action: cut `mobile-preview-0.5`
-bundling Phase 9; the one remaining Minimum-Milestone gap is a physical-device cold start,
-which genuinely needs real hardware. No production keystore or Play/F-Droid submission
-yet.**
+true R8-minified config. **Phase 9 is built, emulator-verified, and shipped as `mobile-preview-0.5`**
+(2026-07-24): today's-bag (toggle/filter/count/clear + live export scope), a new Settings
+tab (default throw view, data backup/import/delete, About, v1.1 sync placeholder), tab
+icons + no double title, P3 polish, and a found-while-testing DB serialization fix for a
+real "database is locked" concurrency bug — all smoke-tested in the true R8-minified
+release config. The one remaining Minimum-Milestone gap is a physical-device cold start
+(genuinely needs real hardware); after that, Distribution Track D1. No production keystore
+or Play/F-Droid submission yet.**
