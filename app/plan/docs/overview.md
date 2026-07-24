@@ -55,6 +55,14 @@ export/import round-trips. That's the finish line for "v1 works" — Play Store 
 F-Droid submission are separate, later milestones (see `../PORT_PLAN.md`'s Distribution
 Track).
 
+**Status (2026-07-24):** every item on that bar is met *on an emulator* — the full
+feature set is built and shipped as `mobile-preview-0.4`. The only unmet milestone items
+are the ones that literally require real hardware (a physical-device cold start, and
+drag-reorder verified with a real finger), plus a short polish pass (`PORT_PLAN.md`
+Phase 9) — notably finishing or removing the half-built today's-bag feature. So "v1
+works" is essentially proven; "v1 is shippable" is one polish pass and one real-device
+session away.
+
 ## What's genuinely novel here vs. what's just applying an existing pattern
 
 Nothing about the architecture is novel — local-first Expo/SQLite apps with local Gradle

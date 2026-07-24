@@ -34,19 +34,25 @@ conclusion, until it's been checked against something real.
 
 ## What needs to be validated before investing real time
 
-In rough priority order:
+> **All three items below are now resolved** (2026-07-23/24). Kept as a record of what
+> the go/no-go actually hinged on, and how each turned out.
 
-1. **The SQLite CRUD layer actually works on a real Android device/emulator.** This is
-   the one piece of Phase 3 that's written and typechecks but has never run against real
-   native SQL — `expo-sqlite` can't be exercised under plain Jest. Everything past this
-   (Phase 4's first real screen onward) depends on it.
-2. **The custom vertical-slider approach (Reanimated + `useSharedValue`) actually
-   performs acceptably on a real device for Flight Shaper**, since this is the one UI
-   piece with no direct RN built-in equivalent (web uses a CSS-rotated horizontal
-   `<input type=range>`) — planned but not yet built (Phase 5).
-3. **F-Droid's reproducible-build bar is achievable enough to get a human reviewer's
-   sign-off**, since no Expo/RN app is known to hit a perfect byte-match — this is a
-   real open question flagged for research, not yet tested (see `research-handoff.md`).
+1. ~~The SQLite CRUD layer actually works on a real Android device/emulator~~ —
+   **confirmed**. Full open → create → save → read → cascade-delete flow verified on an
+   emulator; every screen since is built on it. See `FRAMEWORK.md` Phase 2.
+2. ~~The custom vertical-slider (Reanimated) performs acceptably on-device~~ —
+   **confirmed**, and it turned out to be load-bearing: the cheaper rotated-native-slider
+   fallback measurably failed (gesture-negotiation conflict), so the custom component was
+   necessary, not optional. See `../PORT_PLAN.md` Phase 5.
+3. ~~F-Droid's reproducible-build bar is achievable for this stack~~ — **confirmed
+   without needing external research**: the developer's other Expo/RN app (DragTree) got
+   a full byte-match merged into F-Droid's index. Concrete playbook in
+   `fdroid-reference.md`.
+
+The residual unknowns are no longer about *whether the approach works* — it does — but
+about polish and real-hardware confirmation: the Phase 9 gap-closing pass, a physical-
+device run, and (later, for D1) the Play Console Data Safety wording still in
+`research-handoff.md`.
 
 ## Cost side
 

@@ -3,6 +3,15 @@
 > The website is the spec. The mobile app is a port, not a redesign.
 > This document maps every feature, function, and data structure in the current website
 > so the port has a verified source of truth before any React Native code is written.
+>
+> **Status (2026-07-24): this is the *pre-build* website inventory, and it stays valid as
+> a spec reference because the website hasn't changed — but the port itself is now built
+> (Phases 0–8 done, `mobile-preview-0.4` shipped). For as-built status, the actual file
+> structure, and remaining work, see [`PORT_PLAN.md`](./PORT_PLAN.md) and
+> [`plan/FRAMEWORK.md`](./plan/FRAMEWORK.md), which are authoritative on current state.
+> A few numbers below were found slightly wrong during the build and are corrected inline
+> (nose range, CSV export columns); §15's proposed file layout was superseded by an
+> expo-router `app/(tabs)/` structure — see PORT_PLAN.**
 
 ---
 
@@ -216,10 +225,13 @@ Only one key. In mobile v1, skip the welcome modal entirely or show it once usin
 ## 10. CSV Import / Export
 
 ### Export (current behavior in `index.html`)
-Fields exported per disc:
+Fields exported per disc — **11 columns, no `color`** (corrected; an earlier draft of this
+doc wrongly listed `color` as a 12th column, and that error propagated into an early
+PORT_PLAN Phase 7 note):
 ```
-mfr, mold, plastic, weight, speed, glide, turn, fade, use, thr, notes, color
+Manufacturer, Mold, Plastic, Weight, Speed, Glide, Turn, Fade, Primary Use, Throw Style, Notes
 ```
+(`buildCSV()` header is byte-for-byte the above; `color` is deliberately not exported.)
 File created as Blob + auto-download via `<a>` click trigger.
 
 ### Import (current behavior)
@@ -246,10 +258,10 @@ File created as Blob + auto-download via `<a>` click trigger.
 | `disc.turn` | Selected disc | -5 to 1 |
 | `disc.fade` | Selected disc | 0–5 |
 | `hyzer` | Slider `sl-hyzer` | -30° to +30° (positive = hyzer) |
-| `nose` | Slider `sl-nose` | -20° to +20° (positive = nose up) |
+| `nose` | Slider `sl-nose` | **-15° to +15°** (positive = nose up) — corrected; an earlier draft said ±20 |
 | `wind` | Slider `sl-wind` | -20 to +20 (positive = headwind) |
-| `armSpeed` | Slider `sl-arm` | 0–100% (100 = full power) |
-| `spin` | Slider `sl-spin` | 0–100% (100 = normal spin) |
+| `armSpeed` | Slider `sl-arm` | 50–100% on the slider (100 = full power) |
+| `spin` | Slider `sl-spin` | 50–100% on the slider (100 = normal spin) |
 | `arcView` | Dropdown | RHBH / RHFH / LHBH / LHFH |
 
 ### MOD Constants (from `flightshape.html`)
@@ -398,6 +410,15 @@ stabShort(n)  → n >= 1: 'OS'           | n <= -1: 'US'            | else: 'ST'
 ## 15. Proposed Expo File Structure
 
 > Only listed after completing the website inventory above. This is a destination, not a starting point.
+>
+> **Superseded (2026-07-24):** the as-built app uses an expo-router `app/(tabs)/` layout
+> (`index.tsx` = Bag, `flight-shaper.tsx`, `disc-suggest.tsx`) rather than a `screens/`
+> folder, and the speculative `physicsV2.ts` / `flightRenderer.ts` / `DevScreen.tsx` were
+> not built (physics-sim is deliberately out of scope for mobile v1). The real component
+> set is in `src/components/` (`DiscCard`, `DiscFormModal`, `DiscLibraryModal`,
+> `VerticalSlider`, `FlightArcSvg`, `AngleRefDiagrams`, `HyzerReferenceDiagram`,
+> `ScenarioGrid`, `SuggestResultCard`, `CsvExportModal`, `CsvImportModal`). See
+> `PORT_PLAN.md` for what actually exists.
 
 ```
 app/src/

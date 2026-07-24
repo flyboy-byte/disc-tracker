@@ -86,23 +86,37 @@ Maps directly onto `PORT_PLAN.md`'s own phases:
       on-device 2026-07-24, see `../PORT_PLAN.md`)
 - [x] Phase 7 (Import/Export — CSV share sheet + document picker, verified on-device
       2026-07-24, see `../PORT_PLAN.md`)
-- [ ] Phase 8 (Android build + full smoke test on a physical device)
-- [ ] Phase 9 (VPS Sync, v1.1) — explicitly out of scope until v1 APK is proven; fully
+- [~] Phase 8 (Android build + smoke test) — build pipeline run for real (4 preview
+      APKs, `0.1`–`0.4`); the release APK smoke-tested in its true R8-minified config on
+      the emulator; deterministic checklist items all pass (distance fixture, target SDK
+      36, GMS-free). **Two items still open, both needing real hardware:** a physical-
+      device run, and drag-reorder verified with a real gesture (synthetic adb drag
+      wouldn't trigger it).
+- [ ] Phase 9 (v1 polish & gap-closing) — surfaced by the 2026-07-24 post-`0.4` audit:
+      one feature gap (today's-bag has no UI toggle) + two cosmetics (double title,
+      missing tab icons) + minor polish. See `../PORT_PLAN.md` Phase 9. Do before the
+      next release.
+- [ ] Phase 10 (VPS Sync, v1.1) — explicitly out of scope until v1 APK is proven; fully
       designed in `RESEARCH.md` §2 but deliberately not started (see `docs/notes.md`)
 
 **Gate to Phase 4 (of this framework):** one working version that does the core thing
 end-to-end — i.e. `PORT_PLAN.md` Phase 8's smoke-test checklist passing on a real
-device. **Not yet met** — the Bag screen exists and works, but Flight Shaper, Disc
-Suggest, and Import/Export are still placeholder.
+device. **Nearly met** — all four screens are built and verified on the emulator and the
+full v1 feature set shipped as `mobile-preview-0.4`; what's left is a real-device run and
+the Phase 9 polish pass, not any missing feature.
 
 ### Phase 4 — Verify
 
-- [ ] Full `PORT_PLAN.md` §8A smoke-test checklist on a physical device
-- [ ] GMS/proprietary-dependency check (`./gradlew app:dependencies | grep -i 'gms\|firebase\|play-services'` returns nothing)
-- [ ] Known gaps documented plainly (currently: on-device SQLite verification, no
-      physics-sim mode planned for mobile v1 — see `docs/risks.md`)
+- [~] Full `PORT_PLAN.md` §8A smoke-test checklist — all items pass on the emulator
+      except the two that require real hardware (physical-device run, drag-reorder
+      gesture)
+- [x] GMS/proprietary-dependency check (`./gradlew app:dependencies | grep -i 'gms\|firebase\|play-services'` returns nothing) — clean since Phase 1; re-run before D1/D2
+- [x] Known gaps documented plainly — the post-`0.4` audit findings are captured as
+      `PORT_PLAN.md` Phase 9 (today's-bag UI gap, double title, missing tab icons, minor
+      polish), physics-sim deliberately out of scope for mobile v1 (see `docs/risks.md`)
 
-**Gate to Phase 5:** confident enough in the v1 build to start the distribution track.
+**Gate to Phase 5:** confident enough in the v1 build to start the distribution track —
+i.e. Phase 9 polish done + a clean physical-device run.
 
 ### Phase 5 — Formalize
 
@@ -132,8 +146,13 @@ input swipe` works great for continuous Pan gestures (confirmed on the Flight Sh
 sliders), but two correctly-targeted `adb shell input draganddrop` attempts — the tool
 meant for long-press-gated drags — didn't trigger react-native-draggable-flatlist's
 reorder at all, no crash, no error. Logged honestly as needing a physical finger rather
-than further scripted attempts. Three debug-signed preview APKs
-(`mobile-preview-0.1`–`0.3`) are on GitHub Releases for hands-on testing — no production
-keystore or Play/F-Droid submission yet; a `0.4` covering Disc Suggest + CSV is the next
-release to cut. Next action: cut that release; drag-reorder and a physical-device run
-remain open pending real hardware.**
+than further scripted attempts. Four debug-signed preview APKs
+(`mobile-preview-0.1`–`0.4`) are on GitHub Releases for hands-on testing — `0.4` covers
+the full v1 feature set (all four screens + CSV) and was smoke-tested in its true
+R8-minified release config. No production keystore or Play/F-Droid submission yet. A
+post-`0.4` code audit (2026-07-24) then surfaced Phase 9: one real feature gap
+(today's-bag has no UI toggle — schema/CRUD/export-scope all assume it, but nothing sets
+`inBag`) plus two cosmetics (title renders twice; tab bar has no icons) and minor polish.
+Next action: work Phase 9 (`../PORT_PLAN.md`) and cut `mobile-preview-0.5`; drag-reorder
+and a physical-device run remain open pending real hardware and are best done at the
+first real-device install.**

@@ -17,11 +17,14 @@
 
 ## Current Status (2026-07-24) — read this first
 
-**Phases 0–7 are built and verified on a real Android emulator (not just typechecked).**
-Several real bugs were found and fixed along the way (details in the Phase 4/5/7
-sections below) — the kind of thing that only shows up when you actually run the app,
-which is why every phase in this doc gets an on-device pass before being marked done,
-not just a green build.
+**Phases 0–8 are done and verified on a real Android emulator (not just typechecked),
+and the full v1 feature set shipped as `mobile-preview-0.4`.** Several real bugs were
+found and fixed along the way (details in the Phase 4/5/7 sections below) — the kind of
+thing that only shows up when you actually run the app, which is why every phase in this
+doc gets an on-device pass before being marked done, not just a green build. A code
+audit right after `0.4` (2026-07-24) then surfaced **Phase 9** — a short list of polish
+items and one real feature gap (today's-bag has no UI toggle) between "features exist"
+and "shippable v1." Read Phase 9 before the next release.
 
 **What actually works right now, if you install a build:**
 - **Bag tab** — full CRUD (add manual or from the 1,660+ disc library, edit, delete,
@@ -37,16 +40,20 @@ not just a green build.
 F-Droid, no production keystore yet. `0.4` (Disc Suggest + CSV import/export) is
 current.
 
-**Known open issues (don't re-discover these, just fix them):**
-- Drag-reorder on the Bag tab (custom sort) is wired up but **still not verified with a
-  real drag gesture**. Two synthetic-gesture attempts (`adb shell input draganddrop`,
-  correctly targeted, confirmed via a working tap on the same coordinates) both failed
-  to trigger it — see Phase 8 for the write-up. This needs an actual finger, not another
-  scripted attempt: a physical device, or the emulator driven interactively by hand.
+**Known open issues (don't re-discover these — they're captured, mostly in Phase 9):**
+- **Today's-bag feature has no UI toggle** (Phase 9, P1) — schema/CRUD/export-scope all
+  assume it exists, but nothing can set `inBag`, so the export "Today's bag" scope is a
+  dead path. Decide finish-it vs. hide-it before the next release.
+- **Two cosmetic issues** (Phase 9, P2): the tab title renders twice (native header +
+  in-screen `<h1>`), and the bottom tab bar shows empty box glyphs because no
+  `tabBarIcon` is set.
+- Drag-reorder on the Bag tab is wired up but **still not verified with a real drag
+  gesture** — synthetic `adb input draganddrop` didn't trigger it (Phase 8 write-up).
+  Needs an actual finger: a physical device, or the emulator driven by hand.
 - **No physical device has run this app yet** — everything so far is emulator-only
   (x86_64 AVD `verify_test`). The shipped preview APKs are arm64/armeabi and have not
   been installed on real hardware by anyone but the end user downloading them blind.
-- No production keystore — see "Signing" below.
+- No production keystore — see Distribution Track D1 below.
 
 **The pattern that caused the one shipped bug so far, and will bite again if repeated:**
 `expo-router` keeps tab screens mounted when you switch away from them. Any screen that
@@ -57,11 +64,11 @@ noticed discs added later from the Bag tab. **Disc Suggest (Phase 6) will read t
 bag data and needs the same `useFocusEffect` refresh from the start** — don't rebuild
 this bug a second time.
 
-**Next action:** none blocking — the Minimum Credible v1 Milestone feature set is fully
-built and released (`mobile-preview-0.4`). What's left is verification-only: drag-reorder
-and a physical-device run, both needing a real finger/device rather than more work in
-this environment. After that, the Distribution Track (D1/D2/D3, see below) is the next
-real chunk of work.
+**Next action:** Phase 9 — decide the today's-bag question (P1) and fix the two cosmetics
+(P2), then cut `mobile-preview-0.5`. The remaining Minimum-Milestone gaps (drag-reorder
+gesture + a physical-device run) need a real finger/device rather than more work in this
+environment — best done together at the first real-device install. After that, the
+Distribution Track (D1/D2/D3, below) is the next real chunk of work.
 
 ---
 
@@ -461,6 +468,76 @@ the user. Fine for early testing; not appropriate once real users are involved.
 
 ---
 
+## Phase 9 — v1 Polish & Gap-Closing — NOT STARTED
+
+> Surfaced by a full code audit of the mobile port on **2026-07-24**, right after
+> `mobile-preview-0.4` shipped. The `0.4` feature set is functionally complete and
+> faithful to the website; these are the gaps and rough edges between "the features
+> exist" and "this is the v1 you'd actually put in front of people." Ordered by
+> severity. **Do P1 + P2 before cutting the next release; P3 is optional polish.**
+
+### P1 — "In bag" / today's-bag feature has no UI entry point
+
+The whole today's-bag feature is plumbed end-to-end **except the one control that turns
+it on.** The `in_bag` column exists in the schema (`migrations.ts`), round-trips through
+CRUD (`db.ts` — `inBag` on read/write), `DiscCard` already renders a bagged-disc border
+(`DiscCard.tsx`, `styles.bagged`), and `CsvExportModal` offers an "All discs / Today's
+bag" scope picker (`CsvExportModal.tsx`). But **nothing in the app can set `inBag =
+true`** — there's no per-card toggle, no "In bag" filter pill, and `DiscFormModal` has no
+in-bag field. Consequences:
+- The export "Today's bag" scope is a **dead path** — `bagCount` is always 0, so that
+  picker never renders. A user can never export just their current bag.
+- On the website this is a first-class feature: a per-card checkmark, a "Clear bag" bulk
+  action, an "In bag" filter toggle, and filtered CSV export.
+
+**Decision needed first:** is today's-bag in scope for v1? It wasn't a numbered Phase 4
+feature, but the schema/CRUD/export UI all already assume it exists, so the current state
+is the worst of both — half-built. Two clean resolutions:
+- **(a) Finish it** (recommended if it's wanted): add a bag toggle on `DiscCard` (tap
+  target in the corner, matching the website's checkmark), an "In bag" filter pill in the
+  Bag screen's filter row, and a "Clear bag" action. `saveDiscs`/`getDiscs` already carry
+  `inBag`, so this is pure UI wiring — no schema or CRUD change.
+- **(b) Hide it for v1**: drop the scope picker from `CsvExportModal` (always export all)
+  and leave `in_bag` dormant in the schema for a later version. Removes the dead path with
+  a few lines. Keeps the sync-ready schema intact.
+
+### P2 — Two visible cosmetic issues (both show in every screenshot)
+
+1. **Redundant double title.** `app/(tabs)/_layout.tsx` never sets `headerShown: false`,
+   so each tab renders the native header bar *and* each screen renders its own large `<h1>`
+   (with `paddingTop: 56` to clear the status bar). You see the title twice, stacked
+   ("Bag" / "Bag"). Fix: `screenOptions={{ headerShown: false }}` on the `Tabs` — the
+   screens already self-title and self-pad, so the native header is pure redundancy.
+2. **Tab bar has no icons.** `app/(tabs)/_layout.tsx` defines no `tabBarIcon`, which is why
+   the bottom bar shows empty box glyphs (tofu) above each label. Fix: add a small icon per
+   tab (e.g. `@expo/vector-icons`, already an Expo dep — confirm it pulls in no GMS before
+   using; otherwise a bundled SVG via `react-native-svg`, which is already a dependency).
+
+### P3 — Minor / polish (optional, non-blocking)
+
+- **Disc Suggest double-fetches on cold open.** `disc-suggest.tsx`'s `useFocusEffect`
+  depends on `[userId]`; the first run creates the user → `userId` changes → callback
+  identity changes → it refetches while still focused. Harmless (idempotent read), but
+  Flight Shaper avoided this with a `didInitialSelect` ref + a separate mount `useEffect`.
+  Apply the same guard if it's ever worth the tidiness.
+- **`SuggestResultCard` stability bar doesn't round its percentages** the way the
+  website's `stabBar()` does (`Math.round(...)`). Visually indistinguishable; noting only
+  for byte-strict parity.
+- **No `accessibilityLabel` / `accessibilityRole`** on any `Pressable` in the app. Fine
+  for a personal tool; worth a pass before wide public (Play Store) distribution, since
+  it's the kind of thing store reviews and real users with screen readers notice.
+
+### Also still open from Phase 8 (verification, not code)
+
+- **Drag-reorder with a real gesture** — synthetic `adb input draganddrop` didn't trigger
+  the long-press-gated drag; needs a physical finger (see Phase 8 write-up).
+- **A physical-device run** — everything so far is emulator-only.
+
+Both are best knocked out in the same sitting as the first real-device install, which is
+also the last unchecked item on the Minimum Credible v1 Milestone.
+
+---
+
 ## Distribution Track (after Phase 8 APK is proven)
 
 > These are not phases of the port — they are deployment infrastructure. Do not start
@@ -504,7 +581,7 @@ in the meantime. Do not let D3 block anything.
 
 ---
 
-## Phase 9 — VPS Sync (v1.1, after v1 ships)
+## Phase 10 — VPS Sync (v1.1, after v1 ships)
 
 **Goal:** Optional manual sync between phone and the existing Flask website via the
 same `/api/data` endpoints. Not a cloud service, not a third-party backend — the user's

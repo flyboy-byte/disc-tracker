@@ -65,14 +65,27 @@
   Verified end-to-end on a real Android emulator (open → create user → save/read discs
   → meta round-trip → bulk-replace → cascade delete), all passed. See `FRAMEWORK.md`
   Phase 2. No longer a risk; kept here as a historical note until the next edit pass.
-- **The custom vertical-slider component** (Reanimated + `useSharedValue`, no direct
-  RN built-in equivalent) is planned but unbuilt (Phase 5) — real on-device performance
-  for a 60fps arc-redraw-on-drag interaction is unverified until it exists.
-- **Gradle build reliability under this environment's constraints** — background builds
-  repeatedly hit a 10-minute hard timeout during Phase 1; the fix (letting Gradle's
-  disk-persisted task cache carry work across retries) worked but is a workaround for
-  an environment limit, not a guarantee it won't recur on a bigger build (e.g. Phase 8's
-  release/bundle builds, which do more work than a debug build).
+- ~~The custom vertical-slider component's on-device performance is unverified~~ —
+  **resolved 2026-07-23**. Built on Reanimated + `Gesture.Pan()` and verified with real
+  drag gestures on the emulator (60fps arc redraw, no jank). Note the non-obvious finding:
+  the cheaper "rotated native slider" approach *failed* on-device (gesture-negotiation
+  conflict with the parent ScrollView), so the custom component wasn't gold-plating — it
+  was required. See `../PORT_PLAN.md` Phase 5.
+- ~~Gradle release/bundle build reliability under this environment's timeouts~~ —
+  **largely resolved 2026-07-24**. Real `assembleRelease` runs (with R8 minify + resource
+  shrink + the ABI override) completed well within the timeout by reusing Gradle's
+  disk-persisted task cache across invocations. `bundleRelease` (AAB for Play Console)
+  does slightly more work and hasn't been run yet, but the release APK path — the harder
+  part — is proven.
+- **New (v1-polish debt, from the 2026-07-24 post-`0.4` audit)** — none of these are
+  correctness bugs, but they're the gap between "features work" and "shippable v1,"
+  tracked as `../PORT_PLAN.md` Phase 9: (1) the today's-bag feature is half-built — schema,
+  CRUD, and the CSV export scope picker all assume an `inBag` flag that no UI can set, so
+  the "Today's bag" export is a dead path; (2) the tab title renders twice (native header +
+  in-screen heading) and the tab bar shows no icons; (3) no accessibility labels on any
+  control — fine for personal use, a real gap before Play Store review. The a11y and
+  cosmetics items are exactly the "polish needed for public release vs. good enough for
+  personal use" tension flagged in `notes.md`.
 
 ## Operational risk
 

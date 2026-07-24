@@ -6,7 +6,7 @@ Two things in one repo:
 
 1. **A live Flask web app** — personal disc golf bag tracker running on a VPS at `51.81.80.126`. Multi-user, local SQLite, no cloud, no accounts. The website is the canonical version and the spec for everything else.
 
-2. **An Android/iOS app port in progress** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Real app code now exists — Phases 0-3 done (parity fixtures verified, Expo scaffold building real signed APKs, pure logic ported with passing tests, SQLite schema/CRUD written). Not yet functional as an app — no screen has real content yet.
+2. **An Android app port in progress** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Functional: all three tabs (Bag / Flight Shaper / Disc Suggest) built and verified on an emulator, full v1 feature set shipped as `mobile-preview-0.4` on GitHub Releases. Currently in Phase 9 (polish + one feature gap) before the next release; not yet run on a physical device. See "Mobile app — current state" below.
 
 ---
 
@@ -182,15 +182,27 @@ a real reason to keep checking model agreement over time rather than the one-tim
 
 ## Mobile app — current state
 
-**Phases 0-3 done, no functional screens yet.** Parity fixtures verified against the live
-website (and two real bugs in the plan's fixture tables caught and fixed along the way), a
-working Expo scaffold that builds real signed local-Gradle APKs, the pure disc/physics/scenario/
-CSV logic ported to TypeScript with 48/48 tests passing, and a SQLite schema/CRUD layer
-matching `app.py`'s exactly (including `in_bag`) — designed so a future opt-in sync (v1.1) can
-reuse it directly, since local-only v1 never blocks adding sync later. That SQLite layer's
-CRUD behavior is untested on a real device/emulator so far (native module, can't verify under
-plain Jest) — do that before Phase 4. Bag / Flight Shaper / Disc Suggest tabs currently just
-show placeholder text; no disc list, DB wiring, or physics UI exists yet.
+**Phases 0-8 done; full v1 feature set shipped as `mobile-preview-0.4`.** All three tabs
+are real and working, verified on an Android emulator (not just typechecked):
+- **Bag** — full CRUD (manual add or from the 1,660+ disc library), edit, delete, sort,
+  search, stability/type filters, color picker, CSV import/export (share sheet + document
+  picker). SQLite-backed, survives app kills.
+- **Flight Shaper** — bag/manual disc picker, 5 sliders (custom Reanimated `VerticalSlider`),
+  live arc + ghost-arc redraw, distance estimate, RHBH/RHFH/LHBH/LHFH switcher. Physics-sim
+  mode deliberately NOT ported (server dependency).
+- **Disc Suggest** — 12-scenario grid, bag + top-15 library matches, `useFocusEffect`-refreshed.
+
+The SQLite CRUD layer is verified on-device. 48/48 Jest tests still pass. Several real
+bugs were found and fixed by actually running the app (form-remount, native-slider/ScrollView
+gesture conflict, stale-bag-data on tab switch, document-picker re-entry crash) — all
+documented in `app/PORT_PLAN.md`.
+
+**Current work — Phase 9 (v1 polish & gap-closing), from a post-`0.4` code audit:** one
+real feature gap (today's-bag has schema/CRUD/export-scope but no UI toggle to set `inBag`,
+so the "Today's bag" export scope is a dead path — decide finish-it vs. hide-it) plus two
+cosmetics (tab title renders twice; tab bar has no icons) and minor polish. Two verification
+gaps need real hardware: drag-reorder with a real finger, and a physical-device cold start.
+See `app/PORT_PLAN.md` Phase 9.
 
 ### Read these files before touching anything app-related:
 - `app/PORT_PLAN.md` — full phased build plan, minimum credible v1 milestone, parity fixtures
@@ -224,10 +236,18 @@ show placeholder text; no disc list, DB wiring, or physics UI exists yet.
 - Never run D1/D2/D3 in parallel
 
 ### Next immediate step:
-Verify the Phase 3 SQLite layer on a real Android emulator or device (this machine has a
-working toolchain + AVDs already — see `app/PORT_PLAN.md` Phase 3's note). Then Phase 4: the
-first real screen (Bag view), wiring `src/db/db.ts` and `src/utils/` into actual UI. Full
-device/emulator test runs are being batched for later rather than done phase-by-phase.
+`app/PORT_PLAN.md` Phase 9 — decide the today's-bag question (P1: finish the in-bag
+toggle/filter/clear UI, or drop the dead export scope) and fix the two cosmetics (P2:
+`headerShown: false` on the tabs to kill the double title; add `tabBarIcon`s), then cut
+`mobile-preview-0.5`. The two remaining Minimum-Milestone items — drag-reorder verified
+with a real finger, and a physical-device cold start — need real hardware and are best
+done together at the first real-device install. After that: Distribution Track D1.
+
+The emulator + toolchain on this machine work: AVD `verify_test` (x86_64, API 37); build
+debug/release with `JAVA_HOME=/usr/lib/jvm/java-21-openjdk` and `emulator` at
+`~/Android/Sdk/emulator/emulator`. For emulator smoke-testing a *release* build, build a
+throwaway x86_64 release-config APK (`-PreactNativeArchitectures=x86_64`) since the shipped
+APK is arm64/armeabi only.
 
 ---
 
