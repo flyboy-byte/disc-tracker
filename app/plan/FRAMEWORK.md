@@ -125,12 +125,15 @@ after `mobile-preview-0.2` shipped: a mount-only `useEffect` meant the bag list 
 refreshed after switching tabs — fixed in `mobile-preview-0.3` with `useFocusEffect`;
 Disc Suggest applied that lesson from the start with no new bugs; CSV Import: an
 unhandled promise rejection when the document picker was invoked while a previous call
-hadn't settled — fixed with a re-entry guard and a real `catch`). `adb shell input
-swipe` works fine for testing real drag gestures on the emulator (used successfully for
-the Flight Shaper sliders) — Bag screen's drag-reorder is still the one untested
-interaction, worth revisiting with the same technique rather than assuming it needs a
-physical device. Three debug-signed preview APKs (`mobile-preview-0.1`–`0.3`) are on
-GitHub Releases for hands-on testing — no production keystore or Play/F-Droid submission
-yet; a `0.4` covering Disc Suggest + CSV is the next release to cut. Next action: the
-Phase 8 kink-hunting pass (drag-reorder gesture test, full smoke checklist, physical
-device caveat documented honestly rather than chased).**
+hadn't settled — fixed with a re-entry guard and a real `catch`). Phase 8's deterministic
+checklist items (Destroyer distance fixture, target SDK check) both passed 2026-07-24.
+Drag-reorder is the one item that stayed unverified despite real effort: `adb shell
+input swipe` works great for continuous Pan gestures (confirmed on the Flight Shaper
+sliders), but two correctly-targeted `adb shell input draganddrop` attempts — the tool
+meant for long-press-gated drags — didn't trigger react-native-draggable-flatlist's
+reorder at all, no crash, no error. Logged honestly as needing a physical finger rather
+than further scripted attempts. Three debug-signed preview APKs
+(`mobile-preview-0.1`–`0.3`) are on GitHub Releases for hands-on testing — no production
+keystore or Play/F-Droid submission yet; a `0.4` covering Disc Suggest + CSV is the next
+release to cut. Next action: cut that release; drag-reorder and a physical-device run
+remain open pending real hardware.**

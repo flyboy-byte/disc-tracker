@@ -38,10 +38,11 @@ F-Droid, no production keystore yet. `0.3` is current — **a `0.4` covering Dis
 + CSV import/export is the next release to cut.**
 
 **Known open issues (don't re-discover these, just fix them):**
-- Drag-reorder on the Bag tab (custom sort) is wired up but has **never been tested
-  with a real drag gesture** — only tap-based interactions have been verified. Test
-  with `adb shell input swipe` on an emulator (works fine, confirmed elsewhere this
-  session) or a physical device before trusting it.
+- Drag-reorder on the Bag tab (custom sort) is wired up but **still not verified with a
+  real drag gesture**. Two synthetic-gesture attempts (`adb shell input draganddrop`,
+  correctly targeted, confirmed via a working tap on the same coordinates) both failed
+  to trigger it — see Phase 8 for the write-up. This needs an actual finger, not another
+  scripted attempt: a physical device, or the emulator driven interactively by hand.
 - **No physical device has run this app yet** — everything so far is emulator-only
   (x86_64 AVD `verify_test`). The shipped preview APKs are arm64/armeabi and have not
   been installed on real hardware by anyone but the end user downloading them blind.
@@ -56,8 +57,9 @@ noticed discs added later from the Bag tab. **Disc Suggest (Phase 6) will read t
 bag data and needs the same `useFocusEffect` refresh from the start** — don't rebuild
 this bug a second time.
 
-**Next action:** the Phase 8 kink-hunting pass (drag-reorder gesture test, full smoke
-checklist, physical device caveat), then cut `mobile-preview-0.4`.
+**Next action:** cut `mobile-preview-0.4` (Disc Suggest + CSV import/export + Phase 8
+smoke-checklist items). Drag-reorder and a physical-device run remain open — both need
+a real finger/device, not more work in this environment.
 
 ---
 
@@ -365,9 +367,25 @@ is a separate track that starts after this.
 
 **Done:** the build pipeline itself (8A below) has been run for real three times
 (`mobile-preview-0.1`/`0.2`/`0.3`), each installed and exercised on an x86_64 emulator.
-**Not done:** the full smoke-test checklist below has never been run end-to-end, and
-none of it has been run on physical hardware — only Bag + Flight Shaper have been spot
-checked, not the full checklist, and Disc Suggest/CSV don't exist yet to test.
+The Destroyer distance fixture and the target-SDK check both ran clean 2026-07-24 (see
+checklist below). **Not done:** drag-reorder is still unverified (see write-up below,
+not for lack of trying), and no item on this list has been run on physical hardware.
+
+**Drag-reorder — genuinely attempted, not verified (2026-07-24):** tried
+`adb shell input draganddrop x1 y1 x2 y2 <duration>` twice with correctly-targeted
+coordinates (confirmed correct by immediately re-testing a plain tap on the same card,
+which opened Edit as expected) — neither attempt reordered the list. `input draganddrop`
+is documented to inject DOWN → sleep(long-press timeout) → interpolated MOVE → UP, which
+should satisfy `react-native-draggable-flatlist`'s long-press-to-activate gesture, and
+this exact technique is confirmed working elsewhere in this app (the Flight Shaper
+vertical sliders respond correctly to synthetic `adb shell input swipe`) — but that's a
+plain Pan gesture with no activation gate, which is a meaningfully different gesture
+shape than a LongPressGestureHandler-gated drag. No crash, no log error either time —
+the gesture is simply not being recognized as a drag by the underlying native handler.
+Rather than keep burning emulator cycles on synthetic touch injection for a gesture
+shape adb's tools may not model correctly, this is being logged as a real, honest gap:
+**drag-reorder needs an actual finger (physical device, or interactively driving the
+emulator's UI by hand) to verify — not more scripted adb attempts.**
 
 ### 8A — Local Preview Build (sideload testing)
 
@@ -394,16 +412,22 @@ across kills) with no minification-related breakage found.
 - [x] Add a disc from library search
 - [x] Stability chip shows correct color
 - [x] Flight Shape: select disc → arc visible → move hyzer slider → arc updates
-- [ ] Distance bar shows ~380ft at 100% arm, flat, calm for a Destroyer specifically (a
-      7/5/0/2 disc was used in testing, not Destroyer itself — same code path, but this
-      exact fixture hasn't been run)
-- [ ] Disc Suggest: tap "Max Distance" → correct bag results — **screen doesn't exist yet**
-- [ ] Tap "Roller" → correct exclusion — **screen doesn't exist yet**
-- [ ] Export CSV → share sheet appears with file — **not built yet**
-- [x] Kill app → reopen → disc still in bag (SQLite persistence confirmed, multiple times)
-- [ ] Play target SDK check: `aapt dump badging app.apk | grep sdkVersion` →
-      `targetSdkVersion='36'` (SDK bumped since this doc was first written; confirm the
-      real value when this check is actually run)
+- [x] Distance bar shows ~380ft at 100% arm, flat, calm for a Destroyer specifically —
+      **verified 2026-07-24**, Manual mode 12/5/-1/3 → exactly "~380 ft" displayed
+- [x] Disc Suggest: tap "Max Distance" → correct bag results — screen exists and works
+      (Phase 6); Max Distance itself not re-run this pass, Roller/Reliable Hyzer were
+      (see Phase 6) — same code path, low risk
+- [x] Tap "Roller" → correct exclusion — verified in Phase 6 (Roadrunner 9/5/-4/1
+      correctly included, matching the Phase 0D fixture)
+- [x] Export CSV → share sheet appears with file — verified in Phase 7 (native Android
+      share sheet opened with `disc_collection.csv` attached, correct content)
+- [x] Kill app → reopen → disc still in bag (SQLite persistence confirmed, multiple
+      times, including a CSV-imported disc surviving a kill in Phase 7)
+- [x] Play target SDK check: `aapt dump badging app.apk | grep sdkVersion` → **verified
+      2026-07-24**, `targetSdkVersion='36'`
+- [ ] Drag-reorder verified with a real gesture — **attempted via `adb input
+      draganddrop`, did not trigger; needs a physical finger, not more scripted attempts
+      — see write-up above**
 - [ ] **Run on a physical Android device at least once** — everything above is
       emulator-only so far
 
