@@ -17,25 +17,25 @@
 
 ## Current Status (2026-07-24) — read this first
 
-**Phases 0–6 are built and verified on a real Android emulator (not just typechecked).**
-Several real bugs were found and fixed along the way (details in the Phase 4/5 sections
-below) — the kind of thing that only shows up when you actually run the app, which is
-why every phase in this doc gets an on-device pass before being marked done, not just a
-green build.
+**Phases 0–7 are built and verified on a real Android emulator (not just typechecked).**
+Several real bugs were found and fixed along the way (details in the Phase 4/5/7
+sections below) — the kind of thing that only shows up when you actually run the app,
+which is why every phase in this doc gets an on-device pass before being marked done,
+not just a green build.
 
 **What actually works right now, if you install a build:**
 - **Bag tab** — full CRUD (add manual or from the 1,660+ disc library, edit, delete,
-  sort, search, filter, color picker), SQLite-backed, survives app kills.
+  sort, search, filter, color picker), CSV import/export (share sheet + document picker),
+  SQLite-backed, survives app kills.
 - **Flight Shaper tab** — disc picker (bag or manual), 5 working sliders, live arc
   redraw with ghost-arc comparison, distance estimate, throw-style switcher.
 - **Disc Suggest tab** — 12-scenario grid, bag matches + top-15 library matches per
-  scenario, deduped, `useFocusEffect`-refreshed. Built and verified on-device
-  2026-07-24 (see Phase 6 below).
+  scenario, deduped, `useFocusEffect`-refreshed.
 
 **What's released:** three debug-signed preview APKs on GitHub Releases
 (`mobile-preview-0.1` → `0.3`), for hands-on testing only — not Play Store, not
-F-Droid, no production keystore yet. `0.3` is current — **a `0.4` with Disc Suggest is
-the next release to cut.**
+F-Droid, no production keystore yet. `0.3` is current — **a `0.4` covering Disc Suggest
++ CSV import/export is the next release to cut.**
 
 **Known open issues (don't re-discover these, just fix them):**
 - Drag-reorder on the Bag tab (custom sort) is wired up but has **never been tested
@@ -56,9 +56,8 @@ noticed discs added later from the Bag tab. **Disc Suggest (Phase 6) will read t
 bag data and needs the same `useFocusEffect` refresh from the start** — don't rebuild
 this bug a second time.
 
-**Next action:** cut `mobile-preview-0.4` (Disc Suggest), then Phase 7 (CSV import/export)
-or the Phase 8 kink-hunting pass (drag-reorder gesture test, full smoke checklist,
-physical device) — not yet decided which comes first.
+**Next action:** the Phase 8 kink-hunting pass (drag-reorder gesture test, full smoke
+checklist, physical device caveat), then cut `mobile-preview-0.4`.
 
 ---
 
@@ -78,7 +77,8 @@ physical device) — not yet decided which comes first.
       scenarios — verified on-device 2026-07-24 (Roller and Reliable Hyzer both spot
       checked against the bag; Max Distance not re-run but same filterBag/filterLibrary
       code path)
-- [ ] CSV export produces a file, CSV import reads it back correctly — **not built**
+- [x] CSV export produces a file, CSV import reads it back correctly — verified
+      on-device 2026-07-24 (share sheet + real file picker, both round-tripped)
 
 Everything after this — Play Store submission, F-Droid, Physics V2, sync — is a separate job.
 
@@ -313,25 +313,48 @@ the two scenarios actually tested, low risk.
 
 ---
 
-## Phase 7 — Import / Export — NOT STARTED
+## Phase 7 — Import / Export ✅ done, verified on-device (2026-07-24)
 
-**Goal:** CSV round-trip matches web behavior. `src/utils/csv.ts` (Phase 2) already has
-the parsing/building/dedupe logic, tested — this phase is wiring it to file I/O and UI.
+CSV round-trip matching web behavior, built on the already-tested `src/utils/csv.ts`
+(Phase 2) — this phase was wiring it to file I/O and UI.
 
-**Export fields (in order):** `mfr, mold, plastic, weight, speed, glide, turn, fade, use, thr, notes, color`
+Files: `src/components/{CsvExportModal,CsvImportModal}.tsx`, wired into
+`app/(tabs)/index.tsx` (two new ghost buttons next to "+ Add disc").
 
-**Import behavior:**
-- Parse header row to find column positions (order-agnostic)
-- Strip leading `#` from color if present
-- Assign new `disc_id` values (from `user_meta.next_id`)
-- Append to current bag (do not clear existing discs)
+**Export:** scope picker (All / Today's bag, matching the website's radio choice — only
+shown when the bag has any `inBag` discs), live CSV preview, `expo-file-system`'s new
+`File`/`Directory`/`Paths` API writes to `Paths.cache/exports/disc_collection.csv`,
+`expo-sharing`'s `shareAsync()` opens the native share sheet — the mobile equivalent of
+the website's Download/Copy buttons. Verified on-device: share sheet opened with the
+correct file attached and byte-correct CSV content, re-shared successfully a second time.
 
-**Mobile implementation:**
-- Export: `expo-file-system` write temp file → `expo-sharing` share sheet
-- Import: `expo-document-picker` pick `.csv` → read text → parse → insert into SQLite
+**Import:** `expo-document-picker` for file selection (matches this doc's original plan)
+plus a paste-CSV textarea as a zero-dependency fallback (mirrors the website's own
+textarea path). Same append-not-replace semantics as `doImport()` in `templates/index.html`
+— dedupes against the existing bag and cap at `MAX_IMPORT`, assigns new ids via the same
+`max(id)+1` scheme `handleSave` already uses for manual adds (not `user_meta.next_id`,
+which this port's Bag screen doesn't use either — an existing, harmless divergence from
+the website's own id scheme).
 
-**Parity check:** Export bag from web app, import CSV into mobile app. All discs appear
-with correct fields.
+**Real bug found and fixed on-device (2026-07-24):** tapping "Pick CSV file" while a
+previous picker call hadn't settled yet threw `Error: Call to function
+'ExpoDocumentPicker.getDocumentAsync' has been rejected. → Different document picking in
+progress` as an **unhandled promise rejection** — a red-box crash in dev, and in a
+release build this would have been a silently-swallowed failure with no user-visible
+feedback. `pickFile()` only had a `finally`, no `catch`. Fixed with a `picking`-state
+re-entry guard plus a real `catch` that shows a friendly inline error message
+("Could not open file picker — try again, or paste the CSV text instead.") instead of
+throwing. Verified the fix by reproducing the exact failure (rapid picker re-invocation),
+then confirming a clean file-based import worked end-to-end afterward: picked a real
+`.csv` from the file picker, correct preview count, imported, disc appeared with all
+fields correct (mfr/mold/plastic/weight/flight numbers/use/notes), and survived an app
+kill + relaunch.
+
+**Parity check:** exported CSV header/column order matches `buildCSV()` in
+`templates/index.html` exactly (byte-for-byte, same 11 columns in the same order).
+Cross-app round-trip (export from mobile → import on web, or vice versa) not yet run —
+low risk since both sides share the identical header/column contract, but flag as
+untested if it matters later.
 
 ---
 

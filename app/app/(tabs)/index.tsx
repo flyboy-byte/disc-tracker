@@ -1,10 +1,12 @@
 // Bag screen — PORT_PLAN.md Phase 4. Ported from templates/index.html's render()/
 // openAdd()/openEdit()/saveDisc()/deleteDisc()/setFilter()/setSort()/startDrag()+endDrag().
-// CSV export/import is Phase 7, not here (needs expo-file-system/expo-sharing wiring).
+// CSV export/import (Phase 7) is wired in via CsvExportModal/CsvImportModal below.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist';
 import { FlatList } from 'react-native-gesture-handler';
+import CsvExportModal from '../../src/components/CsvExportModal';
+import CsvImportModal from '../../src/components/CsvImportModal';
 import DiscCard from '../../src/components/DiscCard';
 import DiscFormModal from '../../src/components/DiscFormModal';
 import DiscLibraryModal from '../../src/components/DiscLibraryModal';
@@ -59,6 +61,8 @@ export default function BagScreen() {
   // since a blank add and a library-prefilled add are both formIsNew=true.
   const [formSession, setFormSession] = useState(0);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -165,6 +169,17 @@ export default function BagScreen() {
     await persist(data);
   };
 
+  // Same id-assignment scheme as handleSave's new-disc path — append-only, matches the
+  // website's doImport() (assigns new ids, pushes onto the existing bag, never clears it).
+  const handleImportDiscs = async (imported: Disc[]) => {
+    let nextId = (discs.reduce((max, d) => Math.max(max, d.id ?? 0), 0) || 100) + 1;
+    const withIds = imported.map((d) => ({ ...d, id: nextId++ }));
+    const next = [...discs, ...withIds];
+    setDiscs(next);
+    setImportOpen(false);
+    await persist(next);
+  };
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -202,6 +217,12 @@ export default function BagScreen() {
       <View style={styles.actionsRow}>
         <Pressable style={styles.addBtn} onPress={openAdd}>
           <Text style={styles.addBtnText}>+ Add disc</Text>
+        </Pressable>
+        <Pressable style={styles.ghostBtn} onPress={() => setImportOpen(true)}>
+          <Text style={styles.ghostBtnText}>Import</Text>
+        </Pressable>
+        <Pressable style={styles.ghostBtn} onPress={() => setExportOpen(true)}>
+          <Text style={styles.ghostBtnText}>Export</Text>
         </Pressable>
         {sortMode === 'custom' && (
           <Text style={styles.dragHint}>{dragEnabled ? 'long-press ⠿ to reorder' : 'clear search/filters to drag-reorder'}</Text>
@@ -243,6 +264,8 @@ export default function BagScreen() {
         }}
       />
       <DiscLibraryModal visible={libraryOpen} onCancel={() => setLibraryOpen(false)} onPick={handlePickFromLibrary} />
+      <CsvExportModal visible={exportOpen} discs={discs} onCancel={() => setExportOpen(false)} />
+      <CsvImportModal visible={importOpen} existingDiscs={discs} onCancel={() => setImportOpen(false)} onImport={handleImportDiscs} />
     </View>
   );
 }
@@ -296,6 +319,8 @@ const styles = StyleSheet.create({
   actionsRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 8 },
   addBtn: { backgroundColor: colors.accent, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   addBtnText: { color: '#fff', fontWeight: '700' },
+  ghostBtn: { borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+  ghostBtnText: { color: colors.muted, fontWeight: '600', fontSize: 13 },
   dragHint: { color: colors.muted, fontSize: 12, flexShrink: 1 },
   empty: { color: colors.muted, textAlign: 'center', marginTop: 40 },
   listContent: { paddingBottom: 24 },
