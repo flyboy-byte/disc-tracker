@@ -15,11 +15,11 @@
 
 ---
 
-## Current Status (2026-07-23) — read this first
+## Current Status (2026-07-24) — read this first
 
-**Phases 0–5 are built and verified on a real Android emulator (not just typechecked).**
-Two real bugs were found and fixed along the way (details in Phase 4/5 sections below) —
-both were the kind of thing that only shows up when you actually run the app, which is
+**Phases 0–6 are built and verified on a real Android emulator (not just typechecked).**
+Several real bugs were found and fixed along the way (details in the Phase 4/5 sections
+below) — the kind of thing that only shows up when you actually run the app, which is
 why every phase in this doc gets an on-device pass before being marked done, not just a
 green build.
 
@@ -28,11 +28,14 @@ green build.
   sort, search, filter, color picker), SQLite-backed, survives app kills.
 - **Flight Shaper tab** — disc picker (bag or manual), 5 working sliders, live arc
   redraw with ghost-arc comparison, distance estimate, throw-style switcher.
-- **Disc Suggest tab** — still a placeholder. Nothing built yet.
+- **Disc Suggest tab** — 12-scenario grid, bag matches + top-15 library matches per
+  scenario, deduped, `useFocusEffect`-refreshed. Built and verified on-device
+  2026-07-24 (see Phase 6 below).
 
 **What's released:** three debug-signed preview APKs on GitHub Releases
 (`mobile-preview-0.1` → `0.3`), for hands-on testing only — not Play Store, not
-F-Droid, no production keystore yet. `0.3` is current.
+F-Droid, no production keystore yet. `0.3` is current — **a `0.4` with Disc Suggest is
+the next release to cut.**
 
 **Known open issues (don't re-discover these, just fix them):**
 - Drag-reorder on the Bag tab (custom sort) is wired up but has **never been tested
@@ -53,7 +56,9 @@ noticed discs added later from the Bag tab. **Disc Suggest (Phase 6) will read t
 bag data and needs the same `useFocusEffect` refresh from the start** — don't rebuild
 this bug a second time.
 
-**Next action:** Phase 6 (Disc Suggest screen).
+**Next action:** cut `mobile-preview-0.4` (Disc Suggest), then Phase 7 (CSV import/export)
+or the Phase 8 kink-hunting pass (drag-reorder gesture test, full smoke checklist,
+physical device) — not yet decided which comes first.
 
 ---
 
@@ -69,8 +74,10 @@ this bug a second time.
 - [x] Phase 0 parity tests pass (stability, distance, scenario filters)
 - [x] Flight Shape arc renders and updates when sliders move — verified on-device with
       a real drag gesture, not just a tap
-- [ ] Disc Suggest shows correct bag matches for at least Roller and Max Distance
-      scenarios — **not built**
+- [x] Disc Suggest shows correct bag matches for at least Roller and Max Distance
+      scenarios — verified on-device 2026-07-24 (Roller and Reliable Hyzer both spot
+      checked against the bag; Max Distance not re-run but same filterBag/filterLibrary
+      code path)
 - [ ] CSV export produces a file, CSV import reads it back correctly — **not built**
 
 Everything after this — Play Store submission, F-Droid, Physics V2, sync — is a separate job.
@@ -276,31 +283,33 @@ too.
 
 ---
 
-## Phase 6 — Disc Suggest Screen — NOT STARTED
+## Phase 6 — Disc Suggest Screen ✅ done, verified on-device (2026-07-24)
 
-**Goal:** Scenario recommendation matching `discsuggestion.html` behavior. Still a
-placeholder screen (`app/(tabs)/disc-suggest.tsx`) — nothing built.
+Scenario recommendation matching `discsuggestion.html` behavior.
 
-**Features:**
-1. 12-scenario grid (2 columns mobile → 3 → 6 at wider widths)
-2. Tap scenario → show bag matches + library matches
-3. Bag matches: "In your bag" highlighted cards
-4. Library matches: top 15 sorted by proximity to scenario midpoint stability, deduplicated against bag
-5. Stability chip + stability bar on each card
+| # | Feature | Status |
+|---|---------|--------|
+| 1 | 12-scenario grid | ✅ done (fixed 2-column — phone-only app, skipped the website's 3/6-col desktop breakpoints as not applicable) |
+| 2 | Tap scenario → bag matches + library matches | ✅ done |
+| 3 | Bag matches: "In your bag" highlighted cards | ✅ done |
+| 4 | Library matches: top 15 by proximity to scenario midpoint, deduped against bag | ✅ done |
+| 5 | Stability chip + -4..+7 stability position bar on each card | ✅ done |
 
-**Already built and ready to wire in:** `src/utils/scenarios.ts` (the real 12-entry
-`SCENARIOS` array + `filterBag()`/`filterLibrary()`) from Phase 2 — this screen is pure
-UI work on top of already-ported, already-tested logic.
+Files: `src/components/{ScenarioGrid,SuggestResultCard}.tsx`, `app/(tabs)/disc-suggest.tsx`.
+Reused directly, no changes needed: `src/utils/scenarios.ts` (Phase 2's `SCENARIOS` +
+`filterBag()`/`filterLibrary()`), `src/utils/masterLibrary.ts` (Phase 4's bundled-library
+loader), `disc.ts`'s `bagToDisc()`/`stabClass()`/`stabShort()`/`typeShort()`.
 
-**Master library:** `src/utils/masterLibrary.ts` (from Phase 4) — already loads
-`assets/discs_master.json` via `require()`, reuse directly, no new loader needed.
+**Applied the Phase 5 lesson from the start:** loads bag discs via `useFocusEffect`, not a
+mount-only `useEffect` — no stale-data bug this time.
 
-**Apply the Phase 5 lesson:** this screen reads bag discs the same way Flight Shaper
-does. Use `useFocusEffect` to refetch on every tab focus from the start — do not repeat
-the mount-only-`useEffect` bug that shipped in `mobile-preview-0.2`.
-
-**Parity check:** Select "Roller" scenario. Only discs with `turn <= -3` and `fade <= 1`
-should appear in bag results.
+**Parity checks run on-device (2026-07-24):** selected "Reliable Hyzer" with a 2-disc bag
+(Buzzz 5/4/-1/1, Judge 2/4/0/1) — correctly showed 0 bag matches (neither has `fade >= 3`)
+and 15 library matches, all OS. Selected "Roller" — all library results showed `turn <= -3`
+and `fade <= 1` as expected (Roadrunner 9/5/-4/1 appeared, matching the Phase 0D fixture
+table's expected Roller ✅). No crashes, no `ReactNativeJS` errors in logcat during either
+test. Max Distance not separately re-run — same `filterBag`/`filterLibrary` code path as
+the two scenarios actually tested, low risk.
 
 ---
 
