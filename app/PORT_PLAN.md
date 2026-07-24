@@ -34,6 +34,9 @@ including drag-reorder, is verified on the emulator.
   redraw with ghost-arc comparison, distance estimate, throw-style switcher.
 - **Disc Suggest tab** — 12-scenario grid, bag matches + top-15 library matches per
   scenario, deduped, `useFocusEffect`-refreshed.
+- **Settings tab** — default throw view (persisted, inherited by Flight Shaper), data
+  backup/import/delete-all, a v1.1 sync placeholder, and About (version, GPLv3, source
+  link, local-only statement).
 - Tab bar has real icons; no duplicate screen titles; DB access is serialized (no
   "database is locked" under concurrent read/write).
 
@@ -501,6 +504,18 @@ release build). Fixed by serializing every public DB op in `db.ts` onto a single
 chain (`serialize()`), with a raw `readMeta` helper so `setMeta`→`getMeta` doesn't
 re-enter the queue and deadlock. Verified: heavy concurrent stress (rapid tab-switching +
 drag write + back-to-back in-bag toggles) produced zero lock errors and no deadlock.
+
+**Settings tab (added 2026-07-24, same pass).** A 4th bottom tab (gear icon,
+`TabBarIcon.tsx` `settings`) → `app/(tabs)/settings.tsx`: (1) **Default throw view**
+(RHBH/RHFH/LHBH/LHFH) persisted to `user_meta.arc_view` — Flight Shaper re-reads it on
+focus, so a change here propagates (verified on-device); (2) **Data** — back up (CSV
+share), import (reuses the CSV modals), and "Delete all discs" with a confirm; (3) a
+disabled **Sync** placeholder marking where the v1.1 VPS-sync UI lands (per Phase 10);
+(4) **About** — version, a local-only/no-tracking statement, GPLv3, and a source-code
+link. Because Settings can now mutate the bag (import/delete-all), the **Bag** screen
+also gained a `useFocusEffect` refetch (it previously loaded mount-only) so those changes
+reflect when you return to it — the same pattern the plan keeps flagging. Deliberately
+v1-scoped: no sync, no Marshall Street images yet.
 
 **Drag-reorder — now verified on the emulator (closes the long-standing Phase 8 gap).**
 The trick the earlier attempts missed: `adb input draganddrop`/`swipe` can't produce the

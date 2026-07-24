@@ -71,8 +71,10 @@ export default function FlightShaperScreen() {
     useCallback(() => {
       if (!didInitialSelect.current || userId == null) return;
       (async () => {
-        const discs = await getDiscs(userId);
+        // Also re-read the default arc view — it's settable from the Settings tab now.
+        const [discs, meta] = await Promise.all([getDiscs(userId), getMeta(userId)]);
         setBagDiscs(discs);
+        setArcView((meta.arcView as ArcView) || 'RHBH');
       })();
     }, [userId])
   );

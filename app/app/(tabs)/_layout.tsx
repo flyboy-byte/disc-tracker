@@ -26,6 +26,10 @@ export default function TabsLayout() {
         name="disc-suggest"
         options={{ title: 'Disc Suggest', tabBarIcon: ({ color }) => <TabBarIcon name="suggest" color={color} /> }}
       />
+      <Tabs.Screen
+        name="settings"
+        options={{ title: 'Settings', tabBarIcon: ({ color }) => <TabBarIcon name="settings" color={color} /> }}
+      />
     </Tabs>
   );
 }

@@ -191,6 +191,10 @@ are real and working, verified on an Android emulator (not just typechecked):
   live arc + ghost-arc redraw, distance estimate, RHBH/RHFH/LHBH/LHFH switcher. Physics-sim
   mode deliberately NOT ported (server dependency).
 - **Disc Suggest** — 12-scenario grid, bag + top-15 library matches, `useFocusEffect`-refreshed.
+- **Settings** (4th tab, gear icon) — default throw view (persisted, inherited by Flight
+  Shaper), data backup/import/delete-all, a v1.1 sync placeholder, About (version, GPLv3,
+  source link). Adding it required a `useFocusEffect` refetch on the Bag screen too, since
+  Settings can import/delete discs.
 
 The SQLite CRUD layer is verified on-device. 48/48 Jest tests still pass. Several real
 bugs were found and fixed by actually running the app (form-remount, native-slider/ScrollView

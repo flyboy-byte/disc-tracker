@@ -1,10 +1,11 @@
 // Bag screen — PORT_PLAN.md Phase 4. Ported from templates/index.html's render()/
 // openAdd()/openEdit()/saveDisc()/deleteDisc()/setFilter()/setSort()/startDrag()+endDrag().
 // CSV export/import (Phase 7) is wired in via CsvExportModal/CsvImportModal below.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist';
 import { FlatList } from 'react-native-gesture-handler';
+import { useFocusEffect } from 'expo-router';
 import CsvExportModal from '../../src/components/CsvExportModal';
 import CsvImportModal from '../../src/components/CsvImportModal';
 import DiscCard from '../../src/components/DiscCard';
@@ -66,6 +67,9 @@ export default function BagScreen() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  // Guards the focus refetch so it only runs after the initial mount load below (which the
+  // Settings tab's import/reset can invalidate — same useFocusEffect pattern the plan flags).
+  const didInitialLoad = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -74,9 +78,19 @@ export default function BagScreen() {
       setUserId(uid);
       setDiscs(loadedDiscs);
       setSortMode((meta.sortMode as SortMode) || 'speed-desc');
+      didInitialLoad.current = true;
       setLoading(false);
     })();
   }, []);
+
+  // Refetch the bag whenever the tab regains focus — the Settings tab can import discs or
+  // delete them all, and this screen stays mounted, so a mount-only load would go stale.
+  useFocusEffect(
+    useCallback(() => {
+      if (!didInitialLoad.current || userId == null) return;
+      (async () => setDiscs(await getDiscs(userId)))();
+    }, [userId])
+  );
 
   const persist = useCallback(
     async (next: Disc[]) => {
