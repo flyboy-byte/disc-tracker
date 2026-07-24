@@ -2,13 +2,14 @@
 // setMode()/onSlider()/updateArc()/setBaseDisc()/loadBag()/onManualChange(). Physics-sim
 // mode (server-side shotshaper) is intentionally NOT ported — the mobile app must not
 // depend on the Flask server (CLAUDE.md hard constraint) — only the legacy Bézier arc.
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 // gesture-handler's ScrollView (not react-native's) — its NativeViewGestureHandler
 // negotiates touch claims with nested native views (our rotated Slider) properly;
 // plain RN ScrollView won on-device even with scrollEnabled toggling (confirmed
 // 2026-07-23, see VerticalSlider.tsx).
 import { ScrollView } from 'react-native-gesture-handler';
+import { useFocusEffect } from 'expo-router';
 import AngleRefDiagrams from '../../src/components/AngleRefDiagrams';
 import FlightArcSvg from '../../src/components/FlightArcSvg';
 import HyzerReferenceDiagram from '../../src/components/HyzerReferenceDiagram';
@@ -39,6 +40,9 @@ export default function FlightShaperScreen() {
   const [sliders, setSliders] = useState<SliderValues>(DEFAULT_SLIDERS);
   const [arcView, setArcView] = useState<ArcView>('RHBH');
   const [scrollEnabled, setScrollEnabled] = useState(true);
+  // Guards the one-time "auto-select the fastest disc + fall back to Manual mode if the
+  // bag is empty" behavior so it only fires on first load, not on every refocus below.
+  const didInitialSelect = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -53,9 +57,25 @@ export default function FlightShaperScreen() {
       } else {
         setMode('manual');
       }
+      didInitialSelect.current = true;
       setLoading(false);
     })();
   }, []);
+
+  // Real bug, confirmed on-device (2026-07-23): expo-router's tab screens stay mounted
+  // when you switch tabs, so a plain "load once on mount" effect goes stale the moment
+  // you add/edit a disc on the Bag tab and come back here — the newly added disc simply
+  // never appeared. Refetch on every focus instead (skipping the very first one, since
+  // the mount effect above already handles that).
+  useFocusEffect(
+    useCallback(() => {
+      if (!didInitialSelect.current || userId == null) return;
+      (async () => {
+        const discs = await getDiscs(userId);
+        setBagDiscs(discs);
+      })();
+    }, [userId])
+  );
 
   const sortedBag = useMemo(() => [...bagDiscs].sort((a, b) => b.speed - a.speed), [bagDiscs]);
   const selectedBagDisc = useMemo(() => bagDiscs.find((d) => d.id === selectedBagId) ?? null, [bagDiscs, selectedBagId]);
