@@ -32,10 +32,10 @@ not just a green build.
 - **Disc Suggest tab** — 12-scenario grid, bag matches + top-15 library matches per
   scenario, deduped, `useFocusEffect`-refreshed.
 
-**What's released:** three debug-signed preview APKs on GitHub Releases
-(`mobile-preview-0.1` → `0.3`), for hands-on testing only — not Play Store, not
-F-Droid, no production keystore yet. `0.3` is current — **a `0.4` covering Disc Suggest
-+ CSV import/export is the next release to cut.**
+**What's released:** four debug-signed preview APKs on GitHub Releases
+(`mobile-preview-0.1` → `0.4`), for hands-on testing only — not Play Store, not
+F-Droid, no production keystore yet. `0.4` (Disc Suggest + CSV import/export) is
+current.
 
 **Known open issues (don't re-discover these, just fix them):**
 - Drag-reorder on the Bag tab (custom sort) is wired up but **still not verified with a
@@ -57,9 +57,11 @@ noticed discs added later from the Bag tab. **Disc Suggest (Phase 6) will read t
 bag data and needs the same `useFocusEffect` refresh from the start** — don't rebuild
 this bug a second time.
 
-**Next action:** cut `mobile-preview-0.4` (Disc Suggest + CSV import/export + Phase 8
-smoke-checklist items). Drag-reorder and a physical-device run remain open — both need
-a real finger/device, not more work in this environment.
+**Next action:** none blocking — the Minimum Credible v1 Milestone feature set is fully
+built and released (`mobile-preview-0.4`). What's left is verification-only: drag-reorder
+and a physical-device run, both needing a real finger/device rather than more work in
+this environment. After that, the Distribution Track (D1/D2/D3, see below) is the next
+real chunk of work.
 
 ---
 
@@ -443,7 +445,7 @@ dependency added since then pulled something in transitively.
 
 ### Interim preview releases (not part of the formal 8A/8B checklist)
 
-Three debug-signed APKs pushed to GitHub Releases for hands-on testing, ahead of any
+Four debug-signed APKs pushed to GitHub Releases for hands-on testing, ahead of any
 real signing/distribution setup:
 
 | Tag | What changed |
@@ -451,6 +453,7 @@ real signing/distribution setup:
 | `mobile-preview-0.1` | First release — Bag tab only |
 | `mobile-preview-0.2` | + Flight Shaper tab |
 | `mobile-preview-0.3` | Fix: Flight Shaper showing stale bag data (see Phase 5) |
+| `mobile-preview-0.4` | + Disc Suggest tab, + CSV import/export (see Phases 6-7) |
 
 These are **debug-signed** (no production keystore exists yet — see Distribution
 Track D1 below), and the repo is public, so releases are visible to anyone, not just
