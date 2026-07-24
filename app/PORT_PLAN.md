@@ -17,42 +17,44 @@
 
 ## Current Status (2026-07-24) — read this first
 
-**Phases 0–8 are done and verified on a real Android emulator (not just typechecked),
-and the full v1 feature set shipped as `mobile-preview-0.4`.** Several real bugs were
-found and fixed along the way (details in the Phase 4/5/7 sections below) — the kind of
-thing that only shows up when you actually run the app, which is why every phase in this
-doc gets an on-device pass before being marked done, not just a green build. A code
-audit right after `0.4` (2026-07-24) then surfaced **Phase 9** — a short list of polish
-items and one real feature gap (today's-bag has no UI toggle) between "features exist"
-and "shippable v1." Read Phase 9 before the next release.
+**Phases 0–9 are done and verified on a real Android emulator (not just typechecked).**
+The full v1 feature set shipped as `mobile-preview-0.4`; Phase 9 (the post-`0.4` polish +
+gap-closing pass) is built and verified but **not yet released — a `0.5` is due.** Several
+real bugs were found and fixed by actually running the app (Phase 4/5/7/9 sections below) —
+which is why every phase gets an on-device pass, not just a green build. As of 2026-07-24
+the *only* unmet Minimum-Milestone item is a physical-device cold start; everything else,
+including drag-reorder, is verified on the emulator.
 
 **What actually works right now, if you install a build:**
 - **Bag tab** — full CRUD (add manual or from the 1,660+ disc library, edit, delete,
-  sort, search, filter, color picker), CSV import/export (share sheet + document picker),
-  SQLite-backed, survives app kills.
+  sort, search, filter, color picker), **today's-bag** (per-card toggle, filter, count,
+  clear), **drag-reorder** (custom sort), CSV import/export (share sheet + document
+  picker, with a today's-bag export scope), SQLite-backed, survives app kills.
 - **Flight Shaper tab** — disc picker (bag or manual), 5 working sliders, live arc
   redraw with ghost-arc comparison, distance estimate, throw-style switcher.
 - **Disc Suggest tab** — 12-scenario grid, bag matches + top-15 library matches per
   scenario, deduped, `useFocusEffect`-refreshed.
+- Tab bar has real icons; no duplicate screen titles; DB access is serialized (no
+  "database is locked" under concurrent read/write).
 
 **What's released:** four debug-signed preview APKs on GitHub Releases
 (`mobile-preview-0.1` → `0.4`), for hands-on testing only — not Play Store, not
-F-Droid, no production keystore yet. `0.4` (Disc Suggest + CSV import/export) is
-current.
+F-Droid, no production keystore yet. `0.4` is the newest **released** build; **Phase 9's
+work (today's-bag, tab icons, DB fix, a11y) is committed but not yet in a release — cut
+`0.5` next.**
 
-**Known open issues (don't re-discover these — they're captured, mostly in Phase 9):**
-- **Today's-bag feature has no UI toggle** (Phase 9, P1) — schema/CRUD/export-scope all
-  assume it exists, but nothing can set `inBag`, so the export "Today's bag" scope is a
-  dead path. Decide finish-it vs. hide-it before the next release.
-- **Two cosmetic issues** (Phase 9, P2): the tab title renders twice (native header +
-  in-screen `<h1>`), and the bottom tab bar shows empty box glyphs because no
-  `tabBarIcon` is set.
-- Drag-reorder on the Bag tab is wired up but **still not verified with a real drag
-  gesture** — synthetic `adb input draganddrop` didn't trigger it (Phase 8 write-up).
-  Needs an actual finger: a physical device, or the emulator driven by hand.
+**Known open issues (most Phase 9 items are now RESOLVED — see Phase 9 for details):**
+- ~~Today's-bag has no UI toggle~~ — **fixed** (Phase 9 P1): toggle + filter + count +
+  clear, and the export scope is live.
+- ~~Double title / missing tab icons~~ — **fixed** (Phase 9 P2).
+- ~~Drag-reorder unverified~~ — **verified on the emulator** (Phase 8/9) via
+  `adb input motionevent` hold-then-move; persists across restart.
+- ~~"database is locked" under concurrent read/write~~ — **fixed** (Phase 9): DB ops
+  serialized in `db.ts`.
 - **No physical device has run this app yet** — everything so far is emulator-only
   (x86_64 AVD `verify_test`). The shipped preview APKs are arm64/armeabi and have not
-  been installed on real hardware by anyone but the end user downloading them blind.
+  been installed on real hardware by anyone but the end user downloading them blind. This
+  is now the single remaining Minimum-Milestone gap.
 - No production keystore — see Distribution Track D1 below.
 
 **The pattern that caused the one shipped bug so far, and will bite again if repeated:**
@@ -64,11 +66,10 @@ noticed discs added later from the Bag tab. **Disc Suggest (Phase 6) will read t
 bag data and needs the same `useFocusEffect` refresh from the start** — don't rebuild
 this bug a second time.
 
-**Next action:** Phase 9 — decide the today's-bag question (P1) and fix the two cosmetics
-(P2), then cut `mobile-preview-0.5`. The remaining Minimum-Milestone gaps (drag-reorder
-gesture + a physical-device run) need a real finger/device rather than more work in this
-environment — best done together at the first real-device install. After that, the
-Distribution Track (D1/D2/D3, below) is the next real chunk of work.
+**Next action:** cut `mobile-preview-0.5` (bundles all of Phase 9 — today's-bag, tab
+icons, DB serialization fix, a11y). The only remaining Minimum-Milestone gap is a
+physical-device cold start (genuinely needs hardware). After that, the Distribution Track
+(D1/D2/D3, below) is the next real chunk of work.
 
 ---
 
@@ -374,27 +375,27 @@ untested if it matters later.
 **Goal:** Real APK on a physical device, all screens verified. Distribution (D1/D2/D3)
 is a separate track that starts after this.
 
-**Done:** the build pipeline itself (8A below) has been run for real three times
-(`mobile-preview-0.1`/`0.2`/`0.3`), each installed and exercised on an x86_64 emulator.
-The Destroyer distance fixture and the target-SDK check both ran clean 2026-07-24 (see
-checklist below). **Not done:** drag-reorder is still unverified (see write-up below,
-not for lack of trying), and no item on this list has been run on physical hardware.
+**Done:** the build pipeline (8A below) has been run for real four times
+(`mobile-preview-0.1`–`0.4`), each installed and exercised on an x86_64 emulator; `0.4`
+was smoke-tested in its true R8-minified release config. The Destroyer distance fixture,
+target-SDK check, GMS-free check, and (finally) **drag-reorder** all pass on the emulator.
+**Only remaining item: a physical-device cold start** — genuinely needs hardware.
 
-**Drag-reorder — genuinely attempted, not verified (2026-07-24):** tried
-`adb shell input draganddrop x1 y1 x2 y2 <duration>` twice with correctly-targeted
-coordinates (confirmed correct by immediately re-testing a plain tap on the same card,
-which opened Edit as expected) — neither attempt reordered the list. `input draganddrop`
-is documented to inject DOWN → sleep(long-press timeout) → interpolated MOVE → UP, which
-should satisfy `react-native-draggable-flatlist`'s long-press-to-activate gesture, and
-this exact technique is confirmed working elsewhere in this app (the Flight Shaper
-vertical sliders respond correctly to synthetic `adb shell input swipe`) — but that's a
-plain Pan gesture with no activation gate, which is a meaningfully different gesture
-shape than a LongPressGestureHandler-gated drag. No crash, no log error either time —
-the gesture is simply not being recognized as a drag by the underlying native handler.
-Rather than keep burning emulator cycles on synthetic touch injection for a gesture
-shape adb's tools may not model correctly, this is being logged as a real, honest gap:
-**drag-reorder needs an actual finger (physical device, or interactively driving the
-emulator's UI by hand) to verify — not more scripted adb attempts.**
+**Drag-reorder — VERIFIED on the emulator (2026-07-24).** Earlier attempts with
+`adb input draganddrop` and slow `input swipe` failed because neither can produce the
+long-press-then-move that `react-native-draggable-flatlist` gates its drag on — a
+continuous swipe is claimed as a list scroll before the ~500ms long-press arms. The
+working technique is a raw hold-then-move touch stream, held stationary long enough to
+fire `onLongPress` (which calls `drag()`), then moved:
+```bash
+adb shell "input motionevent DOWN 540 1000; sleep 0.9; \
+  input motionevent MOVE 540 1150; input motionevent MOVE 540 1350; \
+  input motionevent MOVE 540 1520; input motionevent UP 540 1560"
+```
+This reordered a card past its neighbour and the new order **persisted across a full
+kill + relaunch** (so `handleDragEnd` → `saveDiscs` writes correctly). Lesson for future
+sessions: drag/long-press-gated gestures ARE emulator-testable — use `input motionevent`
+with a hold, not `input draganddrop`/`swipe`.
 
 ### 8A — Local Preview Build (sideload testing)
 
@@ -434,11 +435,11 @@ across kills) with no minification-related breakage found.
       times, including a CSV-imported disc surviving a kill in Phase 7)
 - [x] Play target SDK check: `aapt dump badging app.apk | grep sdkVersion` → **verified
       2026-07-24**, `targetSdkVersion='36'`
-- [ ] Drag-reorder verified with a real gesture — **attempted via `adb input
-      draganddrop`, did not trigger; needs a physical finger, not more scripted attempts
-      — see write-up above**
+- [x] Drag-reorder verified with a real gesture — **verified 2026-07-24** via
+      `adb input motionevent` hold-then-move; reorder persisted across kill+relaunch (see
+      write-up above)
 - [ ] **Run on a physical Android device at least once** — everything above is
-      emulator-only so far
+      emulator-only so far (the one genuinely hardware-blocked item)
 
 ### 8B — GMS / Proprietary Dependency Check
 
@@ -468,13 +469,46 @@ the user. Fine for early testing; not appropriate once real users are involved.
 
 ---
 
-## Phase 9 — v1 Polish & Gap-Closing — NOT STARTED
+## Phase 9 — v1 Polish & Gap-Closing — ✅ done, verified on-device (2026-07-24)
 
 > Surfaced by a full code audit of the mobile port on **2026-07-24**, right after
-> `mobile-preview-0.4` shipped. The `0.4` feature set is functionally complete and
-> faithful to the website; these are the gaps and rough edges between "the features
-> exist" and "this is the v1 you'd actually put in front of people." Ordered by
-> severity. **Do P1 + P2 before cutting the next release; P3 is optional polish.**
+> `mobile-preview-0.4` shipped, then built and verified the same day. The subsections
+> below (P1/P2/P3) are kept as the record of what was decided and done; ordered by the
+> severity they were triaged at.
+
+**Outcome — all built and emulator-verified:**
+- **P1 (today's-bag):** finished, not hidden — per-card "In bag" toggle, an "In bag (N)"
+  filter, a bag count in the header substat, and a "Clear bag" action (with a confirm
+  dialog). Verified end-to-end: toggle → card shows "✓ In bag" + accent border + substat
+  count; filter narrows the list; the CSV Export "Today's bag (N)" scope (previously a
+  dead path) now appears and narrows the export; Clear bag confirms, unmarks all, and
+  auto-drops the now-empty filter. Files: `DiscCard.tsx` (toggle), `app/(tabs)/index.tsx`
+  (state/filter/clear/count).
+- **P2 (cosmetics):** fixed both. `headerShown: false` on the Tabs removed the duplicate
+  title; added custom `react-native-svg` tab icons (`TabBarIcon.tsx` — bag / flight-arc /
+  target) instead of pulling in `@expo/vector-icons` (avoids an npm install + keeps deps
+  F-Droid-minimal). Both confirmed on every tab.
+- **P3 (polish):** disc-suggest double-fetch fixed (userId held in a ref so `useFocusEffect`
+  has stable `[]` deps); `SuggestResultCard` bar percentages now `Math.round`ed to match
+  the website; `accessibilityRole`/`accessibilityState`/`accessibilityLabel` added to the
+  bag action buttons, filter pills, scenario cards, and the in-bag toggle.
+
+**Bonus fix found by this testing pass — DB write/read serialization.** Verifying
+drag-reorder surfaced a real, pre-existing concurrency bug: `saveDiscs`'s
+`withExclusiveTransactionAsync` could collide with a concurrent focus-effect `getDiscs`,
+throwing an unhandled `database is locked` rejection (a silent failed read/save in a
+release build). Fixed by serializing every public DB op in `db.ts` onto a single promise
+chain (`serialize()`), with a raw `readMeta` helper so `setMeta`→`getMeta` doesn't
+re-enter the queue and deadlock. Verified: heavy concurrent stress (rapid tab-switching +
+drag write + back-to-back in-bag toggles) produced zero lock errors and no deadlock.
+
+**Drag-reorder — now verified on the emulator (closes the long-standing Phase 8 gap).**
+The trick the earlier attempts missed: `adb input draganddrop`/`swipe` can't produce the
+long-press-then-move that `react-native-draggable-flatlist` requires, but a raw hold-then-
+move touch stream can:
+`adb shell "input motionevent DOWN x y; sleep 0.9; input motionevent MOVE …; input motionevent UP …"`.
+That reordered a card and the new order **persisted across a full kill+relaunch**. So a
+physical device is *not* required to test drag-reorder — this technique is.
 
 ### P1 — "In bag" / today's-bag feature has no UI entry point
 

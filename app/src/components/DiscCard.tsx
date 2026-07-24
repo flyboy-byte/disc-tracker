@@ -11,9 +11,10 @@ interface Props {
   onPress: () => void;
   onLongPress?: () => void;
   dragActive?: boolean;
+  onToggleBag?: () => void;
 }
 
-export default function DiscCard({ disc: d, onPress, onLongPress, dragActive }: Props) {
+export default function DiscCard({ disc: d, onPress, onLongPress, dragActive, onToggleBag }: Props) {
   const s = STAB_META[stab(d)];
   const t = TYPE_META[discType(d)];
   const safeColor = d.color && HEX6.test(d.color) ? d.color : null;
@@ -31,8 +32,25 @@ export default function DiscCard({ disc: d, onPress, onLongPress, dragActive }: 
       ]}
     >
       <View style={styles.head}>
-        <Text style={styles.mfr}>{d.mfr}</Text>
-        <Text style={styles.mold}>{d.mold}</Text>
+        <View style={styles.headText}>
+          <Text style={styles.mfr}>{d.mfr}</Text>
+          <Text style={styles.mold}>{d.mold}</Text>
+        </View>
+        {onToggleBag && (
+          // Nested Pressable: RN routes the touch to the inner control, so tapping this
+          // toggles the bag flag without also firing the card's onPress (edit) — no
+          // stopPropagation needed the way the website's onclick handler required.
+          <Pressable
+            onPress={onToggleBag}
+            hitSlop={8}
+            style={[styles.bagCheck, d.inBag && styles.bagCheckOn]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: !!d.inBag }}
+            accessibilityLabel={d.inBag ? `Remove ${d.mold} from today's bag` : `Add ${d.mold} to today's bag`}
+          >
+            <Text style={[styles.bagCheckText, d.inBag && styles.bagCheckTextOn]}>{d.inBag ? '✓ In bag' : 'In bag'}</Text>
+          </Pressable>
+        )}
       </View>
       <View style={styles.nums}>
         <NumStat label="SPD" value={d.speed} />
@@ -81,7 +99,20 @@ const styles = StyleSheet.create({
   },
   bagged: { borderColor: colors.accent },
   dragActive: { backgroundColor: colors.cardHover, opacity: 0.9 },
-  head: { marginBottom: 6 },
+  head: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 },
+  headText: { flex: 1, minWidth: 0 },
+  bagCheck: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  bagCheckOn: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.15)' },
+  bagCheckText: { color: colors.muted, fontSize: 11, fontWeight: '600' },
+  bagCheckTextOn: { color: colors.accent },
   mfr: { color: colors.muted, fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
   mold: { color: colors.text, fontSize: 18, fontWeight: '700' },
   nums: { flexDirection: 'row', gap: 14, marginBottom: 6 },

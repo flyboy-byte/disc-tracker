@@ -88,14 +88,15 @@ Maps directly onto `PORT_PLAN.md`'s own phases:
       2026-07-24, see `../PORT_PLAN.md`)
 - [~] Phase 8 (Android build + smoke test) — build pipeline run for real (4 preview
       APKs, `0.1`–`0.4`); the release APK smoke-tested in its true R8-minified config on
-      the emulator; deterministic checklist items all pass (distance fixture, target SDK
-      36, GMS-free). **Two items still open, both needing real hardware:** a physical-
-      device run, and drag-reorder verified with a real gesture (synthetic adb drag
-      wouldn't trigger it).
-- [ ] Phase 9 (v1 polish & gap-closing) — surfaced by the 2026-07-24 post-`0.4` audit:
-      one feature gap (today's-bag has no UI toggle) + two cosmetics (double title,
-      missing tab icons) + minor polish. See `../PORT_PLAN.md` Phase 9. Do before the
-      next release.
+      the emulator; checklist all passes including drag-reorder (verified 2026-07-24 via
+      `adb input motionevent` hold-then-move, persisted across restart). **One item left,
+      and it genuinely needs hardware:** a physical-device cold start.
+- [x] Phase 9 (v1 polish & gap-closing) — built + emulator-verified 2026-07-24. Finished
+      today's-bag (toggle/filter/count/clear + live export scope), fixed the cosmetics
+      (headerShown:false + custom svg tab icons), the P3 polish (double-fetch, bar
+      rounding, a11y), and — found while testing — fixed a real "database is locked"
+      concurrency bug by serializing DB ops. See `../PORT_PLAN.md` Phase 9. Not yet
+      released; a `0.5` bundles it.
 - [ ] Phase 10 (VPS Sync, v1.1) — explicitly out of scope until v1 APK is proven; fully
       designed in `RESEARCH.md` §2 but deliberately not started (see `docs/notes.md`)
 
@@ -146,13 +147,14 @@ input swipe` works great for continuous Pan gestures (confirmed on the Flight Sh
 sliders), but two correctly-targeted `adb shell input draganddrop` attempts — the tool
 meant for long-press-gated drags — didn't trigger react-native-draggable-flatlist's
 reorder at all, no crash, no error. Logged honestly as needing a physical finger rather
-than further scripted attempts. Four debug-signed preview APKs
-(`mobile-preview-0.1`–`0.4`) are on GitHub Releases for hands-on testing — `0.4` covers
-the full v1 feature set (all four screens + CSV) and was smoke-tested in its true
-R8-minified release config. No production keystore or Play/F-Droid submission yet. A
-post-`0.4` code audit (2026-07-24) then surfaced Phase 9: one real feature gap
-(today's-bag has no UI toggle — schema/CRUD/export-scope all assume it, but nothing sets
-`inBag`) plus two cosmetics (title renders twice; tab bar has no icons) and minor polish.
-Next action: work Phase 9 (`../PORT_PLAN.md`) and cut `mobile-preview-0.5`; drag-reorder
-and a physical-device run remain open pending real hardware and are best done at the
-first real-device install.**
+than further scripted attempts — until the working technique was found (`adb input
+motionevent` hold-then-move), which verified drag-reorder on the emulator after all, order
+persisting across a kill+relaunch. Four debug-signed preview APKs (`mobile-preview-0.1`–
+`0.4`) are on GitHub Releases; `0.4` covers all four screens + CSV, smoke-tested in its
+true R8-minified config. **Phase 9 is now built and emulator-verified** (2026-07-24):
+today's-bag (toggle/filter/count/clear + live export scope), tab icons + no double title,
+P3 polish, and a found-while-testing DB serialization fix for a real "database is locked"
+concurrency bug. It's committed but not yet released. Next action: cut `mobile-preview-0.5`
+bundling Phase 9; the one remaining Minimum-Milestone gap is a physical-device cold start,
+which genuinely needs real hardware. No production keystore or Play/F-Droid submission
+yet.**

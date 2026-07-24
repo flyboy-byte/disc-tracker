@@ -197,12 +197,18 @@ bugs were found and fixed by actually running the app (form-remount, native-slid
 gesture conflict, stale-bag-data on tab switch, document-picker re-entry crash) — all
 documented in `app/PORT_PLAN.md`.
 
-**Current work — Phase 9 (v1 polish & gap-closing), from a post-`0.4` code audit:** one
-real feature gap (today's-bag has schema/CRUD/export-scope but no UI toggle to set `inBag`,
-so the "Today's bag" export scope is a dead path — decide finish-it vs. hide-it) plus two
-cosmetics (tab title renders twice; tab bar has no icons) and minor polish. Two verification
-gaps need real hardware: drag-reorder with a real finger, and a physical-device cold start.
-See `app/PORT_PLAN.md` Phase 9.
+**Phase 9 (v1 polish & gap-closing) done + emulator-verified 2026-07-24** — committed but
+not yet released (a `0.5` bundles it). Finished today's-bag (per-card in-bag toggle,
+filter, count, "Clear bag", and the CSV "Today's bag" export scope is now live), fixed the
+cosmetics (`headerShown: false` kills the double title; custom `react-native-svg` tab icons
+in `TabBarIcon.tsx` — chose this over `@expo/vector-icons` to avoid an npm install + keep
+deps F-Droid-minimal), did the P3 polish (disc-suggest double-fetch, bar rounding, a11y
+labels), and — found while testing — fixed a real `database is locked` concurrency bug by
+serializing all DB ops in `db.ts`. **Drag-reorder is verified on the emulator** (not just
+physical hardware): use `adb shell "input motionevent DOWN x y; sleep 0.9; input motionevent
+MOVE …; input motionevent UP …"` — a hold-then-move, since `input draganddrop`/`swipe` can't
+arm the long-press. The only remaining Minimum-Milestone gap is a physical-device cold
+start. See `app/PORT_PLAN.md` Phase 9.
 
 ### Read these files before touching anything app-related:
 - `app/PORT_PLAN.md` — full phased build plan, minimum credible v1 milestone, parity fixtures
@@ -236,18 +242,20 @@ See `app/PORT_PLAN.md` Phase 9.
 - Never run D1/D2/D3 in parallel
 
 ### Next immediate step:
-`app/PORT_PLAN.md` Phase 9 — decide the today's-bag question (P1: finish the in-bag
-toggle/filter/clear UI, or drop the dead export scope) and fix the two cosmetics (P2:
-`headerShown: false` on the tabs to kill the double title; add `tabBarIcon`s), then cut
-`mobile-preview-0.5`. The two remaining Minimum-Milestone items — drag-reorder verified
-with a real finger, and a physical-device cold start — need real hardware and are best
-done together at the first real-device install. After that: Distribution Track D1.
+Cut `mobile-preview-0.5` — it bundles all of Phase 9 (today's-bag, tab icons, DB fix,
+a11y), which is committed but not yet released. Build the real arm64/armeabi release APK
+(`JAVA_HOME=/usr/lib/jvm/java-21-openjdk`, `./gradlew assembleRelease
+-PreactNativeArchitectures=arm64-v8a,armeabi-v7a`), then `gh release create
+mobile-preview-0.5`. The one remaining Minimum-Milestone gap is a physical-device cold
+start (needs real hardware). After that: Distribution Track D1.
 
-The emulator + toolchain on this machine work: AVD `verify_test` (x86_64, API 37); build
-debug/release with `JAVA_HOME=/usr/lib/jvm/java-21-openjdk` and `emulator` at
-`~/Android/Sdk/emulator/emulator`. For emulator smoke-testing a *release* build, build a
-throwaway x86_64 release-config APK (`-PreactNativeArchitectures=x86_64`) since the shipped
-APK is arm64/armeabi only.
+Emulator + toolchain on this machine: AVD `verify_test` (x86_64, API 37); `emulator` at
+`~/Android/Sdk/emulator/emulator`. To load live code changes on the emulator you must
+install the **debug** APK (Metro-connected) — the release APK has an embedded bundle and
+ignores Metro. For emulator smoke-testing a *release* build, build a throwaway x86_64
+release-config APK (`-PreactNativeArchitectures=x86_64`) since the shipped APK is
+arm64/armeabi only. Drag/long-press gestures: `adb input motionevent` hold-then-move (not
+`draganddrop`/`swipe`).
 
 ---
 

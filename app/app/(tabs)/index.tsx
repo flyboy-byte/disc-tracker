@@ -2,7 +2,7 @@
 // openAdd()/openEdit()/saveDisc()/deleteDisc()/setFilter()/setSort()/startDrag()+endDrag().
 // CSV export/import (Phase 7) is wired in via CsvExportModal/CsvImportModal below.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist';
 import { FlatList } from 'react-native-gesture-handler';
 import CsvExportModal from '../../src/components/CsvExportModal';
@@ -52,6 +52,9 @@ export default function BagScreen() {
   const [typeFilter, setTypeFilter] = useState<TypeFilterKey>('all');
   const [sortMode, setSortMode] = useState<SortMode>('speed-desc');
   const [search, setSearch] = useState('');
+  // Today's-bag filter — component state (not persisted): mirrors the website's
+  // sessionStorage `bagFilter`, which likewise resets when the session ends.
+  const [bagFilter, setBagFilter] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
   const [formIsNew, setFormIsNew] = useState(true);
@@ -97,7 +100,8 @@ export default function BagScreen() {
       const matchS = stabFilter === 'all' || stab(d) === stabFilter;
       const matchT = typeFilter === 'all' || discType(d) === typeFilter;
       const matchQ = !q || (d.mfr + d.mold + (d.plastic ?? '') + (d.use ?? '') + (d.notes ?? '')).toLowerCase().includes(q);
-      return matchS && matchT && matchQ;
+      const matchB = !bagFilter || d.inBag;
+      return matchS && matchT && matchQ && matchB;
     });
     if (sortMode === 'speed-desc') rows = [...rows].sort((a, b) => b.speed - a.speed);
     else if (sortMode === 'speed-asc') rows = [...rows].sort((a, b) => a.speed - b.speed);
@@ -105,9 +109,12 @@ export default function BagScreen() {
     else if (sortMode === 'mfr') rows = [...rows].sort((a, b) => (a.mfr + a.mold).localeCompare(b.mfr + b.mold));
     // 'custom' — leave in array order
     return rows;
-  }, [discs, stabFilter, typeFilter, search, sortMode]);
+  }, [discs, stabFilter, typeFilter, search, sortMode, bagFilter]);
 
-  const dragEnabled = sortMode === 'custom' && stabFilter === 'all' && typeFilter === 'all' && !search.trim();
+  // Drag-reorder only makes sense on the full, unfiltered custom-sorted list — a filtered
+  // view has gaps, so dropping a card at index N wouldn't map to the real array position.
+  const dragEnabled =
+    sortMode === 'custom' && stabFilter === 'all' && typeFilter === 'all' && !search.trim() && !bagFilter;
 
   const openAdd = () => {
     setFormIsNew(true);
@@ -169,6 +176,30 @@ export default function BagScreen() {
     await persist(data);
   };
 
+  // Today's bag: flip a single disc's inBag flag and persist. Matches the website's
+  // toggleBagged() — inBag is per-disc, stored the same way as everything else.
+  const toggleBag = async (id: number) => {
+    const next = discs.map((d) => (d.id === id ? { ...d, inBag: !d.inBag } : d));
+    setDiscs(next);
+    await persist(next);
+  };
+
+  const clearBag = () => {
+    Alert.alert("Clear today's bag?", 'This unmarks every disc as in-bag. Your discs are not deleted.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear bag',
+        style: 'destructive',
+        onPress: async () => {
+          const next = discs.map((d) => (d.inBag ? { ...d, inBag: false } : d));
+          setDiscs(next);
+          if (!next.some((d) => d.inBag)) setBagFilter(false);
+          await persist(next);
+        },
+      },
+    ]);
+  };
+
   // Same id-assignment scheme as handleSave's new-disc path — append-only, matches the
   // website's doImport() (assigns new ids, pushes onto the existing bag, never clears it).
   const handleImportDiscs = async (imported: Disc[]) => {
@@ -192,6 +223,7 @@ export default function BagScreen() {
   discs.forEach((d) => typeCounts[discType(d)]++);
   const stabCounts: Record<StabFilter, number> = { all: discs.length, overstable: 0, stable: 0, understable: 0 };
   discs.forEach((d) => stabCounts[stab(d)]++);
+  const bagCount = discs.filter((d) => d.inBag).length;
 
   return (
     <View style={styles.container}>
@@ -199,6 +231,7 @@ export default function BagScreen() {
         <Text style={styles.title}>Bag</Text>
         <Text style={styles.substat}>
           {discs.length} discs · {typeCounts.driver}D · {typeCounts.fairway}FD · {typeCounts.mid}M · {typeCounts.putter}P
+          {bagCount > 0 ? ` · ${bagCount} in bag` : ''}
         </Text>
       </View>
 
@@ -215,19 +248,35 @@ export default function BagScreen() {
       <PillRow items={SORT_OPTIONS} active={sortMode} onPress={(m) => persistSortMode(m as SortMode)} />
 
       <View style={styles.actionsRow}>
-        <Pressable style={styles.addBtn} onPress={openAdd}>
+        <Pressable style={styles.addBtn} onPress={openAdd} accessibilityRole="button" accessibilityLabel="Add a disc">
           <Text style={styles.addBtnText}>+ Add disc</Text>
         </Pressable>
-        <Pressable style={styles.ghostBtn} onPress={() => setImportOpen(true)}>
+        <Pressable style={styles.ghostBtn} onPress={() => setImportOpen(true)} accessibilityRole="button" accessibilityLabel="Import discs from CSV">
           <Text style={styles.ghostBtnText}>Import</Text>
         </Pressable>
-        <Pressable style={styles.ghostBtn} onPress={() => setExportOpen(true)}>
+        <Pressable style={styles.ghostBtn} onPress={() => setExportOpen(true)} accessibilityRole="button" accessibilityLabel="Export discs to CSV">
           <Text style={styles.ghostBtnText}>Export</Text>
         </Pressable>
-        {sortMode === 'custom' && (
-          <Text style={styles.dragHint}>{dragEnabled ? 'long-press ⠿ to reorder' : 'clear search/filters to drag-reorder'}</Text>
+        <Pressable
+          style={[styles.ghostBtn, bagFilter && styles.ghostBtnActive]}
+          onPress={() => setBagFilter((v) => !v)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: bagFilter }}
+          accessibilityLabel={bagFilter ? 'Show all discs' : "Show only today's bag"}
+        >
+          <Text style={[styles.ghostBtnText, bagFilter && styles.ghostBtnTextActive]}>
+            {bagCount > 0 ? `In bag (${bagCount})` : 'In bag'}
+          </Text>
+        </Pressable>
+        {bagCount > 0 && (
+          <Pressable style={styles.ghostBtn} onPress={clearBag} accessibilityRole="button" accessibilityLabel="Clear today's bag">
+            <Text style={styles.ghostBtnText}>Clear bag</Text>
+          </Pressable>
         )}
       </View>
+      {sortMode === 'custom' && (
+        <Text style={styles.dragHint}>{dragEnabled ? 'long-press a card to reorder' : 'clear search/filters to drag-reorder'}</Text>
+      )}
 
       {filteredSorted.length === 0 ? (
         <Text style={styles.empty}>No discs match.</Text>
@@ -238,7 +287,13 @@ export default function BagScreen() {
           onDragEnd={handleDragEnd}
           contentContainerStyle={styles.listContent}
           renderItem={({ item, drag, isActive }: RenderItemParams<Disc>) => (
-            <DiscCard disc={item} onPress={() => openEdit(item)} onLongPress={drag} dragActive={isActive} />
+            <DiscCard
+              disc={item}
+              onPress={() => openEdit(item)}
+              onLongPress={drag}
+              dragActive={isActive}
+              onToggleBag={item.id != null ? () => toggleBag(item.id!) : undefined}
+            />
           )}
         />
       ) : (
@@ -246,7 +301,9 @@ export default function BagScreen() {
           data={filteredSorted}
           keyExtractor={(d) => String(d.id)}
           contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => <DiscCard disc={item} onPress={() => openEdit(item)} />}
+          renderItem={({ item }) => (
+            <DiscCard disc={item} onPress={() => openEdit(item)} onToggleBag={item.id != null ? () => toggleBag(item.id!) : undefined} />
+          )}
         />
       )}
 
@@ -284,7 +341,14 @@ function PillRow<T extends string>({
   return (
     <View style={styles.pillRow}>
       {items.map((it) => (
-        <Pressable key={it.key} onPress={() => onPress(it.key)} style={[styles.pill, active === it.key && styles.pillActive]}>
+        <Pressable
+          key={it.key}
+          onPress={() => onPress(it.key)}
+          style={[styles.pill, active === it.key && styles.pillActive]}
+          accessibilityRole="button"
+          accessibilityState={{ selected: active === it.key }}
+          accessibilityLabel={it.label}
+        >
           <Text style={[styles.pillText, active === it.key && styles.pillTextActive]}>
             {it.label}
             {counts && it.key !== 'all' ? ` ${counts[it.key]}` : ''}
@@ -316,12 +380,14 @@ const styles = StyleSheet.create({
   pillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.12)' },
   pillText: { color: colors.muted, fontSize: 12 },
   pillTextActive: { color: colors.accent, fontWeight: '600' },
-  actionsRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 8 },
+  actionsRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginVertical: 8 },
   addBtn: { backgroundColor: colors.accent, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   addBtnText: { color: '#fff', fontWeight: '700' },
   ghostBtn: { borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+  ghostBtnActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.12)' },
   ghostBtnText: { color: colors.muted, fontWeight: '600', fontSize: 13 },
-  dragHint: { color: colors.muted, fontSize: 12, flexShrink: 1 },
+  ghostBtnTextActive: { color: colors.accent },
+  dragHint: { color: colors.muted, fontSize: 12, flexShrink: 1, marginBottom: 6 },
   empty: { color: colors.muted, textAlign: 'center', marginTop: 40 },
   listContent: { paddingBottom: 24 },
 });

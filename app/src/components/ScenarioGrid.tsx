@@ -22,6 +22,9 @@ export default function ScenarioGrid({ scenarios, activeId, onSelect }: Props) {
             key={sc.id}
             style={[styles.card, active && styles.cardActive]}
             onPress={() => onSelect(sc)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+            accessibilityLabel={`${sc.title}: ${sc.desc}`}
           >
             <Text style={styles.icon}>{sc.icon}</Text>
             <Text style={styles.title}>{sc.title}</Text>

@@ -24,8 +24,8 @@ export default function SuggestResultCard({ disc: d, inBag }: Props) {
   const MIN = -4;
   const MAX = 7;
   const RANGE = MAX - MIN;
-  const pct = ((d.stability - MIN) / RANGE) * 100;
-  const zeroPct = ((-MIN) / RANGE) * 100;
+  const pct = Math.round(((d.stability - MIN) / RANGE) * 100);
+  const zeroPct = Math.round(((-MIN) / RANGE) * 100);
   const isOS = d.stability >= 0;
   const left = isOS ? zeroPct : pct;
   const width = Math.abs(pct - zeroPct);

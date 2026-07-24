@@ -2,7 +2,7 @@
 // pick a scenario, see bag matches (via filterBag) and top-15 library matches (via
 // filterLibrary), library results deduped against whatever's already shown in the bag
 // section by name+mfr (case-insensitive), same as the website.
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import ScenarioGrid from '../../src/components/ScenarioGrid';
@@ -22,23 +22,25 @@ const LIBRARY_DISCS: ScenarioDisc[] = masterDiscs.filter(
 
 export default function DiscSuggestScreen() {
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<number | null>(null);
   const [bagDiscs, setBagDiscs] = useState<Disc[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Resolve the user once and hold it in a ref so the focus effect below has stable ([])
+  // deps — depending on a `userId` state instead caused a double-fetch on cold open (the
+  // first run set the state, whose change re-fired the still-focused effect).
+  const userIdRef = useRef<number | null>(null);
 
+  // Refetch the bag on every tab focus (per PORT_PLAN.md's Phase 6 lesson — this screen
+  // reads the same bag data Flight Shaper does, and a mount-only load already shipped one
+  // stale-data bug there). Stable deps → fires only on real focus events, not state changes.
   useFocusEffect(
     useCallback(() => {
       (async () => {
-        const uid = userId ?? (await getOrCreateDefaultUser());
-        const discs = await getDiscs(uid);
-        setUserId(uid);
+        if (userIdRef.current == null) userIdRef.current = await getOrCreateDefaultUser();
+        const discs = await getDiscs(userIdRef.current);
         setBagDiscs(discs);
         setLoading(false);
       })();
-      // Only depends on userId so this refires on every tab focus (per PORT_PLAN.md's
-      // explicit Phase 6 lesson — this screen reads the same bag data Flight Shaper does,
-      // and a mount-only load already shipped one stale-data bug there).
-    }, [userId])
+    }, [])
   );
 
   const activeScenario = useMemo(() => SCENARIOS.find((s) => s.id === activeId) ?? null, [activeId]);
