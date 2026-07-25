@@ -21,8 +21,8 @@ has one other app (DragTree) live on both. Single-user per device; no multi-tena
 concept, no login.
 
 Explicitly **not** trying to be: a cloud-synced multi-device app (v1 is local-only by
-design — see `approach.md`), an iOS app (Android-first, iOS deliberately out of scope
-for now), a monetized product (no ads, no accounts, no analytics, no purchases — this is
+design — see `approach.md`), an iOS app in v1 (Android-first; iOS isn't cut — it
+stays possible on the same Expo/RN codebase, just deferred well behind Android + F-Droid), a monetized product (no ads, no accounts, no analytics, no purchases — this is
 a FOSS personal tool, not a business; see the sibling `idea-to-business` skill if that
 framing were ever needed instead), or a rewrite of the physics/scenario logic — it must
 match the website's existing math exactly unless a real bug is proven.

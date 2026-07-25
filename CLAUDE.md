@@ -235,7 +235,8 @@ Minimum Credible v1 Milestone is fully met. See `app/PORT_PLAN.md` Phase 9.
 ### Build pipeline:
 - Android builds: `./gradlew assembleRelease` (local, not EAS cloud)
 - No EAS at all — dropped entirely (DragTree proved local Gradle stays manageable as long as
-  the codebase stays simple). No `eas.json`. iOS is out of scope for now.
+  the codebase stays simple). No `eas.json`. iOS isn't cut — it stays possible on the same
+  Expo/RN codebase, just deferred well behind Android + F-Droid (revisit build tooling then).
 - Signing: `android/local.properties` with null-guard pattern (never committed)
 - F-Droid strips signing via `sed -i '/signingConfig /d'` — expected behavior
 
