@@ -201,8 +201,8 @@ bugs were found and fixed by actually running the app (form-remount, native-slid
 gesture conflict, stale-bag-data on tab switch, document-picker re-entry crash) — all
 documented in `app/PORT_PLAN.md`.
 
-**Phase 9 (v1 polish & gap-closing) done + emulator-verified 2026-07-24** — committed but
-not yet released (a `0.5` bundles it). Finished today's-bag (per-card in-bag toggle,
+**Phase 9 (v1 polish & gap-closing) done + verified 2026-07-24** — shipped as
+`mobile-preview-0.5`. Finished today's-bag (per-card in-bag toggle,
 filter, count, "Clear bag", and the CSV "Today's bag" export scope is now live), fixed the
 cosmetics (`headerShown: false` kills the double title; custom `react-native-svg` tab icons
 in `TabBarIcon.tsx` — chose this over `@expo/vector-icons` to avoid an npm install + keep
@@ -211,8 +211,8 @@ labels), and — found while testing — fixed a real `database is locked` concu
 serializing all DB ops in `db.ts`. **Drag-reorder is verified on the emulator** (not just
 physical hardware): use `adb shell "input motionevent DOWN x y; sleep 0.9; input motionevent
 MOVE …; input motionevent UP …"` — a hold-then-move, since `input draganddrop`/`swipe` can't
-arm the long-press. The only remaining Minimum-Milestone gap is a physical-device cold
-start. See `app/PORT_PLAN.md` Phase 9.
+arm the long-press. `0.5` is confirmed working on a real physical Android phone, so the
+Minimum Credible v1 Milestone is fully met. See `app/PORT_PLAN.md` Phase 9.
 
 ### Read these files before touching anything app-related:
 - `app/PORT_PLAN.md` — full phased build plan, minimum credible v1 milestone, parity fixtures
