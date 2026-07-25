@@ -80,7 +80,7 @@ model, for driver-class discs. Research/experimental, off by default.
 
 ## Mobile app
 
-An Android/iOS port (Expo / React Native) is in development. Plan docs are in [`app/PORT_PLAN.md`](app/PORT_PLAN.md). Targeting Play Store + F-Droid. Local-first SQLite, no server dependency.
+An **Android app** (Expo / React Native) — a local-first port of the bag tracker, Flight Shaper, and Disc Suggest tools plus a Settings screen, backed by on-device SQLite with no server dependency. **v1 is feature-complete** and confirmed running on real hardware; early **debug-signed preview APKs** are on the [Releases page](https://github.com/flyboy-byte/disc-tracker/releases) for sideloading. Play Store + F-Droid distribution is the next step. Build/plan docs live in [`app/PORT_PLAN.md`](app/PORT_PLAN.md). (Android-first — iOS is out of scope for now.)
 
 ---
 
