@@ -9,7 +9,7 @@
 // adjust the sliders below; the reference diagrams collapse behind a toggle; the disc picker
 // moved from a long inline list into a compact selector + bottom-sheet modal.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 // gesture-handler's ScrollView (not react-native's) — its NativeViewGestureHandler
 // negotiates touch claims with nested native views (our rotated Slider) properly;
 // plain RN ScrollView won on-device even with scrollEnabled toggling (confirmed
@@ -19,6 +19,7 @@ import { useFocusEffect } from 'expo-router';
 import AngleRefDiagrams from '../../src/components/AngleRefDiagrams';
 import FlightArcSvg from '../../src/components/FlightArcSvg';
 import HyzerReferenceDiagram from '../../src/components/HyzerReferenceDiagram';
+import NumberInput from '../../src/components/NumberInput';
 import VerticalSlider from '../../src/components/VerticalSlider';
 import { getDiscs, getMeta, getOrCreateDefaultUser, setMeta } from '../../src/db/db';
 import { colors } from '../../src/theme';
@@ -296,12 +297,7 @@ function ManualField({ label, value, onChangeText }: { label: string; value: num
   return (
     <View style={styles.fnField}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
-        style={styles.input}
-        value={String(value)}
-        onChangeText={(t) => onChangeText(parseFloat(t) || 0)}
-        keyboardType="numeric"
-      />
+      <NumberInput style={styles.input} value={value} onChangeValue={onChangeText} />
     </View>
   );
 }

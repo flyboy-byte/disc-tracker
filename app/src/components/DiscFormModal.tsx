@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { colors } from '../theme';
 import type { Disc } from '../utils/disc';
 import { DISC_COLORS } from '../utils/discColors';
+import NumberInput from './NumberInput';
 
 const THROW_STYLES = ['RHBH', 'RHFH', 'LHBH', 'LHFH'] as const;
 
@@ -25,7 +26,7 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const set = <K extends keyof Disc>(key: K, value: Disc[K]) => setForm((f) => ({ ...f, [key]: value }));
-  const setNum = (key: 'speed' | 'glide' | 'turn' | 'fade', text: string) => set(key, (parseFloat(text) || 0) as never);
+  const setNum = (key: 'speed' | 'glide' | 'turn' | 'fade', n: number) => set(key, n as never);
 
   const handleSave = () => {
     if (!form.mold?.trim()) return;
@@ -49,10 +50,10 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
             <Field label="Plastic" value={form.plastic ?? ''} onChangeText={(v) => set('plastic', v)} placeholder="e.g. Star" />
             <Field label="Weight" value={form.weight ?? ''} onChangeText={(v) => set('weight', v)} placeholder="e.g. 173g" />
             <View style={styles.fnGrid}>
-              <NumField label="Speed" value={form.speed} onChangeText={(v) => setNum('speed', v)} />
-              <NumField label="Glide" value={form.glide} onChangeText={(v) => setNum('glide', v)} />
-              <NumField label="Turn" value={form.turn} onChangeText={(v) => setNum('turn', v)} />
-              <NumField label="Fade" value={form.fade} onChangeText={(v) => setNum('fade', v)} />
+              <NumField label="Speed" value={form.speed} onChange={(v) => setNum('speed', v)} />
+              <NumField label="Glide" value={form.glide} onChange={(v) => setNum('glide', v)} />
+              <NumField label="Turn" value={form.turn} onChange={(v) => setNum('turn', v)} />
+              <NumField label="Fade" value={form.fade} onChange={(v) => setNum('fade', v)} />
             </View>
             <Field label="Primary use" value={form.use ?? ''} onChangeText={(v) => set('use', v)} placeholder="e.g. Overstable utility" />
             <Text style={styles.label}>Throw style</Text>
@@ -143,16 +144,11 @@ function Field({
   );
 }
 
-function NumField({ label, value, onChangeText }: { label: string; value: number; onChangeText: (v: string) => void }) {
+function NumField({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
     <View style={styles.fnField}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={styles.input}
-        value={String(value)}
-        onChangeText={onChangeText}
-        keyboardType="numeric"
-      />
+      <NumberInput style={styles.input} value={value} onChangeValue={onChange} />
     </View>
   );
 }
