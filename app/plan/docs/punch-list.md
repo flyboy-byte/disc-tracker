@@ -102,11 +102,20 @@ warnings from app code (only a pre-existing `InteractionManager` deprecation fro
 
 Candidate kinks — status:
 - **Tab-switch data freshness** — ✅ verified (useFocusEffect refetch; arc-view propagation).
-- **Keyboard covering lower form fields (Notes / custom-hex)** — ⚠️ **known minor kink.** The
-  form sheet (a native `Modal` + `ScrollView`) doesn't auto-scroll/resize to the focused input
-  on Android, so the soft keyboard can cover the bottom fields. Recoverable (scroll the form up
-  by hand), so low-severity. Proper fix = wrap the sheet in `KeyboardAvoidingView`; deferred
-  until it can be verified without risking a regression. **Not yet fixed.**
+- **Keyboard covering lower form fields (Notes / custom-hex)** — ✅ **FIXED** (commit `6ce23e1`).
+  The form sheet now wraps in `KeyboardAvoidingView` (height on Android / padding on iOS) so it
+  rises above the keyboard; verified live (Notes + action buttons stay visible while typing).
 - **List scroll perf with a large bag** — untestable with the 3-disc fixture; revisit with a
   realistic bag.
 - **ScrollView vs. slider gesture feel (Flight Shaper)** — ✅ verified in R2 (scroll-lock holds).
+
+### Cosmetic nits (also fixed, commit `6ce23e1`)
+- [x] **Arc-detail sheet closed instantly** (no slide-out) — now keeps the Modal mounted and
+      retains the last disc during close so the slide-out animation plays.
+- [x] **Toast offset not safe-area-aware** — added `SafeAreaProvider` at the root (was missing)
+      and made the toast `bottom = inset + 72` so it clears the tab bar across devices.
+
+**R3 is complete** — all P0/P1 done, P2 done except P2-3 (deliberately skipped) and large-bag
+perf (untestable now). Shipped in `mobile-preview-0.6`/`0.7`; the final polish batch (`6ce23e1`)
+will ride the next release. Next roadmap step: **R4 — Marshall Street images** (first networked
+feature; must clear the F-Droid privacy bar).
