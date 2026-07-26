@@ -50,10 +50,9 @@ in Flight Shaper) that takes a disc + arcView and draws the exact same `arcPoint
       today's-bag cleared, CSV imported (Bag + Settings), and delete-all. Verified live.
       (CSV export uses the OS share sheet as its own feedback; form-validation error toasts
       like "Mold name is required" remain a small follow-on.)
-- [ ] **P1-5 · No bag-level arc-view selector or stability legend.** Website Bag has an
-      RHBH/RHFH/LHBH/LHFH selector + an OS/ST/US color legend in the toolbar (`index.html:270`).
-      The app only exposes arc view in Flight Shaper/Settings. Naturally folds in with
-      P1-1/1-2 (the selector only matters once the Bag shows arcs).
+- [x] **P1-5 · No bag-level arc-view selector or stability legend.** ✅ DONE (R3, commit
+      `84eb93b`). Added a RHBH/RHFH/LHBH/LHFH pill row (flips all card arcs in-place, persists
+      to the shared `meta.arcView`) + an OS/ST/US legend to the Bag toolbar. Verified live.
 
 ## P2 — polish
 
