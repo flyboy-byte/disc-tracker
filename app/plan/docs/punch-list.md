@@ -42,9 +42,10 @@ in Flight Shaper) that takes a disc + arcView and draws the exact same `arcPoint
       `ArcDetailModal` opens from a card's arc thumbnail: large computed arc + stats + Edit
       hand-off to the form. (The Marshall Street reference image inside that modal is **→R4**,
       deferred — the computed-arc detail itself is live.)
-- [ ] **P1-3 · No field view.** Website `fieldBtn` → `renderFieldView` (`index.html:478`)
-      overlays every bag disc's arc on one top-down field, colored by disc color / stability.
-      A whole view mode the app lacks entirely.
+- [x] **P1-3 · No field view.** ✅ DONE (R3, commit `528b310`). New `FieldView` + a
+      "Field view" toolbar toggle overlays every filtered disc's arc on one top-down field
+      (disc/stability colored, mold-labeled at landing); tapping an arc opens the P1-2 detail
+      sheet. Drag gated off in field mode. Verified live.
 - [x] **P1-4 · No success feedback anywhere.** ✅ DONE (R3, commit `cc57799`). Added a
       root `ToastProvider` + `useToast()`; wired disc added/updated/removed, order saved,
       today's-bag cleared, CSV imported (Bag + Settings), and delete-all. Verified live.
