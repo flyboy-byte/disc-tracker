@@ -1,24 +1,35 @@
 // Card layout ported from templates/index.html's render() — mfr/mold head, 4-up flight
-// number row, plastic/weight meta line, use + notes, disc-type word + stability badge.
+// number row, plastic/weight meta line, use + notes, disc-type word + stability badge,
+// plus a per-disc flight-arc thumbnail (the website's signature — an arc on every card).
+import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme';
 import { discType, stab, STAB_META, TYPE_META, type Disc } from '../utils/disc';
+import { applyModifiers, type SliderValues } from '../utils/legacyPhysics';
+import FlightArcSvg from './FlightArcSvg';
 
 const HEX6 = /^#[0-9A-Fa-f]{6}$/;
+type ArcView = 'RHBH' | 'RHFH' | 'LHBH' | 'LHFH';
+
+// Card thumbnails always show the disc's own neutral flight (no wind/hyzer modifiers), so
+// there is no ghost arc — the interactive shaping lives in the Flight Shaper tab.
+const NEUTRAL: SliderValues = { hyzer: 0, nose: 0, wind: 0, armSpeed: 100, spin: 100 };
 
 interface Props {
   disc: Disc;
+  arcView: ArcView;
   onPress: () => void;
   onLongPress?: () => void;
   dragActive?: boolean;
   onToggleBag?: () => void;
 }
 
-export default function DiscCard({ disc: d, onPress, onLongPress, dragActive, onToggleBag }: Props) {
+export default function DiscCard({ disc: d, arcView, onPress, onLongPress, dragActive, onToggleBag }: Props) {
   const s = STAB_META[stab(d)];
   const t = TYPE_META[discType(d)];
   const safeColor = d.color && HEX6.test(d.color) ? d.color : null;
   const metaLine = [d.plastic, d.weight].filter(Boolean).join(' · ');
+  const adjusted = useMemo(() => applyModifiers(d, NEUTRAL), [d.speed, d.glide, d.turn, d.fade]);
 
   return (
     <Pressable
@@ -31,48 +42,55 @@ export default function DiscCard({ disc: d, onPress, onLongPress, dragActive, on
         dragActive ? styles.dragActive : null,
       ]}
     >
-      <View style={styles.head}>
-        <View style={styles.headText}>
-          <Text style={styles.mfr}>{d.mfr}</Text>
-          <Text style={styles.mold}>{d.mold}</Text>
+      <View style={styles.body}>
+        <View style={styles.main}>
+          <View style={styles.head}>
+            <View style={styles.headText}>
+              <Text style={styles.mfr}>{d.mfr}</Text>
+              <Text style={styles.mold}>{d.mold}</Text>
+            </View>
+            {onToggleBag && (
+              // Nested Pressable: RN routes the touch to the inner control, so tapping this
+              // toggles the bag flag without also firing the card's onPress (edit) — no
+              // stopPropagation needed the way the website's onclick handler required.
+              <Pressable
+                onPress={onToggleBag}
+                hitSlop={8}
+                style={[styles.bagCheck, d.inBag && styles.bagCheckOn]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: !!d.inBag }}
+                accessibilityLabel={d.inBag ? `Remove ${d.mold} from today's bag` : `Add ${d.mold} to today's bag`}
+              >
+                <Text style={[styles.bagCheckText, d.inBag && styles.bagCheckTextOn]}>{d.inBag ? '✓ In bag' : 'In bag'}</Text>
+              </Pressable>
+            )}
+          </View>
+          <View style={styles.nums}>
+            <NumStat label="SPD" value={d.speed} />
+            <NumStat label="GLI" value={d.glide} />
+            <NumStat label="TRN" value={d.turn} />
+            <NumStat label="FDE" value={d.fade} />
+          </View>
+          {metaLine ? (
+            <Text style={styles.meta}>{metaLine}</Text>
+          ) : (
+            <Text style={[styles.meta, styles.metaUnknown]}>plastic / weight unknown</Text>
+          )}
+          {!!d.use && <Text style={styles.use}>{d.use}</Text>}
+          {!!d.notes && (
+            <Text style={styles.note} numberOfLines={2}>
+              📝 {d.notes}
+            </Text>
+          )}
+          <View style={styles.footerRow}>
+            <Text style={styles.typeWord}>{t.word}</Text>
+            <View style={[styles.badge, { backgroundColor: s.color }]}>
+              <Text style={styles.badgeText}>{s.short}</Text>
+            </View>
+          </View>
         </View>
-        {onToggleBag && (
-          // Nested Pressable: RN routes the touch to the inner control, so tapping this
-          // toggles the bag flag without also firing the card's onPress (edit) — no
-          // stopPropagation needed the way the website's onclick handler required.
-          <Pressable
-            onPress={onToggleBag}
-            hitSlop={8}
-            style={[styles.bagCheck, d.inBag && styles.bagCheckOn]}
-            accessibilityRole="button"
-            accessibilityState={{ selected: !!d.inBag }}
-            accessibilityLabel={d.inBag ? `Remove ${d.mold} from today's bag` : `Add ${d.mold} to today's bag`}
-          >
-            <Text style={[styles.bagCheckText, d.inBag && styles.bagCheckTextOn]}>{d.inBag ? '✓ In bag' : 'In bag'}</Text>
-          </Pressable>
-        )}
-      </View>
-      <View style={styles.nums}>
-        <NumStat label="SPD" value={d.speed} />
-        <NumStat label="GLI" value={d.glide} />
-        <NumStat label="TRN" value={d.turn} />
-        <NumStat label="FDE" value={d.fade} />
-      </View>
-      {metaLine ? (
-        <Text style={styles.meta}>{metaLine}</Text>
-      ) : (
-        <Text style={[styles.meta, styles.metaUnknown]}>plastic / weight unknown</Text>
-      )}
-      {!!d.use && <Text style={styles.use}>{d.use}</Text>}
-      {!!d.notes && (
-        <Text style={styles.note} numberOfLines={2}>
-          📝 {d.notes}
-        </Text>
-      )}
-      <View style={styles.footerRow}>
-        <Text style={styles.typeWord}>{t.word}</Text>
-        <View style={[styles.badge, { backgroundColor: s.color }]}>
-          <Text style={styles.badgeText}>{s.short}</Text>
+        <View style={styles.arcThumb} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <FlightArcSvg adjusted={adjusted} baseDisc={null} sliders={NEUTRAL} arcView={arcView} />
         </View>
       </View>
     </Pressable>
@@ -99,6 +117,17 @@ const styles = StyleSheet.create({
   },
   bagged: { borderColor: colors.accent },
   dragActive: { backgroundColor: colors.cardHover, opacity: 0.9 },
+  body: { flexDirection: 'row', gap: 10 },
+  main: { flex: 1, minWidth: 0 },
+  arcThumb: {
+    width: 58,
+    height: 88,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
   head: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 },
   headText: { flex: 1, minWidth: 0 },
   bagCheck: {

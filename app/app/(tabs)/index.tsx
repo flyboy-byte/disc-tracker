@@ -19,6 +19,7 @@ import type { MasterDisc } from '../../src/utils/masterLibrary';
 type StabFilter = 'all' | Stability;
 type TypeFilterKey = 'all' | DiscType;
 type SortMode = 'speed-desc' | 'speed-asc' | 'name' | 'mfr' | 'custom';
+type ArcView = 'RHBH' | 'RHFH' | 'LHBH' | 'LHFH';
 
 const STAB_PILLS: { key: StabFilter; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -52,6 +53,10 @@ export default function BagScreen() {
   const [stabFilter, setStabFilter] = useState<StabFilter>('all');
   const [typeFilter, setTypeFilter] = useState<TypeFilterKey>('all');
   const [sortMode, setSortMode] = useState<SortMode>('speed-desc');
+  // Arc-view for the per-card flight thumbnails, mirroring the persisted default throw view
+  // (set on Settings / Flight Shaper). Loaded on mount and re-read on focus since Settings
+  // can change it while this screen stays mounted.
+  const [arcView, setArcView] = useState<ArcView>('RHBH');
   const [search, setSearch] = useState('');
   // Today's-bag filter — component state (not persisted): mirrors the website's
   // sessionStorage `bagFilter`, which likewise resets when the session ends.
@@ -78,6 +83,7 @@ export default function BagScreen() {
       setUserId(uid);
       setDiscs(loadedDiscs);
       setSortMode((meta.sortMode as SortMode) || 'speed-desc');
+      setArcView((meta.arcView as ArcView) || 'RHBH');
       didInitialLoad.current = true;
       setLoading(false);
     })();
@@ -88,7 +94,11 @@ export default function BagScreen() {
   useFocusEffect(
     useCallback(() => {
       if (!didInitialLoad.current || userId == null) return;
-      (async () => setDiscs(await getDiscs(userId)))();
+      (async () => {
+        const [d, meta] = await Promise.all([getDiscs(userId), getMeta(userId)]);
+        setDiscs(d);
+        setArcView((meta.arcView as ArcView) || 'RHBH');
+      })();
     }, [userId])
   );
 
@@ -303,6 +313,7 @@ export default function BagScreen() {
           renderItem={({ item, drag, isActive }: RenderItemParams<Disc>) => (
             <DiscCard
               disc={item}
+              arcView={arcView}
               onPress={() => openEdit(item)}
               onLongPress={drag}
               dragActive={isActive}
@@ -316,7 +327,7 @@ export default function BagScreen() {
           keyExtractor={(d) => String(d.id)}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
-            <DiscCard disc={item} onPress={() => openEdit(item)} onToggleBag={item.id != null ? () => toggleBag(item.id!) : undefined} />
+            <DiscCard disc={item} arcView={arcView} onPress={() => openEdit(item)} onToggleBag={item.id != null ? () => toggleBag(item.id!) : undefined} />
           )}
         />
       )}
