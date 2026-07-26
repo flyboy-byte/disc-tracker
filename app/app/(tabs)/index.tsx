@@ -2,7 +2,7 @@
 // openAdd()/openEdit()/saveDisc()/deleteDisc()/setFilter()/setSort()/startDrag()+endDrag().
 // CSV export/import (Phase 7) is wired in via CsvExportModal/CsvImportModal below.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist';
 import { FlatList } from 'react-native-gesture-handler';
 import { useFocusEffect } from 'expo-router';
@@ -12,6 +12,7 @@ import CsvImportModal from '../../src/components/CsvImportModal';
 import DiscCard from '../../src/components/DiscCard';
 import DiscFormModal from '../../src/components/DiscFormModal';
 import DiscLibraryModal from '../../src/components/DiscLibraryModal';
+import FieldView from '../../src/components/FieldView';
 import { useToast } from '../../src/components/Toast';
 import { colors } from '../../src/theme';
 import { getDiscs, getMeta, getOrCreateDefaultUser, saveDiscs, setMeta } from '../../src/db/db';
@@ -71,6 +72,8 @@ export default function BagScreen() {
   // Today's-bag filter — component state (not persisted): mirrors the website's
   // sessionStorage `bagFilter`, which likewise resets when the session ends.
   const [bagFilter, setBagFilter] = useState(false);
+  // 'list' = card list; 'field' = all arcs overlaid on one field (website's viewMode).
+  const [viewMode, setViewMode] = useState<'list' | 'field'>('list');
 
   const [formOpen, setFormOpen] = useState(false);
   const [formIsNew, setFormIsNew] = useState(true);
@@ -159,7 +162,7 @@ export default function BagScreen() {
   // Drag-reorder only makes sense on the full, unfiltered custom-sorted list — a filtered
   // view has gaps, so dropping a card at index N wouldn't map to the real array position.
   const dragEnabled =
-    sortMode === 'custom' && stabFilter === 'all' && typeFilter === 'all' && !search.trim() && !bagFilter;
+    viewMode === 'list' && sortMode === 'custom' && stabFilter === 'all' && typeFilter === 'all' && !search.trim() && !bagFilter;
 
   const openAdd = () => {
     setFormIsNew(true);
@@ -324,6 +327,17 @@ export default function BagScreen() {
             <Text style={styles.ghostBtnText}>Clear bag</Text>
           </Pressable>
         )}
+        <Pressable
+          style={[styles.ghostBtn, viewMode === 'field' && styles.ghostBtnActive]}
+          onPress={() => setViewMode((m) => (m === 'field' ? 'list' : 'field'))}
+          accessibilityRole="button"
+          accessibilityState={{ selected: viewMode === 'field' }}
+          accessibilityLabel={viewMode === 'field' ? 'Switch to card list' : 'Switch to field view'}
+        >
+          <Text style={[styles.ghostBtnText, viewMode === 'field' && styles.ghostBtnTextActive]}>
+            {viewMode === 'field' ? 'Bag view' : 'Field view'}
+          </Text>
+        </Pressable>
       </View>
       {sortMode === 'custom' && (
         <Text style={styles.dragHint}>{dragEnabled ? 'long-press a card to reorder' : 'clear search/filters to drag-reorder'}</Text>
@@ -356,6 +370,10 @@ export default function BagScreen() {
 
       {filteredSorted.length === 0 ? (
         <Text style={styles.empty}>No discs match.</Text>
+      ) : viewMode === 'field' ? (
+        <ScrollView contentContainerStyle={styles.listContent}>
+          <FieldView discs={filteredSorted} arcView={arcView} onSelectDisc={setDetailDisc} />
+        </ScrollView>
       ) : dragEnabled ? (
         <DraggableFlatList
           data={filteredSorted}
