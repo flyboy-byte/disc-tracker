@@ -26,32 +26,30 @@ in Flight Shaper) that takes a disc + arcView and draws the exact same `arcPoint
 
 ## P0 — bugs
 
-- [ ] **P0-1 · Negative numbers can't be typed into flight-number fields.** `DiscFormModal`'s
-      `NumField` and Flight Shaper's `ManualField` both do `parseFloat(text) || 0` on a
-      controlled input. Typing `-` yields `NaN → 0`, and the controlled value snaps back to
-      `"0"`, so the minus is swallowed — you **cannot manually enter a negative turn** (e.g.
-      `-2`), which is the common case for understable discs. Workaround today is autofill
-      from the library. Fix: allow an in-progress string (`-`, `-.`, empty) in local state,
-      coerce to number only on blur/save. (`DiscFormModal.tsx:28`, `flight-shaper.tsx:283`.)
+- [x] **P0-1 · Negative numbers can't be typed into flight-number fields.** ✅ DONE (R3,
+      commit `fd5a55d`). Extracted a shared `NumberInput` that holds the raw string locally,
+      tolerates in-progress text (`-`, `-.`, empty), and coerces on blur; both call sites use
+      it. Pure logic in `utils/numberField.ts` with unit coverage (+5 tests). Verified live:
+      `-2` sticks in Turn, and the Android numeric keyboard exposes a minus key.
 
 ## P1 — parity / "feel" gaps
 
-- [ ] **P1-1 · No per-disc flight-arc thumbnail on bag cards.** Website `index.html:657`
-      renders `arcSVG(d)` on every card. App `DiscCard` shows numbers only. Reuse
-      `FlightArcSvg` at a small fixed size with neutral sliders. **Biggest single feel win.**
-- [ ] **P1-2 · No arc-detail view from the Bag.** Website `showArcDetail` (`index.html:405`)
-      opens a modal with the full arc + Edit button. App has no way to see a disc's flight
-      path without leaving for Flight Shaper. (The Marshall Street reference image inside
-      that modal is **→R4**, deferred — the computed-arc detail itself is portable now.)
+- [x] **P1-1 · No per-disc flight-arc thumbnail on bag cards.** ✅ DONE (R3, commit
+      `131f458`). `DiscCard` now renders a compact right-rail `FlightArcSvg` (neutral, no
+      ghost), stability-colored, reading the persisted arc-view (loaded on the Bag screen on
+      mount + focus). Verified live across a putter/mid/driver. **Biggest single feel win.**
+- [x] **P1-2 · No arc-detail view from the Bag.** ✅ DONE (R3, commit `7d38207`). New
+      `ArcDetailModal` opens from a card's arc thumbnail: large computed arc + stats + Edit
+      hand-off to the form. (The Marshall Street reference image inside that modal is **→R4**,
+      deferred — the computed-arc detail itself is live.)
 - [ ] **P1-3 · No field view.** Website `fieldBtn` → `renderFieldView` (`index.html:478`)
       overlays every bag disc's arc on one top-down field, colored by disc color / stability.
       A whole view mode the app lacks entirely.
-- [ ] **P1-4 · No success feedback anywhere.** Website `toast()`s on 12+ actions — disc
-      added/updated/removed, order saved, today's-bag cleared, CSV imported/exported/copied,
-      and error cases ("Mold name is required", "Could not save"). The app confirms
-      *destructive* actions with `Alert` but is **silent on every success**. Add a lightweight
-      toast/snackbar and wire the same set of events. Real "feel" gap — the website
-      acknowledges every action.
+- [x] **P1-4 · No success feedback anywhere.** ✅ DONE (R3, commit `cc57799`). Added a
+      root `ToastProvider` + `useToast()`; wired disc added/updated/removed, order saved,
+      today's-bag cleared, CSV imported (Bag + Settings), and delete-all. Verified live.
+      (CSV export uses the OS share sheet as its own feedback; form-validation error toasts
+      like "Mold name is required" remain a small follow-on.)
 - [ ] **P1-5 · No bag-level arc-view selector or stability legend.** Website Bag has an
       RHBH/RHFH/LHBH/LHFH selector + an OS/ST/US color legend in the toolbar (`index.html:270`).
       The app only exposes arc view in Flight Shaper/Settings. Naturally folds in with
