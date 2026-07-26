@@ -714,12 +714,19 @@ Minimum Milestone is fully met.
 
 ---
 
-## Flight Shaper UX Rework — NOT STARTED (v1.x, flagged from real-device use 2026-07-24)
+## Flight Shaper UX Rework (R2) — BUILT 2026-07-25, visual verification pending
 
-> Feedback from actually using `0.5` on a phone: **the Flight Shaper's UI workflow is
-> poor.** The screens are all *correct* (physics, arc, sliders all match the website) —
-> this is purely a layout/interaction problem, not a logic one. Capturing it now; the
-> specifics of the redesign still need the developer's input before building.
+> **Status:** Direction chosen by the developer = **pinned arc on top**. Built in
+> `app/(tabs)/flight-shaper.tsx` (commit `acd1a4c`): disc selector + arc + adjusted stats are
+> now a fixed top panel; sliders scroll underneath (cause/effect co-visible); disc picker →
+> compact selector + bottom-sheet modal; reference diagrams collapsed behind a toggle.
+> **Layout-only** — physics/arc/slider semantics unchanged (typecheck clean, 48/48 Jest pass).
+> **NOT yet visually verified on the emulator** — the layout is the whole point, so a
+> screenshot pass (pinned arc holds while sliders scroll, slider scroll-lock still works,
+> picker modal opens/selects/closes) is the one remaining step before R2 is truly done. Fold
+> any fixes into commit `acd1a4c` (`--amend`), keeping R2 a single commit.
+>
+> Original diagnosis + candidate directions kept below for context.
 
 **Likely core problem (candidate diagnosis, confirm before reworking):** the screen is one
 long vertical scroll in the order **disc picker → 5 sliders → two reference diagrams →
