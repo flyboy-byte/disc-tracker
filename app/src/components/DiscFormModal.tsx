@@ -7,6 +7,7 @@ import { DISC_COLORS } from '../utils/discColors';
 import NumberInput from './NumberInput';
 
 const THROW_STYLES = ['RHBH', 'RHFH', 'LHBH', 'LHFH'] as const;
+const HEX6 = /^#[0-9A-Fa-f]{6}$/;
 
 interface Props {
   visible: boolean;
@@ -24,9 +25,26 @@ interface Props {
 export default function DiscFormModal({ visible, isNew, initial, onCancel, onSave, onDelete, onOpenLibrary }: Props) {
   const [form, setForm] = useState<Disc>(initial);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Raw text for the custom-hex field (the RN stand-in for the website's <input type="color">).
+  const [hexText, setHexText] = useState(initial.color ?? '');
 
   const set = <K extends keyof Disc>(key: K, value: Disc[K]) => setForm((f) => ({ ...f, [key]: value }));
   const setNum = (key: 'speed' | 'glide' | 'turn' | 'fade', n: number) => set(key, n as never);
+
+  // Preset swatch tap and custom-hex entry both feed the same `color` field; keep the hex
+  // text box in sync so it reflects whatever's currently selected either way.
+  const pickColor = (hex: string) => {
+    set('color', hex);
+    setHexText(hex);
+  };
+  const handleHex = (t: string) => {
+    let v = t.trim();
+    if (v && !v.startsWith('#')) v = `#${v}`;
+    setHexText(v);
+    if (HEX6.test(v)) set('color', v);
+    else if (v === '' || v === '#') set('color', '');
+  };
+  const hexValid = HEX6.test(hexText);
 
   const handleSave = () => {
     if (!form.mold?.trim()) return;
@@ -82,14 +100,32 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
               {DISC_COLORS.map((c) => (
                 <Pressable
                   key={c.hex || 'none'}
-                  onPress={() => set('color', c.hex)}
+                  onPress={() => pickColor(c.hex)}
                   style={[
                     styles.swatch,
                     c.hex ? { backgroundColor: c.hex } : styles.swatchNone,
                     (form.color || '') === c.hex && styles.swatchSelected,
                   ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={c.hex ? `Color ${c.hex}` : 'No color'}
                 />
               ))}
+            </View>
+            <View style={styles.customColorRow}>
+              <View
+                style={[styles.customSwatch, hexValid ? { backgroundColor: hexText } : styles.swatchNone]}
+                accessibilityLabel="Custom color preview"
+              />
+              <TextInput
+                style={[styles.input, styles.hexInput]}
+                value={hexText}
+                onChangeText={handleHex}
+                placeholder="#RRGGBB (custom)"
+                placeholderTextColor={colors.muted}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={7}
+              />
             </View>
           </ScrollView>
           <View style={styles.btnRow}>
@@ -186,10 +222,13 @@ const styles = StyleSheet.create({
   thrPillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.15)' },
   thrPillText: { color: colors.muted, fontSize: 13 },
   thrPillTextActive: { color: colors.accent, fontWeight: '600' },
-  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
   swatch: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: 'transparent' },
   swatchNone: { backgroundColor: colors.bg, borderColor: colors.border },
   swatchSelected: { borderColor: colors.accent },
+  customColorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  customSwatch: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: colors.border },
+  hexInput: { flex: 1 },
   btnRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   btn: { backgroundColor: colors.accent, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
   btnText: { color: '#fff', fontWeight: '700' },
