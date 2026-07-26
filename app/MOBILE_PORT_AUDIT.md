@@ -4,9 +4,10 @@
 > This document maps every feature, function, and data structure in the current website
 > so the port has a verified source of truth before any React Native code is written.
 >
-> **Status (2026-07-24): this is the *pre-build* website inventory, and it stays valid as
+> **Status (2026-07-25): this is the *pre-build* website inventory, and it stays valid as
 > a spec reference because the website hasn't changed — but the port itself is now built
-> (Phases 0–8 done, `mobile-preview-0.4` shipped). For as-built status, the actual file
+> (Phases 0–9 done, v1 shipped as `mobile-preview-0.5` and confirmed on a real phone).
+> For as-built status, the actual file
 > structure, and remaining work, see [`PORT_PLAN.md`](./PORT_PLAN.md) and
 > [`plan/FRAMEWORK.md`](./plan/FRAMEWORK.md), which are authoritative on current state.
 > A few numbers below were found slightly wrong during the build and are corrected inline

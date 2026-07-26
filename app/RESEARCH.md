@@ -18,7 +18,7 @@
 
 **Chosen: Expo (framework) + local Gradle builds only, no EAS.** The app is not performance-critical (UI + SVG, no 3D). All physics and scenario logic is pure JS — ports with type annotations only.
 
-EAS is dropped entirely, not kept as a fallback — DragTree proved local `./gradlew` is manageable as long as the codebase stays simple, and it's what enables F-Droid reproducible builds and signing with your own keystore anyway. EAS cloud-built binaries don't byte-match F-Droid's build server output, which blocks the official F-Droid index. iOS is out of scope for now; if it's ever pursued, evaluate build tooling at that point rather than carrying `eas.json`/cloud-build ceremony around unused until then.
+EAS is dropped entirely, not kept as a fallback — DragTree proved local `./gradlew` is manageable as long as the codebase stays simple, and it's what enables F-Droid reproducible builds and signing with your own keystore anyway. EAS cloud-built binaries don't byte-match F-Droid's build server output, which blocks the official F-Droid index. iOS isn't cut — it stays possible on this same Expo/RN codebase, just deferred well behind Android + F-Droid; if it's ever pursued, evaluate build tooling at that point rather than carrying `eas.json`/cloud-build ceremony around unused until then.
 
 ---
 
@@ -118,7 +118,7 @@ Both Disc Tracker and DragTree target the same two channels:
 | Channel | Status | Notes |
 |---------|--------|-------|
 | Google Play Console | DragTree: live (closed testing) | Locally-built production AAB (`./gradlew bundleRelease`) |
-| F-Droid | DragTree: in progress | Requires no proprietary deps; self-hosted repo via `fdroidserver` |
+| F-Droid | DragTree: merged into the official index (reproducible build) | Requires no proprietary deps; self-hosted repo via `fdroidserver`. Playbook: `plan/docs/fdroid-reference.md` |
 
 **F-Droid compatibility is a hard requirement, not optional.** This shapes every dependency choice: if a package pulls in Google Mobile Services (GMS) or any proprietary SDK, it breaks F-Droid distribution. All planned packages are permissively-licensed (GPL-compatible) and GMS-free — verify this stays true as packages are added.
 

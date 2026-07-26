@@ -6,7 +6,7 @@ Two things in one repo:
 
 1. **A live Flask web app** — personal disc golf bag tracker running on a VPS at `51.81.80.126`. Multi-user, local SQLite, no cloud, no accounts. The website is the canonical version and the spec for everything else.
 
-2. **An Android app port in progress** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Functional: all three tabs (Bag / Flight Shaper / Disc Suggest) built and verified on an emulator, full v1 feature set shipped as `mobile-preview-0.4` on GitHub Releases. Currently in Phase 9 (polish + one feature gap) before the next release; not yet run on a physical device. See "Mobile app — current state" below.
+2. **An Android app port — v1 feature-complete** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. All four tabs (Bag / Flight Shaper / Disc Suggest / Settings) are built and verified, shipped as `mobile-preview-0.5` on GitHub Releases and **confirmed running on a real physical Android phone (2026-07-24)** — every Minimum Credible v1 Milestone item is met. Forward work follows the **Post-v1 Roadmap (R1–R7)** in `app/PORT_PLAN.md`: perfect the app → build the two deferred features (Marshall Street images, VPS sync) → then stores. See "Mobile app — current state" below.
 
 ---
 
@@ -182,8 +182,8 @@ a real reason to keep checking model agreement over time rather than the one-tim
 
 ## Mobile app — current state
 
-**Phases 0-8 done; full v1 feature set shipped as `mobile-preview-0.4`.** All three tabs
-are real and working, verified on an Android emulator (not just typechecked):
+**Phases 0-9 done; v1 shipped as `mobile-preview-0.5`, confirmed on a real phone.** All
+four tabs are real and working, verified on an Android emulator and sideloaded on hardware:
 - **Bag** — full CRUD (manual add or from the 1,660+ disc library), edit, delete, sort,
   search, stability/type filters, color picker, CSV import/export (share sheet + document
   picker). SQLite-backed, survives app kills.

@@ -38,9 +38,10 @@ PORT_PLAN.md's phase list doesn't itself carry.
 6. For the actual step-by-step build work, go to `../PORT_PLAN.md` — this packet frames
    the project, PORT_PLAN.md executes it.
 
-Status (2026-07-24): the framing below was written pre-build, but the build has since
-caught up and passed it — all four screens are implemented and verified on an emulator,
-and the full v1 feature set shipped as `mobile-preview-0.4`. What's left is a real-device
-run and the Phase 9 polish pass (see `FRAMEWORK.md` for the live status, `../PORT_PLAN.md`
-Phase 9 for the specifics). Where a doc below still reads as forward-looking about
-something now built, `FRAMEWORK.md` is the authority on current state.
+Status (updated 2026-07-25): the framing below was written pre-build, but the build has
+since caught up and passed it — all four screens are implemented, Phase 9 polish is done,
+and v1 shipped as `mobile-preview-0.5`, **confirmed running on a real physical Android
+phone (2026-07-24)**. Every Minimum Credible v1 Milestone item is met. Forward work now
+follows the **Post-v1 Roadmap (R1–R7)** in `../PORT_PLAN.md` (perfect the app → the two
+deferred features → stores). Where a doc below still reads as forward-looking about
+something now built, `FRAMEWORK.md` and `../PORT_PLAN.md` are authoritative on current state.

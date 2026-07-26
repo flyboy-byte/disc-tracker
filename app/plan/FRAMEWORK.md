@@ -98,8 +98,9 @@ Maps directly onto `PORT_PLAN.md`'s own phases:
       concurrency bug by serializing DB ops. Also added a **Settings tab** (default throw
       view, data backup/import/delete, About, v1.1 sync placeholder). Shipped as
       **`mobile-preview-0.5`**. See `../PORT_PLAN.md` Phase 9.
-- [ ] Phase 10 (VPS Sync, v1.1) — explicitly out of scope until v1 APK is proven; fully
-      designed in `RESEARCH.md` §2 but deliberately not started (see `docs/notes.md`)
+- [ ] Phase 10 (VPS Sync) — **roadmap step R5** (2026-07-25 replan): pulled forward to
+      *before* the store track, after app polish (R3). Fully designed in `RESEARCH.md` §2,
+      not started yet (see `docs/notes.md`)
 
 **Gate to Phase 4 (of this framework):** one working version that does the core thing
 end-to-end on a real device. **Met (2026-07-24)** — all four screens built, Phase 9 polish
@@ -150,8 +151,8 @@ meant for long-press-gated drags — didn't trigger react-native-draggable-flatl
 reorder at all, no crash, no error. Logged honestly as needing a physical finger rather
 than further scripted attempts — until the working technique was found (`adb input
 motionevent` hold-then-move), which verified drag-reorder on the emulator after all, order
-persisting across a kill+relaunch. Four debug-signed preview APKs (`mobile-preview-0.1`–
-`0.4`) are on GitHub Releases; `0.4` covers all four screens + CSV, smoke-tested in its
+persisting across a kill+relaunch. Five debug-signed preview APKs (`mobile-preview-0.1`–
+`0.5`) are on GitHub Releases; `0.4` covered all four screens + CSV, smoke-tested in its
 true R8-minified config. **Phase 9 is built, emulator-verified, and shipped as `mobile-preview-0.5`**
 (2026-07-24): today's-bag (toggle/filter/count/clear + live export scope), a new Settings
 tab (default throw view, data backup/import/delete, About, v1.1 sync placeholder), tab

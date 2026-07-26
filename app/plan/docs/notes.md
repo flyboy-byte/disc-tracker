@@ -39,23 +39,24 @@ Update this file as answers come in from real tests or research.
 1. ~~Boot an AVD, run the deferred Phase 3 SQLite verification~~ — **done 2026-07-23.**
 2. ~~Phases 4–7 (Bag, Flight Shape, Disc Suggest, Import/Export)~~ — **all done and
    verified on the emulator, 2026-07-23/24.** Shipped as `mobile-preview-0.4`.
-3. **`PORT_PLAN.md` Phase 9 (v1 polish & gap-closing) — the current next action.** Decide
-   the today's-bag question (P1: finish the in-bag UI, or drop the dead export scope) and
-   fix the two cosmetics (P2: double title, missing tab icons); cut `0.5`.
-4. First real-device install: in the same sitting, verify drag-reorder with a real finger
-   and confirm a clean cold-start on physical hardware — the last two Minimum-Milestone
-   items, both blocked only on real hardware.
-5. Then the distribution track (D1 Play Console before D2 F-Droid, never in parallel).
+3. ~~`PORT_PLAN.md` Phase 9 (v1 polish & gap-closing)~~ — **done, shipped as `0.5`.**
+   Today's-bag finished (toggle/filter/count/clear + export scope), cosmetics fixed, plus
+   a new Settings tab and a DB-lock fix.
+4. ~~First real-device install~~ — **done 2026-07-24:** `0.5` sideloaded and confirmed on a
+   real physical Android phone, drag-reorder and cold-start both verified. Every
+   Minimum-Milestone item is met.
+5. **Forward work is now the ordered Post-v1 Roadmap (R1–R7) in `../PORT_PLAN.md`** (replan
+   2026-07-25): perfect the app (R1 audit → R2 Flight Shaper layout rework → R3 polish) →
+   build the two deferred features (R4 Marshall Street images, R5 VPS sync) → then stores
+   (R6 Play closed testing incl. production keystore, R7 F-Droid — not dropped, just after
+   Play).
 
 ## Things to explicitly decide before committing further
 
-- **Today's-bag feature (Phase 9, P1) — decide finish-it vs. hide-it.** The `in_bag`
-  column, its CRUD, `DiscCard`'s bagged styling, and the CSV export's "Today's bag" scope
-  picker all already exist, but there's no UI control to actually mark a disc as in-bag,
-  so the export scope is a dead path. Either add the toggle/filter/clear-bag UI (matches
-  the website; pure UI wiring, no schema change) or drop the export scope picker for v1
-  and leave `in_bag` dormant. This is a real decision, not a bug — it changes what v1
-  *is*. See `../PORT_PLAN.md` Phase 9.
+- ~~**Today's-bag feature (Phase 9, P1) — decide finish-it vs. hide-it.**~~ **RESOLVED
+  (2026-07-24): finished it.** Added the per-card toggle, filter, count, and clear-bag UI
+  (matching the website) and wired the CSV "Today's bag" export scope live. Shipped in
+  `0.5`. See `../PORT_PLAN.md` Phase 9 P1.
 - Whether to build a lightweight sync mechanism for `PORT_PLAN.md`/`RESEARCH.md`
   changes vs. this packet — right now this packet duplicates a *summary* of decisions
   that live in full in those two files; if they diverge, those two remain authoritative

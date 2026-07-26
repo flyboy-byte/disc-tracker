@@ -11,7 +11,9 @@
 > - Do not make the app depend on the Flask server
 > - Local-only v1. Single-user UX. Android-first.
 > - Do not work ahead — complete and verify each phase before starting the next
-> - Physics V2, VPS sync, and F-Droid distribution are explicitly out of scope until v1 APK is proven
+> - v1 APK is now proven (`0.5` on a real phone), so the post-v1 work is sequenced by the
+>   Post-v1 Roadmap (R1–R7): VPS sync (R5) and F-Droid (R7) are scheduled, not out of scope.
+>   Physics V2 stays parked (a parallel R&D track, not on the roadmap).
 
 ---
 
@@ -457,16 +459,18 @@ untested if it matters later.
 
 ---
 
-## Phase 8 — Android Build and Smoke Test — PARTIALLY DONE
+## Phase 8 — Android Build and Smoke Test — ✅ done (2026-07-24)
 
 **Goal:** Real APK on a physical device, all screens verified. Distribution (D1/D2/D3)
 is a separate track that starts after this.
 
-**Done:** the build pipeline (8A below) has been run for real four times
-(`mobile-preview-0.1`–`0.4`), each installed and exercised on an x86_64 emulator; `0.4`
-was smoke-tested in its true R8-minified release config. The Destroyer distance fixture,
-target-SDK check, GMS-free check, and (finally) **drag-reorder** all pass on the emulator.
-**Only remaining item: a physical-device cold start** — genuinely needs hardware.
+**Done:** the build pipeline (8A below) has been run for real five times
+(`mobile-preview-0.1`–`0.5`), each installed and exercised on an x86_64 emulator; `0.4` and
+`0.5` were smoke-tested in their true R8-minified release config. The Destroyer distance
+fixture, target-SDK check, GMS-free check, and **drag-reorder** all pass on the emulator.
+**The physical-device cold start is also done** — `0.5` was sideloaded and confirmed
+running on a real Android phone (2026-07-24). This phase is complete; the whole
+Minimum Credible v1 Milestone is met.
 
 **Drag-reorder — VERIFIED on the emulator (2026-07-24).** Earlier attempts with
 `adb input draganddrop` and slow `input swipe` failed because neither can produce the

@@ -55,13 +55,12 @@ export/import round-trips. That's the finish line for "v1 works" — Play Store 
 F-Droid submission are separate, later milestones (see `../PORT_PLAN.md`'s Distribution
 Track).
 
-**Status (2026-07-24):** every item on that bar is met *on an emulator* — the full
-feature set is built and shipped as `mobile-preview-0.4`. The only unmet milestone items
-are the ones that literally require real hardware (a physical-device cold start, and
-drag-reorder verified with a real finger), plus a short polish pass (`PORT_PLAN.md`
-Phase 9) — notably finishing or removing the half-built today's-bag feature. So "v1
-works" is essentially proven; "v1 is shippable" is one polish pass and one real-device
-session away.
+**Status (updated 2026-07-25):** every item on that bar is met. The full feature set is
+built, the Phase 9 polish pass is done (incl. today's-bag), and v1 shipped as
+`mobile-preview-0.5`, **confirmed running on a real physical Android phone (2026-07-24)** —
+including a physical-device cold start and drag-reorder verified for real. v1 is
+functionally complete and shippable. Forward work follows the Post-v1 Roadmap (R1–R7) in
+`../PORT_PLAN.md`.
 
 ## What's genuinely novel here vs. what's just applying an existing pattern
 
