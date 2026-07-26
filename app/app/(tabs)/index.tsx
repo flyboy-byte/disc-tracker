@@ -12,6 +12,7 @@ import CsvImportModal from '../../src/components/CsvImportModal';
 import DiscCard from '../../src/components/DiscCard';
 import DiscFormModal from '../../src/components/DiscFormModal';
 import DiscLibraryModal from '../../src/components/DiscLibraryModal';
+import { useToast } from '../../src/components/Toast';
 import { colors } from '../../src/theme';
 import { getDiscs, getMeta, getOrCreateDefaultUser, saveDiscs, setMeta } from '../../src/db/db';
 import { discType, stab, type Disc, type DiscType, type Stability } from '../../src/utils/disc';
@@ -48,6 +49,7 @@ function blankDisc(): Disc {
 }
 
 export default function BagScreen() {
+  const toast = useToast();
   const [userId, setUserId] = useState<number | null>(null);
   const [discs, setDiscs] = useState<Disc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,13 +168,16 @@ export default function BagScreen() {
     }
     setDiscs(next);
     setFormOpen(false);
+    toast(formIsNew ? `${saved.mold} added` : `${saved.mold} updated`);
     await persist(next);
   };
 
   const handleDelete = async (id: number) => {
+    const removed = discs.find((d) => d.id === id);
     const next = discs.filter((d) => d.id !== id);
     setDiscs(next);
     setFormOpen(false);
+    toast(`${removed?.mold ?? 'Disc'} removed`);
     await persist(next);
   };
 
@@ -199,6 +204,7 @@ export default function BagScreen() {
 
   const handleDragEnd = async ({ data }: { data: Disc[] }) => {
     setDiscs(data);
+    toast('Order saved');
     await persist(data);
   };
 
@@ -220,6 +226,7 @@ export default function BagScreen() {
           const next = discs.map((d) => (d.inBag ? { ...d, inBag: false } : d));
           setDiscs(next);
           if (!next.some((d) => d.inBag)) setBagFilter(false);
+          toast("Today's bag cleared");
           await persist(next);
         },
       },
@@ -234,6 +241,7 @@ export default function BagScreen() {
     const next = [...discs, ...withIds];
     setDiscs(next);
     setImportOpen(false);
+    toast(`${withIds.length} disc${withIds.length === 1 ? '' : 's'} imported`);
     await persist(next);
   };
 

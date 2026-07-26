@@ -8,6 +8,7 @@ import { useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
 import CsvExportModal from '../../src/components/CsvExportModal';
 import CsvImportModal from '../../src/components/CsvImportModal';
+import { useToast } from '../../src/components/Toast';
 import { getDiscs, getMeta, getOrCreateDefaultUser, saveDiscs, setMeta } from '../../src/db/db';
 import { colors } from '../../src/theme';
 import type { Disc } from '../../src/utils/disc';
@@ -17,6 +18,7 @@ const ARC_VIEWS: ArcView[] = ['RHBH', 'RHFH', 'LHBH', 'LHFH'];
 const SOURCE_URL = 'https://github.com/flyboy-byte/disc-tracker';
 
 export default function SettingsScreen() {
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [discs, setDiscs] = useState<Disc[]>([]);
   const [arcView, setArcView] = useState<ArcView>('RHBH');
@@ -50,6 +52,7 @@ export default function SettingsScreen() {
     const next = [...discs, ...imported.map((d) => ({ ...d, id: nextId++ }))];
     setDiscs(next);
     setImportOpen(false);
+    toast(`${imported.length} disc${imported.length === 1 ? '' : 's'} imported`);
     await saveDiscs(uid, next);
   };
 
@@ -66,7 +69,9 @@ export default function SettingsScreen() {
           onPress: async () => {
             const uid = userIdRef.current;
             if (uid == null) return;
+            const n = discs.length;
             setDiscs([]);
+            toast(`All ${n} disc${n === 1 ? '' : 's'} deleted`);
             await saveDiscs(uid, []);
           },
         },
