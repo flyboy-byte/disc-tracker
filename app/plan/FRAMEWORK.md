@@ -160,6 +160,10 @@ real "database is locked" concurrency bug — all smoke-tested in the true R8-mi
 release config, then **sideloaded and confirmed working on a real physical Android phone
 (2026-07-24) — the Minimum Credible v1 Milestone is now fully met.** One UX issue surfaced
 from real use: the **Flight Shaper workflow needs a layout rework** (arc isn't visible
-while adjusting sliders) — logged as a v1.x item in `../PORT_PLAN.md`, not a blocker. Next
-work is either that rework or the Distribution Track (D1 Play Console). No production
-keystore or Play/F-Droid submission yet.**
+while adjusting sliders) — logged in `../PORT_PLAN.md`, not a blocker. **Forward work is
+now the ordered Post-v1 Roadmap (R1–R7) in `../PORT_PLAN.md` (replan 2026-07-25):** perfect
+the app (R1 audit → R2 Flight Shaper rework → R3 polish) → build the two deferred features
+(R4 Marshall Street images, R5 VPS sync) → then stores (R6 Play closed testing incl. the
+production keystore, R7 F-Droid). GitHub Releases stays primary through R1–R5. F-Droid is
+**not dropped** — it's sequenced after Play, not cut. No production keystore or store
+submission yet.**

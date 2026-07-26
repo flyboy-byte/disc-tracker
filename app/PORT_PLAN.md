@@ -73,10 +73,90 @@ noticed discs added later from the Bag tab. **Disc Suggest (Phase 6) will read t
 bag data and needs the same `useFocusEffect` refresh from the start** — don't rebuild
 this bug a second time.
 
-**Next action:** two independent tracks, pick either — (a) the **Flight Shaper UX rework**
-(the one rough edge from real use; note after Phase 9), or (b) the **Distribution Track**
-(D1 Play Console groundwork, below). Feature-wise the app is a complete, polished v1;
-further *features* (VPS sync, Marshall Street images) are explicitly v1.1.
+**Next action:** follow the **Post-v1 Roadmap** immediately below — the priority is now
+*perfect the app, then build the two deferred features, then ship to stores* (see the
+roadmap for the reasoning and sequencing). The old "pick distribution or the FS rework"
+framing is superseded by that ordered roadmap.
+
+---
+
+## Post-v1 Roadmap (2026-07-25 replan) — read this second
+
+v1 is done and on a real phone. This roadmap is the agreed forward plan, in priority
+order. It's built for **multi-session knockout**: each step below is independently
+completable and shippable as its own preview release, so progress survives across
+sessions without half-finished work in the tree.
+
+**The order, and the reasoning (developer's call, 2026-07-25):**
+
+1. **Perfect the app first.** Close the gap between the mobile app and the *feel and
+   intent* the website has had time-consumingly built into it — kinks, bugs, UI/settings
+   polish, the Flight Shaper workflow. This is the bulk of the near-term work.
+2. **Then build the two features that were deferred to "second release"** — Marshall
+   Street reference images and VPS sync. These were cut from v1 *scope* to ship, not
+   rejected; pull them in **before** any store submission.
+3. **Then distribution, Play Store first, F-Droid firmly still coming.** GitHub Releases
+   stays the primary channel through steps 1–2. Play Store **closed testing** is the
+   first store target. **F-Droid is not dropped — it's the FOSS destination that matters
+   most — it's just sequenced after Play**, because Play App Signing and F-Droid's
+   reproducible-build model conflict, and doing them at once means you can't isolate
+   which system broke a given build (same lesson as the D1-before-D2 rule).
+
+| Step | What | Depends on | Detailed section |
+|------|------|-----------|------------------|
+| **R1** | Parity & Kink Audit → punch-list | — | this section |
+| **R2** | Flight Shaper UX rework (layout-only) | R1 | "Flight Shaper UX Rework" below |
+| **R3** | App-wide polish & parity fixes | R1 | this section |
+| **R4** | Marshall Street reference images | R3 mostly | "Marshall Street Flight Path Images" below |
+| **R5** | VPS sync (opt-in, own server) | R3 mostly | "Phase 10 — VPS Sync" below |
+| **R6** | Release signing + Play closed testing | R2–R5 done | "Distribution Track → D1" below |
+| **R7** | F-Droid (self-hosted → official index) | R6 proven | "Distribution Track → D2/D3" below |
+
+### R1 — Parity & Kink Audit (short; produces the punch-list R2/R3 work from)
+
+**Goal:** a written, prioritized punch-list of everything where the app falls short of
+the website's feel/intent, plus every real-device rough edge — *before* fixing anything,
+so the polish work is driven by a list instead of ad hoc.
+
+- [ ] Go feature-by-feature through `templates/index.html`, `templates/flightshape.html`,
+      `templates/discsuggestion.html` and record each interaction/affordance the app is
+      missing or does more crudely (e.g. website's per-disc arc-detail modal — does the
+      Bag tab offer an equivalent? color-swatch treatment, empty states, toast feedback,
+      keyboard/scroll behavior on the manual-entry fields, etc.).
+- [ ] Real-device bug sweep — install the current build and hunt kinks (form focus/scroll,
+      slow lists, awkward taps, anything that "feels off"), logging each honestly.
+- [ ] Triage into **P0 bug** / **P1 parity gap** / **P2 polish**, and record it here (or a
+      sibling `app/plan/docs/punch-list.md`). This list is the input to R2 and R3.
+
+**Exit:** a written, triaged punch-list exists. No app code changed yet.
+
+### R3 — App-wide Polish & Parity Fixes (multi-session; works the R1 punch-list)
+
+**Goal:** grind the P0/P1/P2 list until the app *feels* like the website. Includes the
+"UI settings" polish the developer called out. Not one big commit — one preview release
+per meaningful batch, so it's always shippable.
+
+- [ ] Fix all P0 bugs first.
+- [ ] Close P1 parity gaps (the "feel and intent" items) in priority order.
+- [ ] P2 polish as capacity allows.
+- [ ] Cut a preview release (`mobile-preview-0.6+`) per batch; keep 48/48 Jest green and
+      smoke-test each build in its true R8-minified release config.
+
+**Exit:** the punch-list is down to nothing the developer considers blocking; the app
+reads as a faithful, polished port of the website.
+
+> R2 (Flight Shaper), R4 (Marshall Street), R5 (VPS sync), R6/R7 (distribution) each have
+> their own detailed section further down — this roadmap only sets their **order and
+> gating**. When you start one, jump to its section. Two cross-cutting notes the detailed
+> sections assume:
+> - **R6 folds in the production keystore** (the "think about signing more" thread):
+>   generate an upload keystore, wire it via the `android/local.properties` null-guard
+>   pattern (never committed, same as DragTree), enroll in **Play App Signing** on first
+>   AAB upload. Nothing ships to Play without this. Deferring F-Droid to R7 is what lets
+>   R6 commit fully to Play App Signing without worrying about byte-reproducibility yet.
+> - **R5 (VPS sync) must land before R6's store paperwork**, because the Play Data Safety
+>   form + privacy policy have to describe sync accurately (see "Before submitting v1.1"
+>   under Phase 10). Building sync after the forms means redoing them.
 
 ---
 
@@ -671,7 +751,12 @@ in the meantime. Do not let D3 block anything.
 
 ---
 
-## Phase 10 — VPS Sync (v1.1, after v1 ships)
+## Phase 10 — VPS Sync (roadmap step **R5** — pulled forward, before store submission)
+
+> **Re-sequenced 2026-07-25:** this was "v1.1, after v1 ships." Per the Post-v1 Roadmap it's
+> now **R5** — built *before* the Play/F-Droid store track (R6/R7), after the app-polish
+> steps (R1–R3) and Marshall Street (R4). Still opt-in, still the developer's own VPS, still
+> local-first. The design below is unchanged and correct; only its timing moved earlier.
 
 **Goal:** Optional manual sync between phone and the existing Flask website via the
 same `/api/data` endpoints. Not a cloud service, not a third-party backend — the user's
@@ -724,12 +809,12 @@ single-user bag.
 
 | Defer to later | Notes |
 |----------------|-------|
-| VPS sync | v1.1 — fully designed, don't build yet |
+| VPS sync | ~~v1.1~~ → **roadmap step R5** (2026-07-25 replan) — build before the store track, after app polish. Fully designed. |
 | Physics V2 (`physicsV2.ts`) | Build alongside, switch when validated against real throw data |
 | Multi-user picker screen | Schema supports it; UI can wait |
 | User login / OAuth | Not needed — sync uses a simple bearer token |
 | Third-party analytics | Not planned |
-| Marshall Street flight images (DiscIt API) | v1.1 — see dedicated section below |
+| Marshall Street flight images (DiscIt API) | ~~v1.1~~ → **roadmap step R4** (2026-07-25 replan) — build before the store track, after app polish. See section below. |
 
 **Technical musts** (these will cause real problems if skipped):
 - `PRAGMA foreign_keys = ON` on every SQLite connection — or CASCADE deletes silently fail
@@ -751,7 +836,13 @@ real throw data points have been collected and used to tune `DEFAULT_FLIGHT_TUNI
 
 ---
 
-## Marshall Street Flight Path Images (v1.1 Decision Track)
+## Marshall Street Flight Path Images (roadmap step **R4** — pulled forward, before store submission)
+
+> **Re-sequenced 2026-07-25:** this was "v1.1, not v1." Per the Post-v1 Roadmap it's now
+> **R4** — built *before* the store track (R6/R7), after app polish (R1–R3). Design and open
+> questions below are unchanged; only the timing moved earlier. Keep it local-first: the
+> feature degrades silently to the computed arc on any API failure/offline, exactly like the
+> website.
 
 **Decision: implement in v1.1, not v1.** Free API at `discit-api.fly.dev`, 1,107/1,203
 discs have a real measured RHBH flight-path image + PDGA physical specs. Compelling but

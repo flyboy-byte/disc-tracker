@@ -249,18 +249,25 @@ Minimum Credible v1 Milestone is fully met. See `app/PORT_PLAN.md` Phase 9.
 ### Next immediate step:
 **v1 is functionally complete** — `mobile-preview-0.5` is released and confirmed working
 on a real physical Android phone (2026-07-24), so every Minimum Credible v1 Milestone item
-is met. Two independent next tracks (pick either):
-- **Flight Shaper UX rework** — the one rough edge from real use: the arc isn't visible
-  while you adjust the sliders (long vertical scroll: disc picker → sliders → diagrams →
-  arc). A *layout-only* rework (do NOT touch physics/arc geometry/slider semantics); get
-  the developer's read on specifics first. See `app/PORT_PLAN.md` "Flight Shaper UX Rework".
-- **Distribution Track D1** (Play Console) — needs a production keystore, Data Safety form,
-  privacy-policy URL, content rating. Then D2 F-Droid.
+is met. The forward plan is now the **Post-v1 Roadmap** (`app/PORT_PLAN.md`, "Post-v1
+Roadmap (2026-07-25 replan)"), in priority order: **perfect the app → build the two
+deferred features → then stores.** Concretely, R1–R7:
+- **R1 Parity & Kink Audit** → a triaged punch-list (website feel/intent gaps + real-device
+  kinks). Start here.
+- **R2 Flight Shaper UX rework** — layout-only (arc not co-visible with sliders); do NOT
+  touch physics/arc geometry/slider semantics. See "Flight Shaper UX Rework".
+- **R3 App-wide polish & parity fixes** — grind the punch-list, incl. UI/settings polish.
+- **R4 Marshall Street images** + **R5 VPS sync** — the two features cut from v1 *scope*
+  (not rejected); pulled in **before** any store submission. VPS sync is opt-in, the
+  developer's own server, still local-first.
+- **R6 Signing + Play closed testing** — production upload keystore (null-guard
+  `local.properties`), Play App Signing, Data Safety form, privacy policy, content rating.
+- **R7 F-Droid** — **not dropped** (it's the FOSS destination), just sequenced after Play,
+  since Play App Signing and F-Droid reproducible builds conflict.
 
-Further *features* (VPS sync, Marshall Street images) are explicitly v1.1. To cut a
-release: build the arm64/armeabi APK (`JAVA_HOME=/usr/lib/jvm/java-21-openjdk`, `./gradlew
-assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a`), then `gh release
-create`.
+GitHub Releases stays the primary channel through R1–R5. To cut a release: build the
+arm64/armeabi APK (`JAVA_HOME=/usr/lib/jvm/java-21-openjdk`, `./gradlew assembleRelease
+-PreactNativeArchitectures=arm64-v8a,armeabi-v7a`), then `gh release create`.
 
 Emulator + toolchain on this machine: AVD `verify_test` (x86_64, API 37); `emulator` at
 `~/Android/Sdk/emulator/emulator`. To load live code changes on the emulator you must
