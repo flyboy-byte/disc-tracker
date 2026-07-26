@@ -160,6 +160,40 @@ reads as a faithful, polished port of the website.
 >   form + privacy policy have to describe sync accurately (see "Before submitting v1.1"
 >   under Phase 10). Building sync after the forms means redoing them.
 
+### Network-feature privacy bar (applies to R4, R5, and any future accounts/backup)
+
+**The developer does F-Droid inclusion reviews himself** (merged the LibreStatus MR
+2026-07-25) — so this app is held to the exact reviewer rubric, and any feature that opens
+a socket must be built to pass it *from the start*, not retrofitted. This is a hard
+acceptance bar on R4/R5, not a nice-to-have:
+
+- **PCAPdroid-clean.** A reviewer captures live traffic. The app must make **zero network
+  connections on launch or in the background** — every request is strictly user-initiated
+  (tap "sync" / open a disc detail with MS-reference explicitly enabled). No auto update
+  checks, no tracking/analytics endpoints, no unexplained connections, no surprise WebView.
+- **Only the one intended host.** R5 contacts only the URL the user typed (their own VPS);
+  R4 contacts only `discit-api.fly.dev`. No third-party telemetry — ever (already a
+  CLAUDE.md hard rule; this reinforces why it matters for distribution).
+- **Off by default, degrade silently.** Both features default off / opt-in and fall back to
+  offline/computed behavior on any failure — the app stays fully functional airplane-mode.
+- **Minimal permissions.** No `MANAGE_EXTERNAL_STORAGE`; file access scoped; don't add a
+  permission a feature doesn't use.
+- **Data Safety + privacy wording** must be honest about opt-in, user-owned server, and
+  user-deletable data — see RESEARCH.md "Sync Privacy Principles" and Phase 10's checklist.
+
+**Pre-existing manifest hygiene to resolve before R6/R7** (found 2026-07-25 in
+`android/app/src/main/AndroidManifest.xml` — these would draw reviewer questions):
+- [ ] `SYSTEM_ALERT_WINDOW` is in the **main** manifest, so it ships in release — it belongs
+      only in the **debug** manifest (RN dev-menu overlay). Remove it from main; verify the
+      release APK no longer requests it.
+- [ ] `INTERNET` is declared but unused until R4/R5 land — fine once they do, but a build
+      reviewed *before* then declares a permission it never exercises. Track alongside R4/R5.
+- [ ] `expo.modules.updates.*` meta-data is present (`ENABLED=false` so inert, but
+      `CHECK_ON_LAUNCH=ALWAYS`) — strip expo-updates for the F-Droid build so there's no
+      "automatic update check" surface to explain.
+- [ ] Re-audit the full permission list against the actual feature set right before R6
+      (`VIBRATE`, legacy `READ/WRITE_EXTERNAL_STORAGE maxSdkVersion=32`) — drop anything unused.
+
 ---
 
 ## Minimum Credible v1 Milestone

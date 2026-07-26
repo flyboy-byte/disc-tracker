@@ -195,6 +195,14 @@ All planned packages pass this check. Add this to CI so it can't silently break.
 4. **Deletable.** Sync settings (URL + token) can be cleared from within the app, which stops all future sync calls.
 5. **Auditable.** Both the mobile sync code and the Flask endpoint are open source — anyone can verify what's sent and received.
 
+> **This is a hard acceptance bar, not aspirational.** The developer does F-Droid inclusion
+> reviews himself and holds this app to the reviewer rubric: a reviewer will capture live
+> traffic with **PCAPdroid** and expect **zero connections on launch/in background**, only
+> user-initiated requests, only to the configured host, no tracking, no auto update checks.
+> Build sync (and the Marshall Street image feature) to survive that from the start. Full
+> checklist + pre-existing manifest hygiene items: see PORT_PLAN.md "Network-feature privacy
+> bar" under the Post-v1 Roadmap.
+
 ---
 
 ## 5. Distribution Compliance
