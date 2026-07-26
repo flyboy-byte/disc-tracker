@@ -15,7 +15,7 @@ import DiscLibraryModal from '../../src/components/DiscLibraryModal';
 import { useToast } from '../../src/components/Toast';
 import { colors } from '../../src/theme';
 import { getDiscs, getMeta, getOrCreateDefaultUser, saveDiscs, setMeta } from '../../src/db/db';
-import { discType, stab, type Disc, type DiscType, type Stability } from '../../src/utils/disc';
+import { discType, stab, STAB_META, type Disc, type DiscType, type Stability } from '../../src/utils/disc';
 import type { MasterDisc } from '../../src/utils/masterLibrary';
 
 type StabFilter = 'all' | Stability;
@@ -42,6 +42,13 @@ const SORT_OPTIONS: { key: SortMode; label: string }[] = [
   { key: 'name', label: 'Name' },
   { key: 'mfr', label: 'Mfr' },
   { key: 'custom', label: 'Custom' },
+];
+const ARC_VIEWS: ArcView[] = ['RHBH', 'RHFH', 'LHBH', 'LHFH'];
+// Stability legend for the arc/badge color language, mirroring index.html's toolbar legend.
+const STAB_LEGEND: { label: string; color: string }[] = [
+  { label: 'Overstable', color: STAB_META.overstable.color },
+  { label: 'Stable', color: STAB_META.stable.color },
+  { label: 'Understable', color: STAB_META.understable.color },
 ];
 
 function blankDisc(): Disc {
@@ -118,6 +125,16 @@ export default function BagScreen() {
     async (mode: SortMode) => {
       setSortMode(mode);
       if (userId != null) await setMeta(userId, { sortMode: mode });
+    },
+    [userId]
+  );
+
+  // Arc view is a single shared preference (also set on Settings / Flight Shaper) — persist to
+  // meta so the change follows the disc everywhere, matching the website's global arcView.
+  const changeArcView = useCallback(
+    async (v: ArcView) => {
+      setArcView(v);
+      if (userId != null) await setMeta(userId, { arcView: v });
     },
     [userId]
   );
@@ -312,6 +329,31 @@ export default function BagScreen() {
         <Text style={styles.dragHint}>{dragEnabled ? 'long-press a card to reorder' : 'clear search/filters to drag-reorder'}</Text>
       )}
 
+      <View style={styles.arcBar}>
+        <View style={styles.legend}>
+          {STAB_LEGEND.map((l) => (
+            <View key={l.label} style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: l.color }]} />
+              <Text style={styles.legendText}>{l.label}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={styles.arcViewPills}>
+          {ARC_VIEWS.map((v) => (
+            <Pressable
+              key={v}
+              onPress={() => changeArcView(v)}
+              style={[styles.arcViewPill, arcView === v && styles.arcViewPillActive]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: arcView === v }}
+              accessibilityLabel={`Show arcs as ${v}`}
+            >
+              <Text style={[styles.arcViewPillText, arcView === v && styles.arcViewPillTextActive]}>{v}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
       {filteredSorted.length === 0 ? (
         <Text style={styles.empty}>No discs match.</Text>
       ) : dragEnabled ? (
@@ -440,6 +482,23 @@ const styles = StyleSheet.create({
   ghostBtnText: { color: colors.muted, fontWeight: '600', fontSize: 13 },
   ghostBtnTextActive: { color: colors.accent },
   dragHint: { color: colors.muted, fontSize: 12, flexShrink: 1, marginBottom: 6 },
+  arcBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  legendDot: { width: 9, height: 9, borderRadius: 5 },
+  legendText: { color: colors.muted, fontSize: 11 },
+  arcViewPills: { flexDirection: 'row', gap: 4 },
+  arcViewPill: { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
+  arcViewPillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.12)' },
+  arcViewPillText: { color: colors.muted, fontSize: 10, fontWeight: '600' },
+  arcViewPillTextActive: { color: colors.accent },
   empty: { color: colors.muted, textAlign: 'center', marginTop: 40 },
   listContent: { paddingBottom: 24 },
 });

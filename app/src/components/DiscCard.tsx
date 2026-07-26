@@ -130,6 +130,10 @@ const styles = StyleSheet.create({
   arcThumb: {
     width: 58,
     height: 88,
+    // Nudge down so the arc lines up against the flight-number row rather than the mfr
+    // eyebrow, matching the website card's padding-top on the arc (index.html:657).
+    marginTop: 18,
+    alignSelf: 'flex-start',
     borderRadius: 8,
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderWidth: 1,
