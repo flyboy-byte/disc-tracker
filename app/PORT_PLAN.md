@@ -110,12 +110,16 @@ sessions without half-finished work in the tree.
 | **R2** | Flight Shaper UX rework (layout-only) | R1 | ✅ done + emulator-verified (`acd1a4c`) |
 | **R3** | App-wide polish & parity fixes | R1 | 🚧 in progress — see below |
 
-> **R3 progress (2026-07-26):** 5 punch-list items done, all verified live on the emulator and
-> shipped in GitHub release **`mobile-preview-0.6`** ("bag flight arcs + Flight Shaper rework",
-> debug-signed, arm64/armeabi): **P0-1** negative-number entry, **P1-1** per-disc arc thumbnails
-> on bag cards, **P1-2** arc-detail sheet, **P1-4** success toasts, **P1-5** bag-toolbar arc-view
-> selector + OS/ST/US legend. Item-level status + remaining work (P1-3 field view, P2-1..4 polish,
-> error toasts, live kink sweep) tracked in `plan/docs/punch-list.md`.
+> **R3 progress (2026-07-26):** all P1 parity items + most of P2 done, verified live and shipped
+> across two GitHub releases (debug-signed, arm64/armeabi): **`mobile-preview-0.6`** ("bag flight
+> arcs + Flight Shaper rework") and **`mobile-preview-0.7`** ("field view + custom colors +
+> polish"). Done: **P0-1** negative entry, **P1-1** card arcs, **P1-2** arc-detail sheet, **P1-3**
+> field view, **P1-4** success toasts, **P1-5** arc-view selector + legend, **P2-1** custom hex
+> color, **P2-2/P2-4** empty/first-run states, inline form validation. **P2-3 pull-to-refresh
+> deliberately skipped** (meaningless on local-only data). **Remaining (minor):** a known
+> keyboard-coverage kink on lower form fields (KeyboardAvoidingView fix deferred), large-bag
+> scroll perf (untestable with the 3-disc fixture), and two cosmetic nits. Item-level status in
+> `plan/docs/punch-list.md`.
 | **R4** | Marshall Street reference images | R3 mostly | "Marshall Street Flight Path Images" below |
 | **R5** | VPS sync (opt-in, own server) | R3 mostly | "Phase 10 — VPS Sync" below |
 | **R6** | Release signing + Play closed testing | R2–R5 done | "Distribution Track → D1" below |
