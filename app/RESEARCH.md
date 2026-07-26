@@ -31,7 +31,7 @@ The Flask app is a localhost server that can't serve a phone directly. Three pat
 - **Path A (LAN bridge):** Phone calls Flask API over WiFi. Fragile, server-dependent, not a real app. Rejected.
 - **Path B (local SQLite only):** `expo-sqlite` on device. Fully offline, no server dependency. **Chosen for v1.**
 - **Path C (encrypted blob backup):** Encrypt disc data, push opaque blob to VPS. Originally planned for v1.1 — **replaced by Path D.**
-- **Path D (sync with own Flask server):** Local SQLite on device stays the source of truth. Optional manual sync pushes/pulls the full bag to/from the existing VPS via the Flask API. **Target for v1.1.**
+- **Path D (sync with own Flask server):** Local SQLite on device stays the source of truth. Optional manual sync pushes/pulls the full bag to/from the existing VPS via the Flask API. **Chosen** — now roadmap step **R5**; full locked design (transport, auth, protocol, transparency) in [`plan/docs/sync-design.md`](plan/docs/sync-design.md). Path C (E2E encrypted blob) stays documented there as a revisit path if the server is ever untrusted.
 
 ### Path D — Sync Architecture
 

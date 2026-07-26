@@ -794,7 +794,16 @@ in the meantime. Do not let D3 block anything.
 > **Re-sequenced 2026-07-25:** this was "v1.1, after v1 ships." Per the Post-v1 Roadmap it's
 > now **R5** — built *before* the Play/F-Droid store track (R6/R7), after the app-polish
 > steps (R1–R3) and Marshall Street (R4). Still opt-in, still the developer's own VPS, still
-> local-first. The design below is unchanged and correct; only its timing moved earlier.
+> local-first.
+>
+> **⚠️ The authoritative design is now [`plan/docs/sync-design.md`](plan/docs/sync-design.md)**
+> (locked 2026-07-25) — it supersedes the minimal sketch below where they differ. Key
+> decisions made there: manual backup/restore (full-replace, one direction, with a pre-flight
+> "overwrite?" check), TLS mandatory + plaintext at rest, a single `SYNC_TOKEN` gating the
+> endpoints with the user selected behind it (the website is already passwordless via `/pick`,
+> so one secret just stops unauthenticated internet *writes*), token in `expo-secure-store`,
+> and a `/api/data/meta` probe for the pre-flight + connection test. The sketch below is kept
+> as the original seed; read the design doc first.
 
 **Goal:** Optional manual sync between phone and the existing Flask website via the
 same `/api/data` endpoints. Not a cloud service, not a third-party backend — the user's
