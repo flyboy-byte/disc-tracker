@@ -57,16 +57,23 @@ in Flight Shaper) that takes a disc + arcView and draws the exact same `arcPoint
 
 ## P2 — polish
 
-- [ ] **P2-1 · Color picker is presets-only.** `DiscFormModal` offers `DISC_COLORS` swatches
-      but no arbitrary color — the website has swatches **plus** an `<input type="color">`
-      custom picker (`index.html:900`). Add a custom-hex option.
-- [ ] **P2-2 · Empty/edge states are terse.** App shows a bare "No discs match." Compare the
-      website's empty/first-run treatment; make empty bag + no-search-results feel intentional.
-- [ ] **P2-3 · No pull-to-refresh** on the bag/suggest lists (minor; data is local so it's
-      cosmetic, but it's an expected gesture).
-- [ ] **P2-4 · First-run orientation.** The website has a one-time welcome modal
-      (`disc_welcome_v1`), deliberately skipped in the port. Optional: a lightweight first-run
-      hint instead of nothing. Low priority.
+- [x] **P2-1 · Color picker is presets-only.** ✅ DONE (R3, commit `1a34417`). Added a custom
+      hex field with a live preview swatch next to the presets (no color-picker dependency, to
+      stay F-Droid-minimal). Verified live.
+- [x] **P2-2 · Empty/edge states are terse.** ✅ DONE (R3, commit `814ae1f`). Truly-empty bag →
+      first-run welcome + Add/Import; filtered-empty → "No discs match" + Clear filters. Verified.
+- [~] **P2-3 · No pull-to-refresh.** **Deliberately skipped.** The bag/suggest lists are backed
+      by local SQLite that never changes from an external source, so a pull-to-refresh gesture
+      would do nothing meaningful and imply the data is remote — worse than omitting it. (Revisit
+      only if R5 VPS sync makes "refresh" mean "pull from server".)
+- [x] **P2-4 · First-run orientation.** ✅ DONE (R3, commit `814ae1f`). The empty-bag state
+      doubles as a first-run welcome (no separate modal), covering this without extra surface.
+
+### Also fixed in R3 (found during P2 live testing)
+- [x] **Form validation was silent.** Saving with an empty mold now flags the Mold field inline
+      (red border + message) instead of no-opping. Done **inline, not via toast**, because the
+      form is a native `Modal` and a root-level toast renders *behind* it (confirmed live). Toasts
+      from Bag/Settings still work since the modal has closed by the time they fire. (`814ae1f`.)
 
 ## Flight Shaper (→R2 — its own task, listed here for completeness)
 
@@ -83,12 +90,23 @@ in Flight Shaper) that takes a disc + arcView and draws the exact same `arcPoint
 
 ---
 
-## Still open: live on-device kink sweep
+## Live on-device kink sweep — largely done through R3
 
-This punch-list is the **static/parity** half of R1. The **interactive kink sweep** —
-install the current build on the `verify_test` emulator and methodically poke every screen
-for scroll/focus/tap/gesture roughness that only shows at runtime — is **not yet done**.
-Candidate kinks to confirm/deny there (in addition to verifying P0-1 live): keyboard
-covering the notes/number fields in the form sheet, ScrollView vs. slider gesture feel,
-list scroll performance with a large bag, tab-switch data freshness. Do this pass, fold any
-findings in here, then R1 is complete and R2/R3 can proceed.
+Most of the interactive sweep happened organically while building/verifying R3 on the
+`verify_test` emulator. Confirmed working live: negative entry, per-card arcs, arc-detail
+sheet + edit handoff, toasts (update/order-saved), drag-reorder (after the card was
+restructured for the arc rail) + persistence, arc-view propagation Settings→Bag, field view
++ arc tap, custom hex, empty/no-match states + Clear filters, inline mold validation. No JS
+warnings from app code (only a pre-existing `InteractionManager` deprecation from
+`react-native-draggable-flatlist`).
+
+Candidate kinks — status:
+- **Tab-switch data freshness** — ✅ verified (useFocusEffect refetch; arc-view propagation).
+- **Keyboard covering lower form fields (Notes / custom-hex)** — ⚠️ **known minor kink.** The
+  form sheet (a native `Modal` + `ScrollView`) doesn't auto-scroll/resize to the focused input
+  on Android, so the soft keyboard can cover the bottom fields. Recoverable (scroll the form up
+  by hand), so low-severity. Proper fix = wrap the sheet in `KeyboardAvoidingView`; deferred
+  until it can be verified without risking a regression. **Not yet fixed.**
+- **List scroll perf with a large bag** — untestable with the 3-disc fixture; revisit with a
+  realistic bag.
+- **ScrollView vs. slider gesture feel (Flight Shaper)** — ✅ verified in R2 (scroll-lock holds).
