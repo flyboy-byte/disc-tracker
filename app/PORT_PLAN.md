@@ -714,17 +714,20 @@ Minimum Milestone is fully met.
 
 ---
 
-## Flight Shaper UX Rework (R2) — BUILT 2026-07-25, visual verification pending
+## Flight Shaper UX Rework (R2) — DONE, verified on emulator 2026-07-26
 
 > **Status:** Direction chosen by the developer = **pinned arc on top**. Built in
 > `app/(tabs)/flight-shaper.tsx` (commit `acd1a4c`): disc selector + arc + adjusted stats are
 > now a fixed top panel; sliders scroll underneath (cause/effect co-visible); disc picker →
 > compact selector + bottom-sheet modal; reference diagrams collapsed behind a toggle.
 > **Layout-only** — physics/arc/slider semantics unchanged (typecheck clean, 48/48 Jest pass).
-> **NOT yet visually verified on the emulator** — the layout is the whole point, so a
-> screenshot pass (pinned arc holds while sliders scroll, slider scroll-lock still works,
-> picker modal opens/selects/closes) is the one remaining step before R2 is truly done. Fold
-> any fixes into commit `acd1a4c` (`--amend`), keeping R2 a single commit.
+> **Visually verified on the `verify_test` emulator 2026-07-26** (debug APK + Metro): pinned
+> arc stays fixed while the conditions panel scrolls (top zone pixel-identical across scroll);
+> `VerticalSlider` scroll-lock holds in the nested ScrollView (dragging ARM 100%→57% moved the
+> value without scrolling the page, arc + ghost-arc + ADJUSTED stats + distance updated live);
+> disc-picker bottom-sheet opens, selecting a disc applies live and auto-closes, slider
+> modifiers persist across the disc swap. No bugs found → no code change → `acd1a4c` stays a
+> single clean commit. **R2 complete; R3 (app-wide polish) opens.**
 >
 > Original diagnosis + candidate directions kept below for context.
 
