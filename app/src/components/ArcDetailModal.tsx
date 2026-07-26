@@ -2,6 +2,7 @@
 // card's arc thumbnail and shows the disc's full computed flight arc (neutral, no modifiers)
 // plus its stats, with an Edit button. The Marshall Street reference image the website shows
 // here is deferred to R4 (see PORT_PLAN.md) — this renders the computed arc only for now.
+import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme';
 import { discType, stab, STAB_META, TYPE_META, type Disc } from '../utils/disc';
@@ -18,16 +19,30 @@ interface Props {
   onEdit: () => void;
 }
 
-export default function ArcDetailModal({ disc: d, arcView, onClose, onEdit }: Props) {
-  if (!d) return null;
+export default function ArcDetailModal({ disc, arcView, onClose, onEdit }: Props) {
+  // Retain the last disc so the slide-out animation still has content to render after `disc`
+  // has already gone null (otherwise the sheet vanishes instantly instead of animating out).
+  const [shown, setShown] = useState<Disc | null>(disc);
+  useEffect(() => {
+    if (disc) setShown(disc);
+  }, [disc]);
+  const d = disc ?? shown;
+
+  return (
+    <Modal visible={disc != null} transparent animationType="slide" onRequestClose={onClose}>
+      {d && <Content d={d} arcView={arcView} onClose={onClose} onEdit={onEdit} />}
+    </Modal>
+  );
+}
+
+function Content({ d, arcView, onClose, onEdit }: { d: Disc; arcView: ArcView; onClose: () => void; onEdit: () => void }) {
   const s = STAB_META[stab(d)];
   const t = TYPE_META[discType(d)];
   const adjusted = applyModifiers(d, NEUTRAL);
   const metaLine = [d.plastic, d.weight].filter(Boolean).join(' · ');
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
+    <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <ScrollView>
             <View style={styles.head}>
@@ -68,7 +83,6 @@ export default function ArcDetailModal({ disc: d, arcView, onClose, onEdit }: Pr
           </View>
         </View>
       </View>
-    </Modal>
   );
 }
 

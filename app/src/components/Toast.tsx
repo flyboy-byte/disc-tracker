@@ -4,6 +4,7 @@
 // `useToast()` -> show(message) that any screen can call. Auto-dismisses; non-interactive.
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme';
 
 type ShowToast = (message: string) => void;
@@ -16,6 +17,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<{ text: string; id: number } | null>(null);
   const opacity = useRef(new Animated.Value(0)).current;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const insets = useSafeAreaInsets();
 
   const show = useCallback((text: string) => setToast({ text, id: Date.now() }), []);
 
@@ -38,7 +40,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={show}>
       {children}
       {toast && (
-        <Animated.View pointerEvents="none" style={[styles.wrap, { opacity }]}>
+        <Animated.View pointerEvents="none" style={[styles.wrap, { opacity, bottom: insets.bottom + 72 }]}>
           <View style={styles.toast}>
             <Text style={styles.text}>{toast.text}</Text>
           </View>
@@ -49,7 +51,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { position: 'absolute', left: 0, right: 0, bottom: 96, alignItems: 'center' },
+  wrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   toast: {
     maxWidth: '86%',
     backgroundColor: colors.card,

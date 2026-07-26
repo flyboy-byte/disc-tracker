@@ -1,6 +1,6 @@
 // Add/edit form ported from showModal()/saveDisc() in templates/index.html.
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors } from '../theme';
 import type { Disc } from '../utils/disc';
 import { DISC_COLORS } from '../utils/discColors';
@@ -64,7 +64,7 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onCancel}>
-      <View style={styles.backdrop}>
+      <KeyboardAvoidingView style={styles.backdrop} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={styles.sheet}>
           <ScrollView keyboardShouldPersistTaps="handled">
             <Text style={styles.title}>{isNew ? 'Add disc' : 'Edit disc'}</Text>
@@ -163,7 +163,7 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
             </Pressable>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
