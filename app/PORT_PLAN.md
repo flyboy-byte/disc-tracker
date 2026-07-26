@@ -106,9 +106,16 @@ sessions without half-finished work in the tree.
 
 | Step | What | Depends on | Detailed section |
 |------|------|-----------|------------------|
-| **R1** | Parity & Kink Audit → punch-list | — | this section |
-| **R2** | Flight Shaper UX rework (layout-only) | R1 | "Flight Shaper UX Rework" below |
-| **R3** | App-wide polish & parity fixes | R1 | this section |
+| **R1** | Parity & Kink Audit → punch-list | — | ✅ done — `plan/docs/punch-list.md` |
+| **R2** | Flight Shaper UX rework (layout-only) | R1 | ✅ done + emulator-verified (`acd1a4c`) |
+| **R3** | App-wide polish & parity fixes | R1 | 🚧 in progress — see below |
+
+> **R3 progress (2026-07-26):** 5 punch-list items done, all verified live on the emulator and
+> shipped in GitHub release **`mobile-preview-0.6`** ("bag flight arcs + Flight Shaper rework",
+> debug-signed, arm64/armeabi): **P0-1** negative-number entry, **P1-1** per-disc arc thumbnails
+> on bag cards, **P1-2** arc-detail sheet, **P1-4** success toasts, **P1-5** bag-toolbar arc-view
+> selector + OS/ST/US legend. Item-level status + remaining work (P1-3 field view, P2-1..4 polish,
+> error toasts, live kink sweep) tracked in `plan/docs/punch-list.md`.
 | **R4** | Marshall Street reference images | R3 mostly | "Marshall Street Flight Path Images" below |
 | **R5** | VPS sync (opt-in, own server) | R3 mostly | "Phase 10 — VPS Sync" below |
 | **R6** | Release signing + Play closed testing | R2–R5 done | "Distribution Track → D1" below |
