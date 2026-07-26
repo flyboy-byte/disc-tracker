@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View 
 import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist';
 import { FlatList } from 'react-native-gesture-handler';
 import { useFocusEffect } from 'expo-router';
+import ArcDetailModal from '../../src/components/ArcDetailModal';
 import CsvExportModal from '../../src/components/CsvExportModal';
 import CsvImportModal from '../../src/components/CsvImportModal';
 import DiscCard from '../../src/components/DiscCard';
@@ -72,6 +73,7 @@ export default function BagScreen() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [detailDisc, setDetailDisc] = useState<Disc | null>(null);
   // Guards the focus refetch so it only runs after the initial mount load below (which the
   // Settings tab's import/reset can invalidate — same useFocusEffect pattern the plan flags).
   const didInitialLoad = useRef(false);
@@ -315,6 +317,7 @@ export default function BagScreen() {
               disc={item}
               arcView={arcView}
               onPress={() => openEdit(item)}
+              onPressArc={() => setDetailDisc(item)}
               onLongPress={drag}
               dragActive={isActive}
               onToggleBag={item.id != null ? () => toggleBag(item.id!) : undefined}
@@ -327,7 +330,13 @@ export default function BagScreen() {
           keyExtractor={(d) => String(d.id)}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
-            <DiscCard disc={item} arcView={arcView} onPress={() => openEdit(item)} onToggleBag={item.id != null ? () => toggleBag(item.id!) : undefined} />
+            <DiscCard
+              disc={item}
+              arcView={arcView}
+              onPress={() => openEdit(item)}
+              onPressArc={() => setDetailDisc(item)}
+              onToggleBag={item.id != null ? () => toggleBag(item.id!) : undefined}
+            />
           )}
         />
       )}
@@ -343,6 +352,16 @@ export default function BagScreen() {
         onOpenLibrary={() => {
           setFormOpen(false);
           setLibraryOpen(true);
+        }}
+      />
+      <ArcDetailModal
+        disc={detailDisc}
+        arcView={arcView}
+        onClose={() => setDetailDisc(null)}
+        onEdit={() => {
+          const d = detailDisc;
+          setDetailDisc(null);
+          if (d) openEdit(d);
         }}
       />
       <DiscLibraryModal visible={libraryOpen} onCancel={() => setLibraryOpen(false)} onPick={handlePickFromLibrary} />

@@ -19,12 +19,13 @@ interface Props {
   disc: Disc;
   arcView: ArcView;
   onPress: () => void;
+  onPressArc?: () => void;
   onLongPress?: () => void;
   dragActive?: boolean;
   onToggleBag?: () => void;
 }
 
-export default function DiscCard({ disc: d, arcView, onPress, onLongPress, dragActive, onToggleBag }: Props) {
+export default function DiscCard({ disc: d, arcView, onPress, onPressArc, onLongPress, dragActive, onToggleBag }: Props) {
   const s = STAB_META[stab(d)];
   const t = TYPE_META[discType(d)];
   const safeColor = d.color && HEX6.test(d.color) ? d.color : null;
@@ -89,9 +90,16 @@ export default function DiscCard({ disc: d, arcView, onPress, onLongPress, dragA
             </View>
           </View>
         </View>
-        <View style={styles.arcThumb} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Pressable
+          style={styles.arcThumb}
+          onPress={onPressArc}
+          // Nested Pressable captures the tap so the thumbnail opens arc-detail instead of
+          // firing the card's edit onPress. With no handler it's inert (still no card tap).
+          accessibilityRole={onPressArc ? 'button' : undefined}
+          accessibilityLabel={onPressArc ? `Show ${d.mold} flight detail` : undefined}
+        >
           <FlightArcSvg adjusted={adjusted} baseDisc={null} sliders={NEUTRAL} arcView={arcView} />
-        </View>
+        </Pressable>
       </View>
     </Pressable>
   );
