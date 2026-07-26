@@ -164,6 +164,14 @@ export default function BagScreen() {
   const dragEnabled =
     viewMode === 'list' && sortMode === 'custom' && stabFilter === 'all' && typeFilter === 'all' && !search.trim() && !bagFilter;
 
+  const filtersActive = stabFilter !== 'all' || typeFilter !== 'all' || !!search.trim() || bagFilter;
+  const clearFilters = () => {
+    setStabFilter('all');
+    setTypeFilter('all');
+    setSearch('');
+    setBagFilter(false);
+  };
+
   const openAdd = () => {
     setFormIsNew(true);
     setFormInitial(blankDisc());
@@ -369,7 +377,37 @@ export default function BagScreen() {
       </View>
 
       {filteredSorted.length === 0 ? (
-        <Text style={styles.empty}>No discs match.</Text>
+        <View style={styles.emptyWrap}>
+          {discs.length === 0 ? (
+            // Truly empty bag — doubles as a first-run welcome (the app deliberately has no
+            // separate welcome modal; see punch-list P2-4).
+            <>
+              <Text style={styles.emptyTitle}>Your bag is empty</Text>
+              <Text style={styles.emptyBody}>
+                Add a disc or import a CSV backup to get started. Everything stays on this device — no
+                account, no cloud.
+              </Text>
+              <View style={styles.emptyActions}>
+                <Pressable style={styles.addBtn} onPress={openAdd} accessibilityRole="button" accessibilityLabel="Add a disc">
+                  <Text style={styles.addBtnText}>+ Add disc</Text>
+                </Pressable>
+                <Pressable style={styles.ghostBtn} onPress={() => setImportOpen(true)} accessibilityRole="button" accessibilityLabel="Import discs from CSV">
+                  <Text style={styles.ghostBtnText}>Import CSV</Text>
+                </Pressable>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.emptyTitle}>No discs match</Text>
+              <Text style={styles.emptyBody}>Nothing fits your current filters or search.</Text>
+              {filtersActive && (
+                <Pressable style={styles.ghostBtn} onPress={clearFilters} accessibilityRole="button" accessibilityLabel="Clear filters and search">
+                  <Text style={styles.ghostBtnText}>Clear filters</Text>
+                </Pressable>
+              )}
+            </>
+          )}
+        </View>
       ) : viewMode === 'field' ? (
         <ScrollView contentContainerStyle={styles.listContent}>
           <FieldView discs={filteredSorted} arcView={arcView} onSelectDisc={setDetailDisc} />
@@ -517,6 +555,9 @@ const styles = StyleSheet.create({
   arcViewPillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.12)' },
   arcViewPillText: { color: colors.muted, fontSize: 10, fontWeight: '600' },
   arcViewPillTextActive: { color: colors.accent },
-  empty: { color: colors.muted, textAlign: 'center', marginTop: 40 },
+  emptyWrap: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 56, gap: 10 },
+  emptyTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+  emptyBody: { color: colors.muted, fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  emptyActions: { flexDirection: 'row', gap: 10, marginTop: 6 },
   listContent: { paddingBottom: 24 },
 });

@@ -25,6 +25,7 @@ interface Props {
 export default function DiscFormModal({ visible, isNew, initial, onCancel, onSave, onDelete, onOpenLibrary }: Props) {
   const [form, setForm] = useState<Disc>(initial);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [moldError, setMoldError] = useState(false);
   // Raw text for the custom-hex field (the RN stand-in for the website's <input type="color">).
   const [hexText, setHexText] = useState(initial.color ?? '');
 
@@ -47,8 +48,18 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
   const hexValid = HEX6.test(hexText);
 
   const handleSave = () => {
-    if (!form.mold?.trim()) return;
+    if (!form.mold?.trim()) {
+      // Inline (not a toast): this fires while the form Modal is open, and a toast rendered in
+      // the app root would sit behind the native Modal layer and never be seen.
+      setMoldError(true);
+      return;
+    }
     onSave(form);
+  };
+
+  const setMold = (v: string) => {
+    set('mold', v);
+    if (v.trim()) setMoldError(false);
   };
 
   return (
@@ -64,7 +75,13 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
               </Pressable>
             )}
             <Field label="Manufacturer" value={form.mfr} onChangeText={(v) => set('mfr', v)} placeholder="e.g. Innova" />
-            <Field label="Mold" value={form.mold} onChangeText={(v) => set('mold', v)} placeholder="e.g. Buzzz" />
+            <Field
+              label="Mold"
+              value={form.mold}
+              onChangeText={setMold}
+              placeholder="e.g. Buzzz"
+              error={moldError ? 'Mold name is required' : undefined}
+            />
             <Field label="Plastic" value={form.plastic ?? ''} onChangeText={(v) => set('plastic', v)} placeholder="e.g. Star" />
             <Field label="Weight" value={form.weight ?? ''} onChangeText={(v) => set('weight', v)} placeholder="e.g. 173g" />
             <View style={styles.fnGrid}>
@@ -160,22 +177,25 @@ function Field({
   value,
   onChangeText,
   placeholder,
+  error,
 }: {
   label: string;
   value: string;
   onChangeText: (v: string) => void;
   placeholder?: string;
+  error?: string;
 }) {
   return (
     <View style={{ marginBottom: 10 }}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, error ? styles.inputError : null]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.muted}
       />
+      {!!error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 }
@@ -214,6 +234,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     color: colors.text,
   },
+  inputError: { borderColor: colors.danger },
+  errorText: { color: colors.danger, fontSize: 12, marginTop: 4 },
   textarea: { minHeight: 70, textAlignVertical: 'top' },
   fnGrid: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   fnField: { flex: 1 },
