@@ -6,7 +6,7 @@ Two things in one repo:
 
 1. **A live Flask web app** — personal disc golf bag tracker running on a VPS at `51.81.80.126`. Multi-user, local SQLite, no cloud, no accounts. The website is the canonical version and the spec for everything else.
 
-2. **An Android app port — v1 feature-complete** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. All four tabs (Bag / Flight Shaper / Disc Suggest / Settings) are built and verified, shipped as `mobile-preview-0.5` on GitHub Releases and **confirmed running on a real physical Android phone (2026-07-24)** — every Minimum Credible v1 Milestone item is met. Forward work follows the **Post-v1 Roadmap (R1–R7)** in `app/PORT_PLAN.md`: perfect the app → build the two deferred features (Marshall Street images, VPS sync) → then stores. See "Mobile app — current state" below.
+2. **An Android app port — v1 feature-complete** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. All four tabs (Bag / Flight Shaper / Disc Suggest / Settings) are built and verified, shipped as `mobile-preview-0.5` on GitHub Releases and **confirmed running on a real physical Android phone (2026-07-24)** — every Minimum Credible v1 Milestone item is met. Forward work follows the **Post-v1 Roadmap (R1–R7)** in `app/PORT_PLAN.md`: perfect the app → build the two deferred features (Marshall Street images, VPS sync) → then stores. **R1–R4 done** (R4 = Marshall Street images, opt-in, shipped 2026-07-29); **R5 (VPS sync) is next.** See "Mobile app — current state" below.
 
 ---
 
