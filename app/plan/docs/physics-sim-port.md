@@ -1,9 +1,23 @@
 # Physics-Sim Port — Scoping & Decision Doc
 
-> **Status:** scoping only, no code written. Produced 2026-07-29 after Logan re-sequenced the
-> roadmap: **the shotshaper physics sim comes before R5 (VPS sync).** This doc weighs the two
-> ways to get it into the app so Logan can pick before any build. Call the chosen work **R4.5**
-> (slots between the now-complete R4 and R5).
+> **DECISION (2026-07-29): Logan chose Path B — the on-device TypeScript reimplementation.**
+> Rationale (his words): no server dependency, and fewer outbound API calls to review/worry about
+> for F-Droid. **BUILT and SHIPPED the same day.** The doc below is kept for provenance; the
+> recommendation was Path A, but Path B's local-first/no-network win was the deciding factor and
+> the fidelity risk was fully retired by the parity harness.
+>
+> **Outcome:** `app/src/physics/sim/` — a faithful TS port (RK45 + dense output + events, the
+> DiscGolfDisc force model, the 4 coefficient tables, and the app.py orchestration). Wired into
+> the Flight Shaper as an opt-in toggle. **Parity vs. the real numpy/scipy engine: worst-case
+> 0.005 mm** across the full scenario grid (`parity.test.ts`, fixtures from
+> `app/plan/tools/gen_physics_fixtures.py`). Nothing in `vendor/shotshaper/` was touched. tsc
+> clean; full Jest green. Commits: engine `da4f7e4`, UI `f0e76e4`.
+>
+> ---
+>
+> **Original scoping (2026-07-29, pre-decision), kept for provenance:** produced after Logan
+> re-sequenced the roadmap so the shotshaper physics sim comes before R5 (VPS sync). Weighed the
+> two ways to get it into the app. Called the work **R4.5** (between R4 and R5).
 
 ## What this is (and isn't)
 

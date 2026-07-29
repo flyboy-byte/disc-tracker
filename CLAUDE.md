@@ -129,7 +129,7 @@ ms_pic_cache  (lookup_key, pic)   -- cached DiscIt API lookups, keyed by "mfr|mo
 
 ### Physics simulation (Flight Shaper "Physics sim" mode)
 
-- Vendored copy of [shotshaper](https://github.com/kegiljarhus/shotshaper) (GPLv3) at `vendor/shotshaper/` — a real rigid-body disc flight simulator (NumPy/SciPy `solve_ivp`) using wind-tunnel/CFD-derived lift/drag/moment coefficients, backed by two papers in `app/references/`. See `vendor/shotshaper/NOTICE.md` for provenance and the one local modification (lazy matplotlib import). **Every refinement to this feature only changes what parameters get passed into the unmodified vendored API — never anything inside `vendor/shotshaper/` itself.**
+- Vendored copy of [shotshaper](https://github.com/kegiljarhus/shotshaper) (GPLv3) at `vendor/shotshaper/` — a real rigid-body disc flight simulator (NumPy/SciPy `solve_ivp`) using wind-tunnel/CFD-derived lift/drag/moment coefficients, backed by two papers in `app/references/`. See `vendor/shotshaper/NOTICE.md` for provenance and the one local modification (lazy matplotlib import). **Every refinement to this feature only changes what parameters get passed into the unmodified vendored API — never anything inside `vendor/shotshaper/` itself.** (This rule governs the *website/server* sim. The **mobile app** has its own independent, faithful **TypeScript reimplementation** of the same engine — `app/src/physics/sim/`, R4.5, runs on-device with no server — which likewise never touches `vendor/shotshaper/`; it's parity-gated against it. The Python `vendor/` copy remains the reference oracle for that port's fixtures.)
 - **Off by default**, opt-in checkbox next to the arc-view selector in `flightshape.html` (`#physicsSimToggle`), with an archetype picker (`#archetypeSelect`) since only 4 driver-class archetypes exist upstream (`cd1`/`cd5` control drivers, `dd2` distance driver, `fd2` fairway driver) — **no putter or midrange data**.
 - **Archetype auto-select:** picking a disc auto-selects the nearest archetype via `pickArchetype()` in `flightshape.html`, based on the disc's own speed/turn/fade — still fully overridable via the dropdown (`(auto)` behavior stops once the user manually picks one, until a new disc is selected). The matching is driven by `ARCHETYPE_PROFILE` in `app.py`, an *empirical* characterization (each archetype run once through shotshaper's own unmodified `.shoot()` with upstream's own example throw params) — not invented physics, just picking among the vendor's 4 pre-built discs. For discs slower than fairway-driver range (speed ≤ 8), a caveat banner (`#sim-caveat`) makes clear this is extrapolating from driver-only data, since no putter/midrange coefficients exist upstream.
 - **Real disc weight as mass:** `discs.weight` (grams) is sent as `weightG` and passed to `DiscGolfDisc(archetype, mass=...)`, clamped to 0.140–0.200 kg — the same range upstream's own `disc_gui2d.py` mass slider validates against. Falls back to 175g when a disc has no recorded weight.
@@ -188,8 +188,11 @@ four tabs are real and working, verified on an Android emulator and sideloaded o
   search, stability/type filters, color picker, CSV import/export (share sheet + document
   picker). SQLite-backed, survives app kills.
 - **Flight Shaper** — bag/manual disc picker, 5 sliders (custom Reanimated `VerticalSlider`),
-  live arc + ghost-arc redraw, distance estimate, RHBH/RHFH/LHBH/LHFH switcher. Physics-sim
-  mode deliberately NOT ported (server dependency).
+  live arc + ghost-arc redraw, distance estimate, RHBH/RHFH/LHBH/LHFH switcher. **Physics-sim
+  mode ported on-device in R4.5** (2026-07-29) — the vendored shotshaper engine reimplemented
+  in TypeScript (`app/src/physics/sim/`), running fully offline with no server; opt-in toggle,
+  parity-tested against the real numpy/scipy engine (worst-case 0.005 mm). See "Mobile app —
+  current state" and the physics-sim note below.
 - **Disc Suggest** — 12-scenario grid, bag + top-15 library matches, `useFocusEffect`-refreshed.
 - **Settings** (4th tab, gear icon) — default throw view (persisted, inherited by Flight
   Shaper), data backup/import/delete-all, a v1.1 sync placeholder, About (version, GPLv3,

@@ -121,7 +121,7 @@ sessions without half-finished work in the tree.
 > scroll perf (untestable with the 3-disc fixture), and two cosmetic nits. Item-level status in
 > `plan/docs/punch-list.md`.
 | **R4** | Marshall Street reference images | R3 mostly | ✅ DONE 2026-07-29 — "Marshall Street Flight Path Images" below |
-| **R4.5** | Physics-sim port (shotshaper) — **re-sequenced before R5 by Logan 2026-07-29** | R4 | Scoping doc `plan/docs/physics-sim-port.md` (awaiting decision) |
+| **R4.5** | Physics-sim port (shotshaper) — **re-sequenced before R5 by Logan 2026-07-29** | R4 | ✅ DONE 2026-07-29 — Path B (on-device TS port). `src/physics/sim/`, parity-tested. Scoping: `plan/docs/physics-sim-port.md` |
 | **R5** | VPS sync (opt-in, own server) | R4.5 | "Phase 10 — VPS Sync" below |
 | **R6** | Release signing + Play closed testing | R2–R5 done | "Distribution Track → D1" below |
 | **R7** | F-Droid (self-hosted → official index) | R6 proven | "Distribution Track → D2/D3" below |
