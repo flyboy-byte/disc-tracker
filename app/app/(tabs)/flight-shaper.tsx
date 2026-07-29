@@ -13,7 +13,7 @@
 // adjust the sliders below; the reference diagrams collapse behind a toggle; the disc picker
 // moved from a long inline list into a compact selector + bottom-sheet modal.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 // gesture-handler's ScrollView (not react-native's) — its NativeViewGestureHandler
 // negotiates touch claims with nested native views (our rotated Slider) properly;
 // plain RN ScrollView won on-device even with scrollEnabled toggling (confirmed
@@ -35,6 +35,9 @@ import { pickArchetype } from '../../src/physics/sim/pickArchetype';
 import type { Archetype } from '../../src/physics/sim/coeffs';
 
 const ARCHETYPES: Archetype[] = ['fd2', 'cd5', 'cd1', 'dd2'];
+// The physics sim is a port of shotshaper (GPLv3) by Knut Erik Teigen Giljarhus — credited here
+// and in Settings, per its license and because it's the right thing to do.
+const SHOTSHAPER_URL = 'https://github.com/kegiljarhus/shotshaper';
 
 function crosswindLabel(v: number): string {
   if (v === 0) return 'calm';
@@ -258,7 +261,11 @@ export default function FlightShaperScreen() {
           <View style={styles.simToggleRow}>
             <View style={{ flex: 1, paddingRight: 12 }}>
               <Text style={styles.simToggleTitle}>Physics sim</Text>
-              <Text style={styles.simToggleSub}>Rigid-body shotshaper trajectory — runs on-device, no server.</Text>
+              <Pressable onPress={() => Linking.openURL(SHOTSHAPER_URL)} accessibilityRole="link" accessibilityLabel="shotshaper source, opens GitHub">
+                <Text style={styles.simToggleSub}>
+                  Rigid-body trajectory via <Text style={styles.simCreditLink}>shotshaper</Text> — K.E.T. Giljarhus, GPLv3 ↗
+                </Text>
+              </Pressable>
             </View>
             <Switch
               value={physicsSimOn}
@@ -511,6 +518,7 @@ const styles = StyleSheet.create({
   simToggleRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, marginBottom: 10 },
   simToggleTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
   simToggleSub: { color: colors.muted, fontSize: 11, marginTop: 2 },
+  simCreditLink: { color: '#38bdf8', fontWeight: '700' },
   archetypeRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
   archetypeLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, color: colors.muted, marginRight: 2 },
   archPill: { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },

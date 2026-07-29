@@ -15,6 +15,7 @@ import type { Disc } from '../../src/utils/disc';
 type ArcView = 'RHBH' | 'RHFH' | 'LHBH' | 'LHFH';
 const ARC_VIEWS: ArcView[] = ['RHBH', 'RHFH', 'LHBH', 'LHFH'];
 const SOURCE_URL = 'https://github.com/flyboy-byte/disc-tracker';
+const SHOTSHAPER_URL = 'https://github.com/kegiljarhus/shotshaper';
 
 export default function SettingsScreen() {
   const toast = useToast();
@@ -201,6 +202,20 @@ export default function SettingsScreen() {
         <View style={styles.divider} />
         <Pressable style={styles.row} onPress={() => Linking.openURL(SOURCE_URL)} accessibilityRole="link" accessibilityLabel="Open source code on GitHub">
           <Text style={[styles.rowText, styles.link]}>Source code</Text>
+          <Text style={[styles.rowChevron, styles.link]}>↗</Text>
+        </Pressable>
+      </View>
+
+      {/* Credits */}
+      <View style={styles.card}>
+        <Text style={styles.sectionLabel}>CREDITS</Text>
+        <Text style={styles.aboutBlurb}>
+          The Physics sim in Flight Shaper is a port of shotshaper, a rigid-body disc-flight
+          simulator by Knut Erik Teigen Giljarhus, used under the GPLv3.
+        </Text>
+        <View style={styles.divider} />
+        <Pressable style={styles.row} onPress={() => Linking.openURL(SHOTSHAPER_URL)} accessibilityRole="link" accessibilityLabel="Open shotshaper on GitHub">
+          <Text style={[styles.rowText, styles.link]}>shotshaper</Text>
           <Text style={[styles.rowChevron, styles.link]}>↗</Text>
         </Pressable>
       </View>
