@@ -15,6 +15,9 @@ export interface UserMeta {
   nextId: number;
   sortMode: string;
   arcView: string;
+  // Marshall Street reference images opt-in. Defaults OFF — the app stays fully offline until
+  // the user turns this on in Settings (F-Droid privacy bar). See src/net/msPic.ts.
+  msRefEnabled: boolean;
 }
 
 const DB_NAME = 'disc_tracker.db';
@@ -170,14 +173,15 @@ export function saveDiscs(userId: number, discs: Disc[]): Promise<void> {
 // Raw read shared by getMeta (serialized) and setMeta (serialized) — must NOT itself be
 // serialized, or setMeta would deadlock waiting on a slot queued behind its own.
 async function readMeta(db: SQLiteDatabase, userId: number): Promise<UserMeta> {
-  const row = await db.getFirstAsync<{ next_id: number; sort_mode: string; arc_view: string }>(
-    'SELECT next_id, sort_mode, arc_view FROM user_meta WHERE user_id = ?',
+  const row = await db.getFirstAsync<{ next_id: number; sort_mode: string; arc_view: string; ms_ref: number }>(
+    'SELECT next_id, sort_mode, arc_view, ms_ref FROM user_meta WHERE user_id = ?',
     [userId]
   );
   return {
     nextId: row?.next_id ?? 100,
     sortMode: row?.sort_mode ?? 'speed-desc',
     arcView: row?.arc_view ?? 'RHBH',
+    msRefEnabled: !!row?.ms_ref,
   };
 }
 
@@ -191,10 +195,39 @@ export function setMeta(userId: number, updates: Partial<UserMeta>): Promise<voi
     const current = await readMeta(db, userId);
     const next = { ...current, ...updates };
     await db.runAsync(
-      `INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view) VALUES (?, ?, ?, ?)
+      `INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view, ms_ref) VALUES (?, ?, ?, ?, ?)
        ON CONFLICT(user_id) DO UPDATE SET
-         next_id = excluded.next_id, sort_mode = excluded.sort_mode, arc_view = excluded.arc_view`,
-      [userId, next.nextId, next.sortMode, next.arcView]
+         next_id = excluded.next_id, sort_mode = excluded.sort_mode,
+         arc_view = excluded.arc_view, ms_ref = excluded.ms_ref`,
+      [userId, next.nextId, next.sortMode, next.arcView, next.msRefEnabled ? 1 : 0]
+    );
+  });
+}
+
+// ── Marshall Street reference-image cache ──────────────────────────────────────
+// Mirror of the website's ms_pic_cache (app.py fetch_ms_pic). getCachedMsPic returns:
+//   undefined → this disc has never been looked up (caller may fetch over the network)
+//   ''        → looked up before, confirmed no match (don't refetch)
+//   'https://…' → cached image URL
+// Only src/net/msPic.ts writes here, and only after a definitive API response, so a transient
+// offline failure never poisons the cache as a permanent "not found".
+export function getCachedMsPic(lookupKey: string): Promise<string | undefined> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    const row = await db.getFirstAsync<{ pic: string | null }>(
+      'SELECT pic FROM ms_pic_cache WHERE lookup_key = ?',
+      [lookupKey]
+    );
+    return row ? row.pic ?? '' : undefined;
+  });
+}
+
+export function putCachedMsPic(lookupKey: string, pic: string): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.runAsync(
+      'INSERT INTO ms_pic_cache (lookup_key, pic) VALUES (?, ?) ON CONFLICT(lookup_key) DO UPDATE SET pic = excluded.pic',
+      [lookupKey, pic]
     );
   });
 }

@@ -1,9 +1,8 @@
 // Settings screen — PORT_PLAN.md Phase 9 addition. Home for app-wide preferences, data
-// backup/restore, and (later, v1.1) the VPS sync UI — hence the disabled placeholder below.
-// Deliberately v1-scoped: no sync, no Marshall Street images yet (both out of scope until v1
-// is proven — see PORT_PLAN.md Phase 10 / the Marshall Street decision track).
+// backup/restore, the Marshall Street reference-image opt-in (R4), and (later) the VPS sync UI —
+// hence the disabled placeholder below.
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
 import CsvExportModal from '../../src/components/CsvExportModal';
@@ -22,6 +21,7 @@ export default function SettingsScreen() {
   const [loading, setLoading] = useState(true);
   const [discs, setDiscs] = useState<Disc[]>([]);
   const [arcView, setArcView] = useState<ArcView>('RHBH');
+  const [msRefEnabled, setMsRefEnabled] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const userIdRef = useRef<number | null>(null);
@@ -35,6 +35,7 @@ export default function SettingsScreen() {
         const [d, meta] = await Promise.all([getDiscs(userIdRef.current), getMeta(userIdRef.current)]);
         setDiscs(d);
         setArcView((meta.arcView as ArcView) || 'RHBH');
+        setMsRefEnabled(meta.msRefEnabled);
         setLoading(false);
       })();
     }, [])
@@ -43,6 +44,11 @@ export default function SettingsScreen() {
   const changeArcView = async (v: ArcView) => {
     setArcView(v);
     if (userIdRef.current != null) await setMeta(userIdRef.current, { arcView: v });
+  };
+
+  const changeMsRef = async (v: boolean) => {
+    setMsRefEnabled(v);
+    if (userIdRef.current != null) await setMeta(userIdRef.current, { msRefEnabled: v });
   };
 
   const handleImport = async (imported: Disc[]) => {
@@ -111,6 +117,32 @@ export default function SettingsScreen() {
             </Pressable>
           ))}
         </View>
+      </View>
+
+      {/* Marshall Street reference images — R4. Opt-in, off by default: the only feature that
+          touches the network, and only when this is on and you open a disc in RHBH view. */}
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={styles.msTextCol}>
+            <Text style={styles.sectionLabel}>REFERENCE IMAGES</Text>
+            <Text style={styles.sectionHint}>
+              Show Marshall Street&apos;s real measured flight-path image on a disc&apos;s detail view (RHBH only).
+            </Text>
+          </View>
+          <Switch
+            value={msRefEnabled}
+            onValueChange={changeMsRef}
+            trackColor={{ false: colors.border, true: colors.accent }}
+            thumbColor="#fff"
+            accessibilityLabel="Marshall Street reference images"
+          />
+        </View>
+        <View style={styles.divider} />
+        <Text style={styles.sectionHint}>
+          {msRefEnabled
+            ? 'When you open a disc, the app fetches its image once from discit-api.fly.dev, then caches it. No other network use; turn off to stay fully offline.'
+            : 'Off — the app makes no network connections. Turn on to fetch images from discit-api.fly.dev on demand.'}
+        </Text>
       </View>
 
       {/* Data */}
@@ -193,6 +225,7 @@ const styles = StyleSheet.create({
   pillText: { color: colors.muted, fontSize: 13, fontWeight: '600' },
   pillTextActive: { color: colors.accent },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
+  msTextCol: { flex: 1, paddingRight: 12 },
   rowText: { color: colors.text, fontSize: 15 },
   rowValue: { color: colors.muted, fontSize: 15 },
   rowChevron: { color: colors.muted, fontSize: 20 },

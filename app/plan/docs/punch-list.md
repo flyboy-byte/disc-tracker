@@ -40,8 +40,8 @@ in Flight Shaper) that takes a disc + arcView and draws the exact same `arcPoint
       mount + focus). Verified live across a putter/mid/driver. **Biggest single feel win.**
 - [x] **P1-2 · No arc-detail view from the Bag.** ✅ DONE (R3, commit `7d38207`). New
       `ArcDetailModal` opens from a card's arc thumbnail: large computed arc + stats + Edit
-      hand-off to the form. (The Marshall Street reference image inside that modal is **→R4**,
-      deferred — the computed-arc detail itself is live.)
+      hand-off to the form. (The Marshall Street reference image inside that modal shipped in
+      **R4**, 2026-07-29 — opt-in, RHBH-only, silent fallback to this computed arc.)
 - [x] **P1-3 · No field view.** ✅ DONE (R3, commit `528b310`). New `FieldView` + a
       "Field view" toolbar toggle overlays every filtered disc's arc on one top-down field
       (disc/stability colored, mold-labeled at landing); tapping an arc opens the P1-2 detail

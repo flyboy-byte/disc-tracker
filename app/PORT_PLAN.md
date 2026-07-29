@@ -197,8 +197,8 @@ acceptance bar on R4/R5, not a nice-to-have:
 - [ ] `SYSTEM_ALERT_WINDOW` is in the **main** manifest, so it ships in release — it belongs
       only in the **debug** manifest (RN dev-menu overlay). Remove it from main; verify the
       release APK no longer requests it.
-- [ ] `INTERNET` is declared but unused until R4/R5 land — fine once they do, but a build
-      reviewed *before* then declares a permission it never exercises. Track alongside R4/R5.
+- [x] `INTERNET` is now **exercised** by R4 (Marshall Street images, opt-in) as of 2026-07-29 —
+      no longer a declared-but-unused permission. (R5 sync will also use it.)
 - [ ] `expo.modules.updates.*` meta-data is present (`ENABLED=false` so inert, but
       `CHECK_ON_LAUNCH=ALWAYS`) — strip expo-updates for the F-Droid build so there's no
       "automatic update check" surface to explain.
@@ -904,13 +904,39 @@ real throw data points have been collected and used to tune `DEFAULT_FLIGHT_TUNI
 
 ---
 
-## Marshall Street Flight Path Images (roadmap step **R4** — pulled forward, before store submission)
+## Marshall Street Flight Path Images (roadmap step **R4** — ✅ DONE 2026-07-29)
 
-> **Re-sequenced 2026-07-25:** this was "v1.1, not v1." Per the Post-v1 Roadmap it's now
-> **R4** — built *before* the store track (R6/R7), after app polish (R1–R3). Design and open
-> questions below are unchanged; only the timing moved earlier. Keep it local-first: the
-> feature degrades silently to the computed arc on any API failure/offline, exactly like the
-> website.
+> **BUILT 2026-07-29.** Opt-in, off by default, single host, silent offline fallback — the
+> "cleanest FOSS way" per the Network-feature privacy bar. Zero new dependencies (RN core
+> `fetch` + `<Image>`, existing `expo-sqlite`). Files:
+> - `src/net/msMatch.ts` — pure match logic (ported from `app.py` `fetch_ms_pic`: exact
+>   name + brand-substring match, first result with an **https** `pic`) + `src/net/msMatch.test.ts`
+>   (8 unit tests, incl. the exact-name-not-prefix case and the non-https rejection).
+> - `src/net/msPic.ts` — `fetchMsPicUrl(mfr, mold)`: cache-first, one network request only on a
+>   miss, caches the outcome (URL or `''` = confirmed no-match) **only on a definitive response**
+>   so an offline miss never freezes in as permanent "not found". Never throws.
+> - `src/db/migrations.ts` — `ms_pic_cache(lookup_key, pic)` table (mirrors the website) +
+>   `user_meta.ms_ref` column (app-only; defaults **0/OFF**, unlike the website's localStorage
+>   default-ON — the F-Droid privacy bar wants zero network until opted in).
+> - `src/db/db.ts` — `UserMeta.msRefEnabled`; `getCachedMsPic`/`putCachedMsPic`.
+> - `ArcDetailModal.tsx` — when opt-in **and** arcView is RHBH, shows the MS image on a white
+>   card (its graphic is drawn for a light ground) with a "Marshall Street flight path · RHBH"
+>   caption; **any** failure (offline, no match, broken image via `onError`) silently swaps back
+>   to the computed arc. Bag screen re-reads the opt-in on focus and passes it through.
+> - `settings.tsx` — REFERENCE IMAGES card: a `Switch` (off by default) with honest copy naming
+>   the single host `discit-api.fly.dev` and stating "off = fully offline".
+>
+> **Privacy-bar posture:** no request on launch/background/cache-hit; only host ever contacted is
+> `discit-api.fly.dev`; RHBH-only; https-only URLs. This is also what finally *justifies* the
+> `INTERNET` permission that was previously declared-but-unused (manifest-hygiene note above).
+>
+> **Open questions from the original design — resolved:** white-background reconciliation → put
+> the image on a white card (don't fight it). Live-fetch vs. bundled table → **live, cached
+> locally per disc** (mirrors the website; no big bundled lookup). DiscIt's 5-tier stability →
+> **not adopted**; the app keeps its own 3-tier OS/ST/US (unchanged). Name mismatches (Buzzz vs
+> Buzzz OS) → handled by the exact-name match, verified in `msMatch.test.ts`.
+>
+> Original design notes (kept for provenance):
 
 **Decision: implement in v1.1, not v1.** Free API at `discit-api.fly.dev`, 1,107/1,203
 discs have a real measured RHBH flight-path image + PDGA physical specs. Compelling but

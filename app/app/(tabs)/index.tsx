@@ -68,6 +68,9 @@ export default function BagScreen() {
   // (set on Settings / Flight Shaper). Loaded on mount and re-read on focus since Settings
   // can change it while this screen stays mounted.
   const [arcView, setArcView] = useState<ArcView>('RHBH');
+  // Marshall Street reference-image opt-in (Settings). Off by default; re-read on focus like
+  // arcView since Settings can toggle it while this screen stays mounted.
+  const [msRefEnabled, setMsRefEnabled] = useState(false);
   const [search, setSearch] = useState('');
   // Today's-bag filter — component state (not persisted): mirrors the website's
   // sessionStorage `bagFilter`, which likewise resets when the session ends.
@@ -98,6 +101,7 @@ export default function BagScreen() {
       setDiscs(loadedDiscs);
       setSortMode((meta.sortMode as SortMode) || 'speed-desc');
       setArcView((meta.arcView as ArcView) || 'RHBH');
+      setMsRefEnabled(meta.msRefEnabled);
       didInitialLoad.current = true;
       setLoading(false);
     })();
@@ -112,6 +116,7 @@ export default function BagScreen() {
         const [d, meta] = await Promise.all([getDiscs(userId), getMeta(userId)]);
         setDiscs(d);
         setArcView((meta.arcView as ArcView) || 'RHBH');
+        setMsRefEnabled(meta.msRefEnabled);
       })();
     }, [userId])
   );
@@ -463,6 +468,7 @@ export default function BagScreen() {
       <ArcDetailModal
         disc={detailDisc}
         arcView={arcView}
+        msRefEnabled={msRefEnabled}
         onClose={() => setDetailDisc(null)}
         onEdit={() => {
           const d = detailDisc;
