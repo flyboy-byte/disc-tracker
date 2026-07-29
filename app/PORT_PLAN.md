@@ -122,15 +122,16 @@ sessions without half-finished work in the tree.
 > `plan/docs/punch-list.md`.
 | **R4** | Marshall Street reference images | R3 mostly | ✅ DONE 2026-07-29 — "Marshall Street Flight Path Images" below |
 | **R4.5** | Physics-sim port (shotshaper) — **re-sequenced before R5 by Logan 2026-07-29** | R4 | ✅ DONE 2026-07-29 — Path B (on-device TS port). `src/physics/sim/`, parity-tested. Scoping: `plan/docs/physics-sim-port.md` |
-| ~~**R5**~~ | ~~VPS sync (opt-in, own server)~~ | — | **PARKED 2026-07-29** — CSV is the portability story. See `plan/docs/direction-2026-07-29.md` Decision 1 + `sync-design.md` (kept for provenance) |
+| **R5** | VPS sync (opt-in, own server) | — | **DEFERRED 2026-07-29 — researched-and-ready, NOT cut.** CSV is the shipping portability story; sync revisitable anytime (Logan values it). Decision 1 + `sync-design.md` |
 | **B1** | Disc-suggestion accuracy rewrite (scoring model + thrower setting + validation harness) | R4.5 | **Next** — `plan/docs/direction-2026-07-29.md` Decision 3 |
 | **B2** | Big-collection support (~200 discs: measurement spike → perf fixes + bag/collection IA) | — | `plan/docs/direction-2026-07-29.md` Decision 2 |
 | **R6** | Release signing + Play closed testing | B1/B2 as desired | "Distribution Track → D1" below — now unblocked (no sync paperwork) |
 | **R7** | F-Droid (self-hosted → official index) | R6 proven | "Distribution Track → D2/D3" below; rubric = fdroiddata MR checklist in `plan/docs/fdroid-reference.md` |
 
-> **2026-07-29 direction pivot:** R5 sync parked; new priorities **B1 (suggestion accuracy)** and
-> **B2 (big collections)** inserted ahead of the distribution track. `physicsV2.ts` parked/obsolete
-> (RESEARCH §7). Full rationale in `plan/docs/direction-2026-07-29.md`.
+> **2026-07-29 direction pivot:** R5 sync **deferred (researched-and-ready, not cut)**; new
+> priorities **B1 (suggestion accuracy — thrower = skill presets)** and **B2 (big collections)**
+> inserted ahead of the distribution track. `physicsV2.ts` parked/obsolete (RESEARCH §7). Full
+> rationale + B1 step-by-step in `plan/docs/direction-2026-07-29.md`.
 
 ### R1 — Parity & Kink Audit (short; produces the punch-list R2/R3 work from)
 
