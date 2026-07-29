@@ -153,6 +153,29 @@ Disc Suggest screen already recomputes cheaply.)
 
 ---
 
+## Follow-up polish — Flight Shaper: frame the sim as a *model switch*, not a toggle
+
+**Logan's steer (2026-07-29):** the Physics-sim control must make clear you are **changing physics
+models**, not just flipping an enhancement on. Right now it reads as a plain "Physics sim" on/off
+`Switch`, which implies "make the existing arc better." That's wrong on the facts: the
+model-agreement diagnostic (CLAUDE.md) established the legacy Bézier arc and the shotshaper sim are
+**different first principles** (empirical curve-fit vs. integrated CFD) that disagree most at the
+neutral baseline — the sim is a *different lens*, not a more-accurate version of the same arc.
+
+**What to change (UI copy/framing only — no physics, no geometry, no slider semantics):**
+- Present it as a **two-model choice**, not an on/off enhancement — e.g. a labelled pair
+  ("Legacy arc" ↔ "Physics sim") or a segmented control, so both are named and neither reads as
+  "the default plus an upgrade."
+- One line of honest copy near the control: these are **two different models**, the sim isn't a
+  "more accurate" legacy arc — same spirit as the slow-disc caveat banner already there.
+- Keep it tied to the existing shotshaper credit link (Giljarhus / GPLv3) so the "who built this
+  model" answer sits right next to the model switch.
+
+Small, self-contained, offline; do it alongside B1/B2 polish or whenever the Flight Shaper is next
+open. Cross-noted in `physics-sim-port.md`.
+
+---
+
 ## Re-sequenced roadmap (replaces R5→R7 tail)
 
 | Step | What | Status |

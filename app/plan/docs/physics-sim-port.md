@@ -118,6 +118,15 @@ fully offline with no server.
 
 ---
 
+## Follow-up (2026-07-29): frame the sim as a *model switch*, not a toggle
+
+Logan's steer after shipping: the Flight-Shaper control currently reads as a plain "Physics sim"
+on/off `Switch`, implying it *enhances* the legacy arc. It doesn't — per the model-agreement finding
+below, the two are different first principles and the sim is a *different lens*, not a more-accurate
+arc. Reframe the UI as a **two-model choice** (named "Legacy arc" ↔ "Physics sim"), add one honest
+line that they're different models, and keep the shotshaper/Giljarhus credit next to it. Copy/framing
+only — no physics/geometry/slider changes. Tracked in `direction-2026-07-29.md`.
+
 ## The model-agreement finding bears on this
 
 CLAUDE.md already records a one-off diagnostic: the legacy Bézier arc and the shotshaper sim
