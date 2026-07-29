@@ -1,0 +1,1981 @@
+{
+  "_note": "B1 baseline — CURRENT filterLibrary picks. Frozen yardstick for the rewrite. Regenerate via plan/tools/gen_suggest_baseline.mjs.",
+  "generated": "2026-07-29",
+  "libraryCount": 1660,
+  "scenarios": {
+    "straight": {
+      "title": "Dead Straight",
+      "filter": {
+        "stabMin": -1,
+        "stabMax": 1,
+        "types": [
+          "Control Driver",
+          "Mid Range"
+        ]
+      },
+      "bagTest": "d.fade + d.turn >= -1 && d.fade + d.turn <= 1 && d.speed >= 4",
+      "libraryMatchCount": 364,
+      "top15": [
+        {
+          "name": "TeMoko",
+          "mfr": "RPM Discs",
+          "type": "Mid Range",
+          "speed": 3,
+          "glide": 4,
+          "turn": 0,
+          "fade": 0,
+          "stability": 0
+        },
+        {
+          "name": "Yan",
+          "mfr": "Yikun",
+          "type": "Mid Range",
+          "speed": 3,
+          "glide": 6,
+          "turn": 0,
+          "fade": 0,
+          "stability": 0
+        },
+        {
+          "name": "Alias",
+          "mfr": "Axiom",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 4,
+          "turn": -1,
+          "fade": 1,
+          "stability": 0
+        },
+        {
+          "name": "Aurora MS",
+          "mfr": "Millennium",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 5,
+          "turn": 0,
+          "fade": 0,
+          "stability": 0
+        },
+        {
+          "name": "Cobra",
+          "mfr": "Innova",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 5,
+          "turn": -2,
+          "fade": 2,
+          "stability": 0
+        },
+        {
+          "name": "Hawk",
+          "mfr": "Discraft",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 3,
+          "turn": -2,
+          "fade": 2,
+          "stability": 0
+        },
+        {
+          "name": "I-One",
+          "mfr": "Cheengz",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 5,
+          "turn": 0,
+          "fade": 0,
+          "stability": 0
+        },
+        {
+          "name": "M Model US",
+          "mfr": "Prodigy",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 5,
+          "turn": -1,
+          "fade": 1,
+          "stability": 0
+        },
+        {
+          "name": "Mako",
+          "mfr": "Innova",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 5,
+          "turn": 0,
+          "fade": 0,
+          "stability": 0
+        },
+        {
+          "name": "MD",
+          "mfr": "Discmania",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 5,
+          "turn": 0,
+          "fade": 0,
+          "stability": 0
+        },
+        {
+          "name": "Super Stingray",
+          "mfr": "Innova",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 5,
+          "turn": -1,
+          "fade": 1,
+          "stability": 0
+        },
+        {
+          "name": "Tangent",
+          "mfr": "MVP",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 4,
+          "turn": -0.5,
+          "fade": 0.5,
+          "stability": 0
+        },
+        {
+          "name": "Amethyst",
+          "mfr": "Visionary Disc Golf",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 5,
+          "turn": -1,
+          "fade": 1,
+          "stability": 0
+        },
+        {
+          "name": "Anubis",
+          "mfr": "Infinite Discs",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 5,
+          "turn": 0,
+          "fade": 0,
+          "stability": 0
+        },
+        {
+          "name": "Axis",
+          "mfr": "MVP",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 5,
+          "turn": -1,
+          "fade": 1,
+          "stability": 0
+        }
+      ]
+    },
+    "hyzer": {
+      "title": "Reliable Hyzer",
+      "filter": {
+        "stabMin": 2,
+        "types": [
+          "Control Driver",
+          "Distance Driver",
+          "Mid Range"
+        ]
+      },
+      "bagTest": "d.fade >= 3 && d.turn >= -1",
+      "libraryMatchCount": 532,
+      "top15": [
+        {
+          "name": "Crossbow Nu",
+          "mfr": "Yikun",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 1.5,
+          "turn": 0.5,
+          "fade": 4,
+          "stability": 4.5
+        },
+        {
+          "name": "Justice",
+          "mfr": "Dynamic Discs",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 1,
+          "turn": 0.5,
+          "fade": 4,
+          "stability": 4.5
+        },
+        {
+          "name": "Notch",
+          "mfr": "Vibram",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 3,
+          "turn": 0,
+          "fade": 4.5,
+          "stability": 4.5
+        },
+        {
+          "name": "Felon",
+          "mfr": "Dynamic Discs",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 3,
+          "turn": 0.5,
+          "fade": 4,
+          "stability": 4.5
+        },
+        {
+          "name": "Sockibomb Felon",
+          "mfr": "Dynamic Discs",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 4,
+          "turn": 0.5,
+          "fade": 4,
+          "stability": 4.5
+        },
+        {
+          "name": "Enforcer",
+          "mfr": "Dynamic Discs",
+          "type": "Distance Driver",
+          "speed": 12,
+          "glide": 4,
+          "turn": 0.5,
+          "fade": 4,
+          "stability": 4.5
+        },
+        {
+          "name": "Stego",
+          "mfr": "Reptilian Disc Golf",
+          "type": "Mid Range",
+          "speed": 3,
+          "glide": 1,
+          "turn": 1,
+          "fade": 4,
+          "stability": 5
+        },
+        {
+          "name": "Anvil",
+          "mfr": "Westside",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 2,
+          "turn": 0,
+          "fade": 4,
+          "stability": 4
+        },
+        {
+          "name": "Loki",
+          "mfr": "Viking Discs",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 2,
+          "turn": 0,
+          "fade": 4,
+          "stability": 4
+        },
+        {
+          "name": "No3 Hyzer",
+          "mfr": "Lightning Discs",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 4,
+          "turn": 0,
+          "fade": 4,
+          "stability": 4
+        },
+        {
+          "name": "Owl",
+          "mfr": "Stokely Discs",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 3,
+          "turn": 0.5,
+          "fade": 3.5,
+          "stability": 4
+        },
+        {
+          "name": "Taurus",
+          "mfr": "Millennium",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 4,
+          "turn": 0,
+          "fade": 4,
+          "stability": 4
+        },
+        {
+          "name": "Amulet",
+          "mfr": "Prodiscus",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 4,
+          "turn": 1,
+          "fade": 3,
+          "stability": 4
+        },
+        {
+          "name": "Commander",
+          "mfr": "Innova",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 3,
+          "turn": 0,
+          "fade": 4,
+          "stability": 4
+        },
+        {
+          "name": "Daybreaker",
+          "mfr": "Lightspeed Disc Golf",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 2,
+          "turn": 0,
+          "fade": 4,
+          "stability": 4
+        }
+      ]
+    },
+    "distance": {
+      "title": "Max Distance",
+      "filter": {
+        "stabMin": -1,
+        "stabMax": 2,
+        "speedMin": 11
+      },
+      "bagTest": "d.speed >= 11 && d.fade <= 3 && d.turn <= -0.5",
+      "libraryMatchCount": 222,
+      "top15": [
+        {
+          "name": "Apex",
+          "mfr": "Gateway",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 6,
+          "turn": -1,
+          "fade": 1.5,
+          "stability": 0.5
+        },
+        {
+          "name": "Openwater",
+          "mfr": "Crosslap",
+          "type": "Distance Driver",
+          "speed": 12,
+          "glide": 4,
+          "turn": -1.5,
+          "fade": 2,
+          "stability": 0.5
+        },
+        {
+          "name": "Orca",
+          "mfr": "Wild Discs",
+          "type": "Distance Driver",
+          "speed": 12,
+          "glide": 5,
+          "turn": -1.5,
+          "fade": 2,
+          "stability": 0.5
+        },
+        {
+          "name": "Paradigm",
+          "mfr": "Discmania",
+          "type": "Distance Driver",
+          "speed": 12,
+          "glide": 6,
+          "turn": -1.5,
+          "fade": 2,
+          "stability": 0.5
+        },
+        {
+          "name": "Vass",
+          "mfr": "Kastaplast",
+          "type": "Distance Driver",
+          "speed": 12,
+          "glide": 5,
+          "turn": -1.5,
+          "fade": 2,
+          "stability": 0.5
+        },
+        {
+          "name": "Mayhem",
+          "mfr": "Axiom",
+          "type": "Distance Driver",
+          "speed": 13,
+          "glide": 5,
+          "turn": -1.5,
+          "fade": 2,
+          "stability": 0.5
+        },
+        {
+          "name": "Alva",
+          "mfr": "Kastaplast",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 6,
+          "turn": -2,
+          "fade": 2,
+          "stability": 0
+        },
+        {
+          "name": "Archon",
+          "mfr": "Innova",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 5,
+          "turn": -2,
+          "fade": 2,
+          "stability": 0
+        },
+        {
+          "name": "Astra",
+          "mfr": "Millennium",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 5,
+          "turn": -1,
+          "fade": 2,
+          "stability": 1
+        },
+        {
+          "name": "Cataclysm",
+          "mfr": "Doomsday Discs",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 5,
+          "turn": -1,
+          "fade": 2,
+          "stability": 1
+        },
+        {
+          "name": "CD3",
+          "mfr": "Discmania",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 5,
+          "turn": -1,
+          "fade": 2,
+          "stability": 1
+        },
+        {
+          "name": "DD1",
+          "mfr": "Discmania",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 5,
+          "turn": -1,
+          "fade": 2,
+          "stability": 1
+        },
+        {
+          "name": "Drive",
+          "mfr": "Discraft",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 5,
+          "turn": -1,
+          "fade": 2,
+          "stability": 1
+        },
+        {
+          "name": "ES1",
+          "mfr": "Millennium",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 5,
+          "turn": -2,
+          "fade": 2,
+          "stability": 0
+        },
+        {
+          "name": "GD1",
+          "mfr": "Disgo",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 5,
+          "turn": -1,
+          "fade": 2,
+          "stability": 1
+        }
+      ]
+    },
+    "headwind": {
+      "title": "Into Headwind",
+      "filter": {
+        "stabMin": 2.5,
+        "types": [
+          "Control Driver",
+          "Distance Driver"
+        ]
+      },
+      "bagTest": "d.fade >= 3 && d.turn >= -0.5 && d.speed >= 7",
+      "libraryMatchCount": 215,
+      "top15": [
+        {
+          "name": "Ram",
+          "mfr": "Innova",
+          "type": "Control Driver",
+          "speed": 6,
+          "glide": 4,
+          "turn": 1,
+          "fade": 4,
+          "stability": 5
+        },
+        {
+          "name": "Xtreme",
+          "mfr": "Discraft",
+          "type": "Control Driver",
+          "speed": 6,
+          "glide": 3,
+          "turn": 1,
+          "fade": 4,
+          "stability": 5
+        },
+        {
+          "name": "EXP-X",
+          "mfr": "Millennium",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 3,
+          "turn": 1,
+          "fade": 4,
+          "stability": 5
+        },
+        {
+          "name": "Notch",
+          "mfr": "Vibram",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 3,
+          "turn": 0,
+          "fade": 4.5,
+          "stability": 4.5
+        },
+        {
+          "name": "Captain Raptor",
+          "mfr": "Discraft",
+          "type": "Distance Driver",
+          "speed": 9,
+          "glide": 3,
+          "turn": 1,
+          "fade": 4,
+          "stability": 5
+        },
+        {
+          "name": "Felon",
+          "mfr": "Dynamic Discs",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 3,
+          "turn": 0.5,
+          "fade": 4,
+          "stability": 4.5
+        },
+        {
+          "name": "Predator",
+          "mfr": "Discraft",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 4,
+          "turn": 1,
+          "fade": 4,
+          "stability": 5
+        },
+        {
+          "name": "Sabertooth",
+          "mfr": "Daredevil",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 4,
+          "turn": 0,
+          "fade": 5,
+          "stability": 5
+        },
+        {
+          "name": "Sockibomb Felon",
+          "mfr": "Dynamic Discs",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 4,
+          "turn": 0.5,
+          "fade": 4,
+          "stability": 4.5
+        },
+        {
+          "name": "Wyrm",
+          "mfr": "Divergent Discs",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 2,
+          "turn": 0,
+          "fade": 5,
+          "stability": 5
+        },
+        {
+          "name": "Criminal",
+          "mfr": "Dynamic Discs",
+          "type": "Distance Driver",
+          "speed": 10,
+          "glide": 3,
+          "turn": 1,
+          "fade": 4,
+          "stability": 5
+        },
+        {
+          "name": "Hellfire",
+          "mfr": "DGA",
+          "type": "Control Driver",
+          "speed": 10,
+          "glide": 3,
+          "turn": 0,
+          "fade": 5,
+          "stability": 5
+        },
+        {
+          "name": "Monster",
+          "mfr": "Innova",
+          "type": "Distance Driver",
+          "speed": 10,
+          "glide": 3,
+          "turn": 0,
+          "fade": 5,
+          "stability": 5
+        },
+        {
+          "name": "Max",
+          "mfr": "Innova",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 3,
+          "turn": 0,
+          "fade": 5,
+          "stability": 5
+        },
+        {
+          "name": "PD3",
+          "mfr": "Discmania",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 3,
+          "turn": 0,
+          "fade": 5,
+          "stability": 5
+        }
+      ]
+    },
+    "tailwind": {
+      "title": "Tailwind",
+      "filter": {
+        "stabMin": -2,
+        "stabMax": 0,
+        "speedMin": 9,
+        "types": [
+          "Control Driver",
+          "Distance Driver"
+        ]
+      },
+      "bagTest": "d.speed >= 9 && d.turn <= -1 && d.fade + d.turn <= 0",
+      "libraryMatchCount": 176,
+      "top15": [
+        {
+          "name": "Bandit",
+          "mfr": "Legacy Discs",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Desperado",
+          "mfr": "Lone Star Disc",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Draconyx",
+          "mfr": "Discape Disc Golf",
+          "type": "Distance Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Falk",
+          "mfr": "Kastaplast",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 6,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Hatchet",
+          "mfr": "Westside",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 6,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Jade",
+          "mfr": "Latitude 64",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 6,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Kalous",
+          "mfr": "Wingman",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Mantra",
+          "mfr": "Thought Space Athletics",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 6,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Money Tree",
+          "mfr": "Above Ground Level",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 6,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Skirmisher",
+          "mfr": "Remix Disc Golf",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -2.5,
+          "fade": 1.5,
+          "stability": -1
+        },
+        {
+          "name": "Spartan",
+          "mfr": "Remix Disc Golf",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 6,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Star Craft",
+          "mfr": "X-UFO",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Stratosphere",
+          "mfr": "Wing It Disc Golf",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 4,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Suture",
+          "mfr": "Salient",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Timberwolf",
+          "mfr": "Daredevil",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 6,
+          "turn": -1,
+          "fade": 0,
+          "stability": -1
+        }
+      ]
+    },
+    "turnover": {
+      "title": "Turnover",
+      "filter": {
+        "stabMax": -1.5,
+        "types": [
+          "Control Driver",
+          "Distance Driver"
+        ]
+      },
+      "bagTest": "d.turn <= -2 && d.fade <= 2 && d.fade + d.turn <= -1",
+      "libraryMatchCount": 89,
+      "top15": [
+        {
+          "name": "Ascend",
+          "mfr": "Streamline",
+          "type": "Control Driver",
+          "speed": 6,
+          "glide": 5,
+          "turn": -3,
+          "fade": 0.5,
+          "stability": -2.5
+        },
+        {
+          "name": "Genius",
+          "mfr": "Discmania",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Marlin",
+          "mfr": "Neptune Discs",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "View",
+          "mfr": "Yikun",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 6,
+          "turn": -3.5,
+          "fade": 1,
+          "stability": -2.5
+        },
+        {
+          "name": "Archangel",
+          "mfr": "Innova",
+          "type": "Control Driver",
+          "speed": 8,
+          "glide": 6,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Function",
+          "mfr": "Discmania",
+          "type": "Control Driver",
+          "speed": 8,
+          "glide": 6.5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Gou",
+          "mfr": "Yikun",
+          "type": "Control Driver",
+          "speed": 8,
+          "glide": 5,
+          "turn": -3.5,
+          "fade": 1,
+          "stability": -2.5
+        },
+        {
+          "name": "Atlantis",
+          "mfr": "Alfa Discs",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 6,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Flipperi",
+          "mfr": "Prodiscus",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 3,
+          "turn": -3,
+          "fade": 0,
+          "stability": -3
+        },
+        {
+          "name": "H7",
+          "mfr": "Prodigy",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Roadrunner",
+          "mfr": "Innova",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Tiki",
+          "mfr": "AstroDisc",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Virus",
+          "mfr": "Axiom",
+          "type": "Distance Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -3.5,
+          "fade": 1,
+          "stability": -2.5
+        },
+        {
+          "name": "Xi He",
+          "mfr": "Yikun",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -3.5,
+          "fade": 0.5,
+          "stability": -3
+        },
+        {
+          "name": "Freetail",
+          "mfr": "Mint Discs",
+          "type": "Distance Driver",
+          "speed": 10,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        }
+      ]
+    },
+    "forehand": {
+      "title": "Forehand",
+      "filter": {
+        "stabMin": 2,
+        "types": [
+          "Control Driver",
+          "Distance Driver",
+          "Mid Range"
+        ]
+      },
+      "bagTest": "d.fade >= 2 && d.turn >= -0.5 && d.speed >= 6",
+      "libraryMatchCount": 532,
+      "top15": [
+        {
+          "name": "Crossbow Nu",
+          "mfr": "Yikun",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 1.5,
+          "turn": 0.5,
+          "fade": 4,
+          "stability": 4.5
+        },
+        {
+          "name": "Justice",
+          "mfr": "Dynamic Discs",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 1,
+          "turn": 0.5,
+          "fade": 4,
+          "stability": 4.5
+        },
+        {
+          "name": "Notch",
+          "mfr": "Vibram",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 3,
+          "turn": 0,
+          "fade": 4.5,
+          "stability": 4.5
+        },
+        {
+          "name": "Felon",
+          "mfr": "Dynamic Discs",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 3,
+          "turn": 0.5,
+          "fade": 4,
+          "stability": 4.5
+        },
+        {
+          "name": "Sockibomb Felon",
+          "mfr": "Dynamic Discs",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 4,
+          "turn": 0.5,
+          "fade": 4,
+          "stability": 4.5
+        },
+        {
+          "name": "Enforcer",
+          "mfr": "Dynamic Discs",
+          "type": "Distance Driver",
+          "speed": 12,
+          "glide": 4,
+          "turn": 0.5,
+          "fade": 4,
+          "stability": 4.5
+        },
+        {
+          "name": "Stego",
+          "mfr": "Reptilian Disc Golf",
+          "type": "Mid Range",
+          "speed": 3,
+          "glide": 1,
+          "turn": 1,
+          "fade": 4,
+          "stability": 5
+        },
+        {
+          "name": "Anvil",
+          "mfr": "Westside",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 2,
+          "turn": 0,
+          "fade": 4,
+          "stability": 4
+        },
+        {
+          "name": "Loki",
+          "mfr": "Viking Discs",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 2,
+          "turn": 0,
+          "fade": 4,
+          "stability": 4
+        },
+        {
+          "name": "No3 Hyzer",
+          "mfr": "Lightning Discs",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 4,
+          "turn": 0,
+          "fade": 4,
+          "stability": 4
+        },
+        {
+          "name": "Owl",
+          "mfr": "Stokely Discs",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 3,
+          "turn": 0.5,
+          "fade": 3.5,
+          "stability": 4
+        },
+        {
+          "name": "Taurus",
+          "mfr": "Millennium",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 4,
+          "turn": 0,
+          "fade": 4,
+          "stability": 4
+        },
+        {
+          "name": "Amulet",
+          "mfr": "Prodiscus",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 4,
+          "turn": 1,
+          "fade": 3,
+          "stability": 4
+        },
+        {
+          "name": "Commander",
+          "mfr": "Innova",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 3,
+          "turn": 0,
+          "fade": 4,
+          "stability": 4
+        },
+        {
+          "name": "Daybreaker",
+          "mfr": "Lightspeed Disc Golf",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 2,
+          "turn": 0,
+          "fade": 4,
+          "stability": 4
+        }
+      ]
+    },
+    "tomahawk": {
+      "title": "Tomahawk",
+      "filter": {
+        "stabMin": 1,
+        "stabMax": 4,
+        "types": [
+          "Control Driver",
+          "Distance Driver"
+        ]
+      },
+      "bagTest": "d.speed >= 7 && d.fade >= 2 && d.turn >= -2",
+      "libraryMatchCount": 478,
+      "top15": [
+        {
+          "name": "Trident",
+          "mfr": "Latitude 64",
+          "type": "Control Driver",
+          "speed": 6,
+          "glide": 4,
+          "turn": -0.5,
+          "fade": 3,
+          "stability": 2.5
+        },
+        {
+          "name": "Evader",
+          "mfr": "Dynamic Discs",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 4,
+          "turn": 0,
+          "fade": 2.5,
+          "stability": 2.5
+        },
+        {
+          "name": "Sirius Helio Vela",
+          "mfr": "Millennium",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 4,
+          "turn": -0.5,
+          "fade": 3,
+          "stability": 2.5
+        },
+        {
+          "name": "Spark",
+          "mfr": "Latitude 64",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 4,
+          "turn": -0.5,
+          "fade": 3,
+          "stability": 2.5
+        },
+        {
+          "name": "Tyrant",
+          "mfr": "Reptilian Disc Golf",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 3,
+          "turn": 0,
+          "fade": 2.5,
+          "stability": 2.5
+        },
+        {
+          "name": "Shock",
+          "mfr": "MVP",
+          "type": "Control Driver",
+          "speed": 8,
+          "glide": 5,
+          "turn": 0,
+          "fade": 2.5,
+          "stability": 2.5
+        },
+        {
+          "name": "Torque",
+          "mfr": "Finish Line Discs",
+          "type": "Control Driver",
+          "speed": 8,
+          "glide": 4,
+          "turn": 0,
+          "fade": 2.5,
+          "stability": 2.5
+        },
+        {
+          "name": "Weapon",
+          "mfr": "Birdie",
+          "type": "Control Driver",
+          "speed": 8,
+          "glide": 5,
+          "turn": 0,
+          "fade": 2.5,
+          "stability": 2.5
+        },
+        {
+          "name": "Convict",
+          "mfr": "Dynamic Discs",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 4,
+          "turn": -0.5,
+          "fade": 3,
+          "stability": 2.5
+        },
+        {
+          "name": "Culverin",
+          "mfr": "Latitude 64",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -0.5,
+          "fade": 3,
+          "stability": 2.5
+        },
+        {
+          "name": "Getaway",
+          "mfr": "Dynamic Discs",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -0.5,
+          "fade": 3,
+          "stability": 2.5
+        },
+        {
+          "name": "Honor",
+          "mfr": "Latitude 64",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": 0,
+          "fade": 2.5,
+          "stability": 2.5
+        },
+        {
+          "name": "Tasmanian Devil",
+          "mfr": "Wild Discs",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 4,
+          "turn": 0,
+          "fade": 2.5,
+          "stability": 2.5
+        },
+        {
+          "name": "Velociraptor",
+          "mfr": "Reptilian Disc Golf",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 4,
+          "turn": 0,
+          "fade": 2.5,
+          "stability": 2.5
+        },
+        {
+          "name": "Zion",
+          "mfr": "Latitude 64",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 4,
+          "turn": -0.5,
+          "fade": 3,
+          "stability": 2.5
+        }
+      ]
+    },
+    "approach": {
+      "title": "Approach",
+      "filter": {
+        "stabMin": -1,
+        "stabMax": 2.5,
+        "types": [
+          "Putt & Approach",
+          "Mid Range"
+        ]
+      },
+      "bagTest": "d.speed <= 6 && d.fade <= 3 && d.turn >= -2 && d.fade + d.turn >= -1",
+      "libraryMatchCount": 583,
+      "top15": [
+        {
+          "name": "Armadillo",
+          "mfr": "Lone Star Disc",
+          "type": "Putt & Approach",
+          "speed": 1,
+          "glide": 2,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Claws",
+          "mfr": "Yikun",
+          "type": "Putt & Approach",
+          "speed": 1,
+          "glide": 3,
+          "turn": 0,
+          "fade": 0.5,
+          "stability": 0.5
+        },
+        {
+          "name": "Glyph",
+          "mfr": "Infinite Discs",
+          "type": "Putt & Approach",
+          "speed": 1,
+          "glide": 5,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Parachute",
+          "mfr": "Streamline",
+          "type": "Putt & Approach",
+          "speed": 1,
+          "glide": 7,
+          "turn": 0,
+          "fade": 0.5,
+          "stability": 0.5
+        },
+        {
+          "name": "Spore",
+          "mfr": "Discmania",
+          "type": "Putt & Approach",
+          "speed": 1,
+          "glide": 7,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Agent",
+          "mfr": "Dynamic Discs",
+          "type": "Putt & Approach",
+          "speed": 2,
+          "glide": 3,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Animal",
+          "mfr": "Innova",
+          "type": "Putt & Approach",
+          "speed": 2,
+          "glide": 1,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Aviar",
+          "mfr": "Innova",
+          "type": "Putt & Approach",
+          "speed": 2,
+          "glide": 3,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Bagger",
+          "mfr": "Pie Pan Discs",
+          "type": "Putt & Approach",
+          "speed": 2,
+          "glide": 3,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Banger GT",
+          "mfr": "Discraft",
+          "type": "Putt & Approach",
+          "speed": 2,
+          "glide": 3,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Bighorn",
+          "mfr": "Daredevil",
+          "type": "Putt & Approach",
+          "speed": 2,
+          "glide": 3,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Bluebonnet",
+          "mfr": "Lone Star Disc",
+          "type": "Putt & Approach",
+          "speed": 2,
+          "glide": 3,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Bongo",
+          "mfr": "Goto Disc Golf",
+          "type": "Putt & Approach",
+          "speed": 2,
+          "glide": 3,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Bullet",
+          "mfr": "Mint Discs",
+          "type": "Putt & Approach",
+          "speed": 2,
+          "glide": 4,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Butter",
+          "mfr": "Clash Discs",
+          "type": "Putt & Approach",
+          "speed": 2,
+          "glide": 3,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        }
+      ]
+    },
+    "accurate_mid": {
+      "title": "Accurate Mid",
+      "filter": {
+        "stabMin": 0,
+        "stabMax": 2,
+        "types": [
+          "Mid Range"
+        ]
+      },
+      "bagTest": "d.speed >= 4 && d.speed <= 6 && d.fade + d.turn >= 0 && d.fade + d.turn <= 2",
+      "libraryMatchCount": 195,
+      "top15": [
+        {
+          "name": "Goblin",
+          "mfr": "Innova",
+          "type": "Mid Range",
+          "speed": 3,
+          "glide": 4,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Alien",
+          "mfr": "Innova",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 2,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Arrowhead",
+          "mfr": "Sacred Discs",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 3,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Axe",
+          "mfr": "Viking Discs",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 3,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Coyote",
+          "mfr": "Innova",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 5,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Gote",
+          "mfr": "Kastaplast",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 5,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Harpoon",
+          "mfr": "Lone Star Disc",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 3,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Lycan",
+          "mfr": "Innova",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 5,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "No3 Hookshot",
+          "mfr": "Lightning Discs",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 5,
+          "turn": -1,
+          "fade": 2,
+          "stability": 1
+        },
+        {
+          "name": "Tailor",
+          "mfr": "Discmania",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 4,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "VRoc",
+          "mfr": "Innova",
+          "type": "Mid Range",
+          "speed": 4,
+          "glide": 4,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Addax V2",
+          "mfr": "Wild Discs",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 5,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Antidote",
+          "mfr": "Salient",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 5,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        },
+        {
+          "name": "Apollo",
+          "mfr": "Alfa Discs",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 5,
+          "turn": -1,
+          "fade": 2,
+          "stability": 1
+        },
+        {
+          "name": "Atlas",
+          "mfr": "Innova",
+          "type": "Mid Range",
+          "speed": 5,
+          "glide": 4,
+          "turn": 0,
+          "fade": 1,
+          "stability": 1
+        }
+      ]
+    },
+    "hyzerflip": {
+      "title": "Hyzer Flip",
+      "filter": {
+        "stabMin": -2,
+        "stabMax": 0,
+        "types": [
+          "Control Driver",
+          "Distance Driver"
+        ]
+      },
+      "bagTest": "d.speed >= 7 && d.speed <= 12 && d.turn <= -1 && d.turn >= -2 && d.fade >= 1 && d.fade <= 2 && d.fade + d.turn <= 0",
+      "libraryMatchCount": 292,
+      "top15": [
+        {
+          "name": "Leopard",
+          "mfr": "Innova",
+          "type": "Control Driver",
+          "speed": 6,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Mercenary",
+          "mfr": "Remix Disc Golf",
+          "type": "Control Driver",
+          "speed": 6,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Pounce",
+          "mfr": "X-UFO",
+          "type": "Control Driver",
+          "speed": 6,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Relay",
+          "mfr": "MVP",
+          "type": "Control Driver",
+          "speed": 6,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Salamander",
+          "mfr": "Mint Discs",
+          "type": "Control Driver",
+          "speed": 6,
+          "glide": 6,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Star Bear",
+          "mfr": "X-UFO",
+          "type": "Control Driver",
+          "speed": 6,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Chemtrail",
+          "mfr": "Doomsday Discs",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 6,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "DMD1",
+          "mfr": "Disc Monkey",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Drift",
+          "mfr": "Streamline",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Euphoria",
+          "mfr": "Orbital Discs",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 6,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "IT",
+          "mfr": "Innova",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 6,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Leopard3",
+          "mfr": "Innova",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Maul",
+          "mfr": "Latitude 64",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 7,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Maximus",
+          "mfr": "Hero Disc",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 6,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Mockingbird",
+          "mfr": "Lone Star Disc",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        }
+      ]
+    },
+    "roller": {
+      "title": "Roller",
+      "filter": {
+        "stabMax": -2.5,
+        "types": [
+          "Control Driver",
+          "Distance Driver"
+        ]
+      },
+      "bagTest": "d.turn <= -3 && d.fade <= 1",
+      "libraryMatchCount": 31,
+      "top15": [
+        {
+          "name": "Genius",
+          "mfr": "Discmania",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Marlin",
+          "mfr": "Neptune Discs",
+          "type": "Control Driver",
+          "speed": 7,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Archangel",
+          "mfr": "Innova",
+          "type": "Control Driver",
+          "speed": 8,
+          "glide": 6,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "F9",
+          "mfr": "Prodigy",
+          "type": "Control Driver",
+          "speed": 8,
+          "glide": 6,
+          "turn": -4,
+          "fade": 0.5,
+          "stability": -3.5
+        },
+        {
+          "name": "Function",
+          "mfr": "Discmania",
+          "type": "Control Driver",
+          "speed": 8,
+          "glide": 6.5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Atlantis",
+          "mfr": "Alfa Discs",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 6,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Flipperi",
+          "mfr": "Prodiscus",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 3,
+          "turn": -3,
+          "fade": 0,
+          "stability": -3
+        },
+        {
+          "name": "H7",
+          "mfr": "Prodigy",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Roadrunner",
+          "mfr": "Innova",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Tiki",
+          "mfr": "AstroDisc",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Xi He",
+          "mfr": "Yikun",
+          "type": "Control Driver",
+          "speed": 9,
+          "glide": 5,
+          "turn": -3.5,
+          "fade": 0.5,
+          "stability": -3
+        },
+        {
+          "name": "Freetail",
+          "mfr": "Mint Discs",
+          "type": "Distance Driver",
+          "speed": 10,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Monarch",
+          "mfr": "Innova",
+          "type": "Distance Driver",
+          "speed": 10,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "TD2",
+          "mfr": "Discmania",
+          "type": "Distance Driver",
+          "speed": 10,
+          "glide": 5,
+          "turn": -4,
+          "fade": 1,
+          "stability": -3
+        },
+        {
+          "name": "Orbital",
+          "mfr": "MVP",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 5,
+          "turn": -4.5,
+          "fade": 1,
+          "stability": -3.5
+        }
+      ]
+    }
+  }
+}
