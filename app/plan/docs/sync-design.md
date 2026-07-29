@@ -36,10 +36,16 @@ Data is a disc-golf bag — small (dozens–hundreds of rows) and low-sensitivit
    the privacy bar, not just preferred.
 
 4. **Transport — HTTPS mandatory; cleartext disabled in release.**
-   ⚠️ **Infra prerequisite:** the VPS currently answers on `http://51.81.80.126` (bare IP,
-   no TLS). A bearer token over plain HTTP is sniffable. Sync needs the Flask app behind a
-   domain + TLS (Caddy / Let's Encrypt) **before** it's usable. Track this as an ops task,
-   not a code task. The release manifest must **not** allow cleartext traffic.
+   ⚠️ **CORRECTION (2026-07-29):** an earlier version of this note asserted the VPS is "bare IP,
+   no TLS" and treated that as sync's blocker. That was **an unverified assumption carried
+   forward, not a checked fact.** A probe on 2026-07-29 found: port 5757 (Flask direct) is
+   firewalled, port 80 answers **404 from a reverse proxy**, and port 443 accepts connections
+   but the TLS handshake EOFs on the *bare IP* — the classic signature of **Host-based vhost
+   routing with a cert bound to a domain**. In other words there is very likely **already a
+   domain + TLS proxy** in front of the app; the exact hostname is unconfirmed (ask Logan). So
+   the "TLS is the long-pole" framing was wrong. **Moot for now regardless:** sync is parked
+   (see `direction-2026-07-29.md`) in favour of CSV as the portability story. If sync is ever
+   revived, confirm the domain/cert first, then this reduces to a code task.
 
 5. **Encryption at rest — none (plaintext on the own VPS).** Same as the website already
    stores it; the website has to *read* the bag to display it, so end-to-end encryption

@@ -108,7 +108,7 @@ sessions without half-finished work in the tree.
 |------|------|-----------|------------------|
 | **R1** | Parity & Kink Audit → punch-list | — | ✅ done — `plan/docs/punch-list.md` |
 | **R2** | Flight Shaper UX rework (layout-only) | R1 | ✅ done + emulator-verified (`acd1a4c`) |
-| **R3** | App-wide polish & parity fixes | R1 | 🚧 in progress — see below |
+| **R3** | App-wide polish & parity fixes | R1 | ✅ DONE 2026-07-26 (commit `6ce23e1`) — see below |
 
 > **R3 progress (2026-07-26):** all P1 parity items + most of P2 done, verified live and shipped
 > across two GitHub releases (debug-signed, arm64/armeabi): **`mobile-preview-0.6`** ("bag flight
@@ -122,9 +122,15 @@ sessions without half-finished work in the tree.
 > `plan/docs/punch-list.md`.
 | **R4** | Marshall Street reference images | R3 mostly | ✅ DONE 2026-07-29 — "Marshall Street Flight Path Images" below |
 | **R4.5** | Physics-sim port (shotshaper) — **re-sequenced before R5 by Logan 2026-07-29** | R4 | ✅ DONE 2026-07-29 — Path B (on-device TS port). `src/physics/sim/`, parity-tested. Scoping: `plan/docs/physics-sim-port.md` |
-| **R5** | VPS sync (opt-in, own server) | R4.5 | "Phase 10 — VPS Sync" below |
-| **R6** | Release signing + Play closed testing | R2–R5 done | "Distribution Track → D1" below |
-| **R7** | F-Droid (self-hosted → official index) | R6 proven | "Distribution Track → D2/D3" below |
+| ~~**R5**~~ | ~~VPS sync (opt-in, own server)~~ | — | **PARKED 2026-07-29** — CSV is the portability story. See `plan/docs/direction-2026-07-29.md` Decision 1 + `sync-design.md` (kept for provenance) |
+| **B1** | Disc-suggestion accuracy rewrite (scoring model + thrower setting + validation harness) | R4.5 | **Next** — `plan/docs/direction-2026-07-29.md` Decision 3 |
+| **B2** | Big-collection support (~200 discs: measurement spike → perf fixes + bag/collection IA) | — | `plan/docs/direction-2026-07-29.md` Decision 2 |
+| **R6** | Release signing + Play closed testing | B1/B2 as desired | "Distribution Track → D1" below — now unblocked (no sync paperwork) |
+| **R7** | F-Droid (self-hosted → official index) | R6 proven | "Distribution Track → D2/D3" below; rubric = fdroiddata MR checklist in `plan/docs/fdroid-reference.md` |
+
+> **2026-07-29 direction pivot:** R5 sync parked; new priorities **B1 (suggestion accuracy)** and
+> **B2 (big collections)** inserted ahead of the distribution track. `physicsV2.ts` parked/obsolete
+> (RESEARCH §7). Full rationale in `plan/docs/direction-2026-07-29.md`.
 
 ### R1 — Parity & Kink Audit (short; produces the punch-list R2/R3 work from)
 

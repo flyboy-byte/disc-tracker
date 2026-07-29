@@ -293,6 +293,15 @@ Note: Path D's sync (§2) is plain HTTPS + a bearer token, not client-side encry
 
 ## 7. Physics Architecture: V2 Design
 
+> ⚠️ **PARKED / likely obsolete (2026-07-29).** `physicsV2.ts` was scoped as a *hand-tuned
+> empirical timestep model* (invented knobs — `dragRate: 0.012`, `phaseTransition: 0.55`, …). Its
+> real motivation below is **architectural** (make the legacy arc testable/modular), **not**
+> physical accuracy — calling it an "improvement" over the Bézier arc was aspirational, never
+> demonstrated. As of R4.5 the app already has a genuinely physics-grounded model on-device (the
+> shotshaper CFD sim, `src/physics/sim/`). A third, made-up empirical model wedged between the
+> Bézier arc and the real sim buys little, so this is **not on the active roadmap**; kept here for
+> provenance. Don't build it without a specific reason. See `plan/docs/direction-2026-07-29.md`.
+
 > This section documents the planned physics improvement. The port is **not** a rewrite — current math is preserved as `legacyPhysics.ts`. V2 is built alongside it.
 
 ### Problem with current approach

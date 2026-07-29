@@ -131,3 +131,32 @@ signed the result; it isn't standing in for F-Droid's own rebuild.
   project's actual native deps, per `infrastructure.md`) for anything pulling in Glide
   transitively before assuming step 4 above doesn't apply — verify, don't assume from
   DragTree's dependency list.
+
+---
+
+## The actual fdroiddata MR checklist (the R7 acceptance rubric)
+
+From the fdroiddata Merge Request template Logan works with as an F-Droid reviewer (screenshot
+2026-07-29, MR-format checklist). This is the concrete bar for our own submission, grouped by
+weight:
+
+**Required**
+- [ ] All related fdroiddata + RFP issues referenced in the MR (we're the author; no prior RFP).
+- [ ] Builds with `fdroid build` and all pipelines pass.
+- [ ] Issue tracker + author contact info exist so bugs can be reported.
+
+**Strongly Recommended**
+- [ ] Upstream repo carries app metadata (summary/description/images/changelog) in a **Fastlane**
+      or **Triple-T** folder structure. ← we don't have this yet; add a `fastlane/metadata/android`
+      tree before submitting.
+- [ ] Releases are **tagged** and **auto-update is enabled** (`UpdateCheckMode: Tags` in metadata).
+
+**Suggested**
+- [ ] External repos added as **git submodules** (not the deprecated `srclibs`). **N/A for us:** the
+      app vendors no external *source* repo — the physics sim is our own TS reimplementation, and
+      npm deps come from the registry (not what this item means). `vendor/shotshaper/` is Python,
+      server-/fixtures-only, not in the Android/RN build. So this box is simply out of scope, which
+      is the clean outcome.
+- [ ] Enable **Reproducible Builds** + add `AllowedAPKSigningKeys` to metadata. ← the one that
+      matters for us; see the reproducible-build workflow above.
+- [ ] Multiple APKs for native code (only if we ship per-ABI splits; currently one fat arm APK).
