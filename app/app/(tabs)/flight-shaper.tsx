@@ -1,15 +1,19 @@
 // Flight Shaper screen — PORT_PLAN.md Phase 5, layout reworked in R2 (2026-07-25).
 // Ported from templates/flightshape.html's setMode()/onSlider()/updateArc()/setBaseDisc()/
-// loadBag()/onManualChange(). Physics-sim mode (server-side shotshaper) is intentionally NOT
-// ported — the mobile app must not depend on the Flask server (CLAUDE.md hard constraint) —
-// only the legacy Bézier arc.
+// loadBag()/onManualChange().
+//
+// Physics-sim mode (R4.5, 2026-07-29): the vendored shotshaper rigid-body simulator is now
+// ported to run FULLY ON-DEVICE (src/physics/sim/*, a faithful RK45 reimplementation gated by a
+// parity harness against the real numpy/scipy engine) — so this no longer needs the Flask server
+// the website's sim mode calls. Opt-in per screen (off by default); when on, the arc swaps for the
+// simulated trajectory + an archetype picker + the slow-disc caveat, exactly like the website.
 //
 // R2 layout rework (layout-ONLY — physics/arc geometry/slider semantics unchanged): the disc
 // selector + arc + adjusted stats are PINNED at the top so the arc stays visible while you
 // adjust the sliders below; the reference diagrams collapse behind a toggle; the disc picker
 // moved from a long inline list into a compact selector + bottom-sheet modal.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 // gesture-handler's ScrollView (not react-native's) — its NativeViewGestureHandler
 // negotiates touch claims with nested native views (our rotated Slider) properly;
 // plain RN ScrollView won on-device even with scrollEnabled toggling (confirmed
@@ -18,6 +22,7 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { useFocusEffect } from 'expo-router';
 import AngleRefDiagrams from '../../src/components/AngleRefDiagrams';
 import FlightArcSvg from '../../src/components/FlightArcSvg';
+import SimArcSvg from '../../src/components/SimArcSvg';
 import HyzerReferenceDiagram from '../../src/components/HyzerReferenceDiagram';
 import NumberInput from '../../src/components/NumberInput';
 import VerticalSlider from '../../src/components/VerticalSlider';
@@ -25,6 +30,16 @@ import { getDiscs, getMeta, getOrCreateDefaultUser, setMeta } from '../../src/db
 import { colors } from '../../src/theme';
 import { STAB_META, stab, type Disc } from '../../src/utils/disc';
 import { applyModifiers, estimateDist, type BaseDisc, type SliderValues } from '../../src/utils/legacyPhysics';
+import { simulateShot } from '../../src/physics/sim/simulateShot';
+import { pickArchetype } from '../../src/physics/sim/pickArchetype';
+import type { Archetype } from '../../src/physics/sim/coeffs';
+
+const ARCHETYPES: Archetype[] = ['fd2', 'cd5', 'cd1', 'dd2'];
+
+function crosswindLabel(v: number): string {
+  if (v === 0) return 'calm';
+  return v > 0 ? `+${v} R` : `${Math.abs(v)} L`;
+}
 
 type ArcView = 'RHBH' | 'RHFH' | 'LHBH' | 'LHFH';
 type Mode = 'bag' | 'manual';
@@ -47,6 +62,13 @@ export default function FlightShaperScreen() {
   const [sliders, setSliders] = useState<SliderValues>(DEFAULT_SLIDERS);
   const [arcView, setArcView] = useState<ArcView>('RHBH');
   const [scrollEnabled, setScrollEnabled] = useState(true);
+  // Physics-sim mode (R4.5). Off by default. crosswind is a sim-only 6th input (the legacy
+  // Bézier arc has no crosswind concept, so it lives outside SliderValues). manualArchetype is
+  // set when the user overrides the auto-pick; simArchetypeManual re-arms auto on a new disc.
+  const [physicsSimOn, setPhysicsSimOn] = useState(false);
+  const [crosswind, setCrosswind] = useState(0);
+  const [manualArchetype, setManualArchetype] = useState<Archetype | null>(null);
+  const [simArchetypeManual, setSimArchetypeManual] = useState(false);
   // R2 layout state: compact disc-picker modal + collapsed reference diagrams (collapsed by
   // default so the sliders sit right under the pinned arc). Pure presentation.
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -104,6 +126,43 @@ export default function FlightShaperScreen() {
     [baseDisc, adjusted, sliders]
   );
 
+  // Real recorded weight (grams) as the sim mass, when the selected bag disc has one; manual
+  // discs have no weight so the sim falls back to 175 g (handled inside simulateShot).
+  const weightG = useMemo(() => {
+    if (mode === 'bag' && selectedBagDisc?.weight) {
+      const w = parseFloat(selectedBagDisc.weight);
+      return Number.isFinite(w) ? w : undefined;
+    }
+    return undefined;
+  }, [mode, selectedBagDisc]);
+
+  // Auto-pick the nearest archetype from the disc's own numbers, unless the user overrode it.
+  const simArchetype: Archetype = useMemo(() => {
+    if (simArchetypeManual && manualArchetype) return manualArchetype;
+    return baseDisc ? pickArchetype(baseDisc) : 'dd2';
+  }, [simArchetypeManual, manualArchetype, baseDisc]);
+
+  // Run the on-device sim only in sim mode. simulateShot is a few hundred RK45 steps — fast
+  // enough to run synchronously on slider changes; if it ever janks, debounce here.
+  const simResult = useMemo(() => {
+    if (!physicsSimOn || !baseDisc) return null;
+    return simulateShot({
+      archetype: simArchetype,
+      pdgaSpeed: baseDisc.speed ?? 7,
+      hyzer: sliders.hyzer,
+      nose: sliders.nose,
+      wind: sliders.wind,
+      crosswind,
+      armSpeed: sliders.armSpeed,
+      spin: sliders.spin,
+      arcView,
+      weightG,
+    });
+  }, [physicsSimOn, baseDisc, simArchetype, sliders, crosswind, arcView, weightG]);
+
+  const showSim = physicsSimOn && simResult != null;
+  const simCaveat = physicsSimOn && baseDisc != null && (baseDisc.speed ?? 7) <= 8;
+
   const changeArcView = async (v: ArcView) => {
     setArcView(v);
     if (userId != null) await setMeta(userId, { arcView: v });
@@ -115,6 +174,7 @@ export default function FlightShaperScreen() {
   const pickBagDisc = (id: number | null) => {
     setSelectedBagId(id);
     setPickerOpen(false);
+    setSimArchetypeManual(false); // a newly selected disc re-engages archetype auto-pick
   };
 
   // Label shown on the compact selector button in the pinned header.
@@ -157,7 +217,9 @@ export default function FlightShaperScreen() {
         </View>
 
         <View style={styles.arcWrap}>
-          {baseDisc && adjusted ? (
+          {showSim ? (
+            <SimArcSvg points={simResult!.points} />
+          ) : baseDisc && adjusted ? (
             <FlightArcSvg adjusted={adjusted} baseDisc={baseDisc} sliders={sliders} arcView={arcView} />
           ) : (
             <Text style={styles.emptyText}>Select a disc to see its flight</Text>
@@ -192,10 +254,60 @@ export default function FlightShaperScreen() {
             </Pressable>
           </View>
 
+          {/* Physics-sim toggle (R4.5) — runs the on-device shotshaper sim in place of the arc. */}
+          <View style={styles.simToggleRow}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text style={styles.simToggleTitle}>Physics sim</Text>
+              <Text style={styles.simToggleSub}>Rigid-body shotshaper trajectory — runs on-device, no server.</Text>
+            </View>
+            <Switch
+              value={physicsSimOn}
+              onValueChange={setPhysicsSimOn}
+              trackColor={{ false: colors.border, true: '#38bdf8' }}
+              thumbColor="#fff"
+              accessibilityLabel="Physics sim"
+            />
+          </View>
+
+          {physicsSimOn && (
+            <View style={styles.archetypeRow}>
+              <Text style={styles.archetypeLabel}>ARCHETYPE</Text>
+              {ARCHETYPES.map((a) => {
+                const active = simArchetype === a;
+                const isAuto = active && !simArchetypeManual;
+                return (
+                  <Pressable
+                    key={a}
+                    onPress={() => {
+                      setManualArchetype(a);
+                      setSimArchetypeManual(true);
+                    }}
+                    style={[styles.archPill, active && styles.archPillActive]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Text style={[styles.archPillText, active && styles.archPillTextActive]}>{isAuto ? `${a} ·auto` : a}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+
+          {simCaveat && (
+            <View style={styles.caveat}>
+              <Text style={styles.caveatText}>
+                Extrapolating from driver-only data — shotshaper has no putter/midrange model, so slow discs use the fairway-driver archetype.
+              </Text>
+            </View>
+          )}
+
           <View style={styles.sliderBank}>
             <SliderCol label="Hyzer" formatKey="hyzer" unit="degrees" value={sliders.hyzer} min={-30} max={30} isDefault={sliders.hyzer === 0} onChange={setSlider('hyzer')} onScrollLock={setScrollEnabled} />
             <SliderCol label="Nose" formatKey="nose" unit="pitch" value={sliders.nose} min={-15} max={15} isDefault={sliders.nose === 0} onChange={setSlider('nose')} onScrollLock={setScrollEnabled} />
             <SliderCol label="Wind" formatKey="wind" unit="mph" value={sliders.wind} min={-20} max={20} isDefault={sliders.wind === 0} onChange={setSlider('wind')} onScrollLock={setScrollEnabled} />
+            {physicsSimOn && (
+              <SliderCol label="Cross" formatKey="wind" unit="mph" valueText={crosswindLabel(crosswind)} value={crosswind} min={-20} max={20} isDefault={crosswind === 0} onChange={(v) => setCrosswind(Math.round(v))} onScrollLock={setScrollEnabled} />
+            )}
             <SliderCol label="Arm" formatKey="armSpeed" unit="power" value={sliders.armSpeed} min={50} max={100} isDefault={sliders.armSpeed === 100} onChange={setSlider('armSpeed')} onScrollLock={setScrollEnabled} />
             <SliderCol label="Spin" formatKey="spin" unit="rpm" value={sliders.spin} min={50} max={100} isDefault={sliders.spin === 100} onChange={setSlider('spin')} onScrollLock={setScrollEnabled} />
           </View>
@@ -311,6 +423,7 @@ function SliderCol({
   isDefault,
   onChange,
   formatKey,
+  valueText,
   onScrollLock,
 }: {
   label: string;
@@ -321,12 +434,13 @@ function SliderCol({
   isDefault: boolean;
   onChange: (v: number) => void;
   formatKey: keyof SliderValues;
+  valueText?: string; // overrides the SliderValues-keyed label (used by the sim-only crosswind col)
   onScrollLock: (enabled: boolean) => void;
 }) {
   return (
     <View style={styles.sliderCol}>
       <Text style={styles.sliderLabel}>{label}</Text>
-      <Text style={[styles.sliderValue, { color: isDefault ? colors.muted : colors.accent }]}>{sliderLabel(formatKey, value)}</Text>
+      <Text style={[styles.sliderValue, { color: isDefault ? colors.muted : colors.accent }]}>{valueText ?? sliderLabel(formatKey, value)}</Text>
       <VerticalSlider
         minimumValue={min}
         maximumValue={max}
@@ -393,6 +507,18 @@ const styles = StyleSheet.create({
   emptyText: { color: colors.muted, fontSize: 13, paddingVertical: 4, textAlign: 'center' },
   resetBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
   resetBtnText: { color: colors.muted, fontSize: 12, fontWeight: '600' },
+  // Physics-sim controls (R4.5).
+  simToggleRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4, marginBottom: 10 },
+  simToggleTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  simToggleSub: { color: colors.muted, fontSize: 11, marginTop: 2 },
+  archetypeRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
+  archetypeLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, color: colors.muted, marginRight: 2 },
+  archPill: { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  archPillActive: { borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.12)' },
+  archPillText: { color: colors.muted, fontSize: 11, fontWeight: '600' },
+  archPillTextActive: { color: '#38bdf8' },
+  caveat: { backgroundColor: 'rgba(251,191,36,0.08)', borderWidth: 1, borderColor: 'rgba(251,191,36,0.25)', borderRadius: 8, padding: 8, marginBottom: 12 },
+  caveatText: { color: '#fbbf24', fontSize: 11, lineHeight: 15 },
   sliderBank: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', gap: 10 },
   sliderCol: { alignItems: 'center', gap: 6, minWidth: 84, flexBasis: '30%' },
   sliderLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, color: colors.muted, textTransform: 'uppercase' },
