@@ -1,7 +1,7 @@
 // Card layout ported from templates/index.html's render() — mfr/mold head, 4-up flight
 // number row, plastic/weight meta line, use + notes, disc-type word + stability badge,
 // plus a per-disc flight-arc thumbnail (the website's signature — an arc on every card).
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme';
 import { discType, stab, STAB_META, TYPE_META, type Disc } from '../utils/disc';
@@ -18,14 +18,17 @@ const NEUTRAL: SliderValues = { hyzer: 0, nose: 0, wind: 0, armSpeed: 100, spin:
 interface Props {
   disc: Disc;
   arcView: ArcView;
-  onPress: () => void;
-  onPressArc?: () => void;
+  // Callbacks receive the disc / new value so the parent can pass STABLE top-level handlers
+  // (not per-item arrows). That's what lets React.memo below actually skip re-renders while
+  // scrolling a large list — the B2 scroll-jank fix (b2-spike.md).
+  onPress: (d: Disc) => void;
+  onPressArc?: (d: Disc) => void;
   onLongPress?: () => void;
   dragActive?: boolean;
-  onToggleBag?: () => void;
+  onToggleBag?: (id: number, nextInBag: boolean) => void;
 }
 
-export default function DiscCard({ disc: d, arcView, onPress, onPressArc, onLongPress, dragActive, onToggleBag }: Props) {
+function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onLongPress, dragActive, onToggleBag }: Props) {
   const s = STAB_META[stab(d)];
   const t = TYPE_META[discType(d)];
   const safeColor = d.color && HEX6.test(d.color) ? d.color : null;
@@ -34,7 +37,7 @@ export default function DiscCard({ disc: d, arcView, onPress, onPressArc, onLong
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => onPress(d)}
       onLongPress={onLongPress}
       style={[
         styles.card,
@@ -50,12 +53,12 @@ export default function DiscCard({ disc: d, arcView, onPress, onPressArc, onLong
               <Text style={styles.mfr}>{d.mfr}</Text>
               <Text style={styles.mold}>{d.mold}</Text>
             </View>
-            {onToggleBag && (
+            {onToggleBag && d.id != null && (
               // Nested Pressable: RN routes the touch to the inner control, so tapping this
               // toggles the bag flag without also firing the card's onPress (edit) — no
               // stopPropagation needed the way the website's onclick handler required.
               <Pressable
-                onPress={onToggleBag}
+                onPress={() => onToggleBag(d.id!, !d.inBag)}
                 hitSlop={8}
                 style={[styles.bagCheck, d.inBag && styles.bagCheckOn]}
                 accessibilityRole="button"
@@ -92,7 +95,7 @@ export default function DiscCard({ disc: d, arcView, onPress, onPressArc, onLong
         </View>
         <Pressable
           style={styles.arcThumb}
-          onPress={onPressArc}
+          onPress={onPressArc ? () => onPressArc(d) : undefined}
           // Nested Pressable captures the tap so the thumbnail opens arc-detail instead of
           // firing the card's edit onPress. With no handler it's inert (still no card tap).
           accessibilityRole={onPressArc ? 'button' : undefined}
@@ -104,6 +107,11 @@ export default function DiscCard({ disc: d, arcView, onPress, onPressArc, onLong
     </Pressable>
   );
 }
+
+// Memoized: with stable callbacks + referentially-stable disc objects from state, this skips
+// re-rendering unchanged cards while scrolling a large list. Default shallow prop compare is
+// enough because the parent now passes stable handlers (see Props note above).
+export default React.memo(DiscCardBase);
 
 function NumStat({ label, value }: { label: string; value: number }) {
   return (

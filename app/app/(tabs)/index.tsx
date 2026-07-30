@@ -210,12 +210,13 @@ export default function BagScreen() {
     setFormOpen(true);
   };
 
-  const openEdit = (d: Disc) => {
+  // Stable (only stable setters inside) so DiscCard's React.memo can skip unchanged cards.
+  const openEdit = useCallback((d: Disc) => {
     setFormIsNew(false);
     setFormInitial(d);
     setFormSession((n) => n + 1);
     setFormOpen(true);
-  };
+  }, []);
 
   const handleSave = async (saved: Disc) => {
     if (userId == null) return;
@@ -274,14 +275,25 @@ export default function BagScreen() {
   };
 
   // Today's bag: flip a single disc's inBag flag and persist. Matches the website's
-  // toggleBagged() — inBag is per-disc, stored the same way as everything else.
-  const toggleBag = async (id: number) => {
-    if (userId == null) return;
-    const target = discs.find((d) => d.id === id);
-    const nextInBag = !target?.inBag;
-    setDiscs(discs.map((d) => (d.id === id ? { ...d, inBag: nextInBag } : d)));
-    await setDiscInBag(userId, id, nextInBag); // single UPDATE
-  };
+  // toggleBagged(). The card supplies nextInBag, so this reads no state → stable (useCallback)
+  // + stale-safe (functional setDiscs), which lets DiscCard's React.memo hold during scroll.
+  const toggleBag = useCallback(
+    async (id: number, nextInBag: boolean) => {
+      if (userId == null) return;
+      setDiscs((prev) => prev.map((d) => (d.id === id ? { ...d, inBag: nextInBag } : d)));
+      await setDiscInBag(userId, id, nextInBag); // single UPDATE
+    },
+    [userId]
+  );
+
+  // Stable renderItem for the (non-drag) list — all handlers stable, so memoized DiscCards only
+  // re-render when their own disc, the arcView, or a handler identity actually changes.
+  const renderCard = useCallback(
+    ({ item }: { item: Disc }) => (
+      <DiscCard disc={item} arcView={arcView} onPress={openEdit} onPressArc={setDetailDisc} onToggleBag={toggleBag} />
+    ),
+    [arcView, openEdit, toggleBag]
+  );
 
   const clearBag = () => {
     Alert.alert("Clear today's bag?", 'This unmarks every disc as in-bag. Your discs are not deleted.', [
@@ -479,11 +491,11 @@ export default function BagScreen() {
             <DiscCard
               disc={item}
               arcView={arcView}
-              onPress={() => openEdit(item)}
-              onPressArc={() => setDetailDisc(item)}
+              onPress={openEdit}
+              onPressArc={setDetailDisc}
               onLongPress={drag}
               dragActive={isActive}
-              onToggleBag={item.id != null ? () => toggleBag(item.id!) : undefined}
+              onToggleBag={toggleBag}
             />
           )}
         />
@@ -492,15 +504,13 @@ export default function BagScreen() {
           data={filteredSorted}
           keyExtractor={(d) => String(d.id)}
           contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <DiscCard
-              disc={item}
-              arcView={arcView}
-              onPress={() => openEdit(item)}
-              onPressArc={() => setDetailDisc(item)}
-              onToggleBag={item.id != null ? () => toggleBag(item.id!) : undefined}
-            />
-          )}
+          renderItem={renderCard}
+          // B2 scroll-perf tuning for large collections (b2-spike.md): render fewer cards per
+          // batch/window so a fast fling through 200 doesn't mount a wave of FlightArcSvgs at once.
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={7}
+          removeClippedSubviews
         />
       )}
 
