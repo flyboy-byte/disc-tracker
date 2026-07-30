@@ -186,8 +186,10 @@ a real reason to keep checking model agreement over time rather than the one-tim
 latest release `mobile-preview-0.12` (B3 scorekeeper + B4 backup).** All five tabs are real
 and working, verified on an Android emulator and sideloaded on hardware:
 - **Bag** — full CRUD (manual add or from the 1,660+ disc library), edit, delete, sort,
-  search, stability/type filters, color picker, CSV import/export (share sheet + document
-  picker). SQLite-backed, survives app kills.
+  search, stability/type filters, color picker, CSV import/export. SQLite-backed, survives app
+  kills. **B2 big-collection support (`0.11`)**: a segmented **Today's Bag / Collection** split,
+  30/page pagination, memoized cards + incremental single-row DB writes, and — replacing the
+  glitchy drag-reorder — per-card **⤒/↑/↓ reorder arrows** (custom sort, Collection scope).
 - **Flight Shaper** — bag/manual disc picker, 5 sliders (custom Reanimated `VerticalSlider`),
   live arc + ghost-arc redraw, distance estimate, RHBH/RHFH/LHBH/LHFH switcher. **Physics-sim
   mode ported on-device in R4.5** (2026-07-29) — the vendored shotshaper engine reimplemented
@@ -199,12 +201,18 @@ and working, verified on an Android emulator and sideloaded on hardware:
   profile + the user's skill preset, bucketed great/good/marginal with band chips. Skill preset
   (Beginner/Intermediate/Advanced) lives in Settings, persisted in `user_meta.skill`. Frozen
   baseline validation harness (`src/utils/__fixtures__/suggest-baseline.json`). `useFocusEffect`-refreshed.
-- **Settings** (4th tab, gear icon) — default throw view (persisted, inherited by Flight
-  Shaper), data backup/import/delete-all, a v1.1 sync placeholder, About (version, GPLv3,
-  source link). Adding it required a `useFocusEffect` refetch on the Bag screen too, since
-  Settings can import/delete discs.
+- **Score** (4th tab, `0.12`) — **offline scorekeeper** (B3), the UDisc-fallback for no-signal
+  rounds. One screen, four internal views (rounds list → setup → hole-by-hole active card →
+  summary standings+grid). 1–8 players, editable par, live totals + vs-par. 4 app-only SQLite
+  tables (`rounds`/`round_holes`/`round_players`/`round_scores`); pure scoring math in
+  `src/utils/roundMath.ts`. `app/plan/docs/scorekeeper-scope.md`.
+- **Settings** (5th tab, gear icon) — default throw view, **skill level** (drives Disc Suggest),
+  Marshall Street reference images (opt-in), **Backup & Restore** (B4, `0.12`): full-device JSON
+  "Back up everything" / "Restore" — discs + today's-bag + settings + scorecards in one file,
+  share-sheet in/out (`src/utils/backup.ts`) — plus CSV disc-list export/import, delete-all, and
+  About. (The old v1.1 sync placeholder is gone — R5 VPS sync was **dropped**, superseded by B4.)
 
-The SQLite CRUD layer is verified on-device. 48/48 Jest tests still pass. Several real
+The SQLite CRUD layer is verified on-device. **115/115 Jest tests pass.** Several real
 bugs were found and fixed by actually running the app (form-remount, native-slider/ScrollView
 gesture conflict, stale-bag-data on tab switch, document-picker re-entry crash) — all
 documented in `app/PORT_PLAN.md`.

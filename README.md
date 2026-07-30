@@ -80,7 +80,15 @@ model, for driver-class discs. Research/experimental, off by default.
 
 ## Mobile app
 
-An **Android app** (Expo / React Native) — a local-first port of the bag tracker, Flight Shaper, and Disc Suggest tools plus a Settings screen, backed by on-device SQLite with no server dependency. **v1 is feature-complete** and confirmed running on real hardware; early **debug-signed preview APKs** are on the [Releases page](https://github.com/flyboy-byte/disc-tracker/releases) for sideloading. Play Store + F-Droid distribution is the next step. Build/plan docs live in [`app/PORT_PLAN.md`](app/PORT_PLAN.md). (Android-first — iOS stays possible on the same Expo/RN codebase, just deferred well behind Android + F-Droid.)
+An **Android app** (Expo / React Native) — a local-first port backed by on-device SQLite with no server dependency. **v1 is feature-complete and has grown well past it.** Five tabs:
+
+- **Bag** — full CRUD from the 1,660+ disc library, per-disc flight-arc thumbnails, filters, colors; scales to big collections (a **Today's Bag / Collection** split, pagination, and per-card reorder arrows).
+- **Flight Shaper** — the slider tool with a live arc, plus an opt-in on-device **Physics sim** (a TypeScript port of [shotshaper](https://github.com/kegiljarhus/shotshaper), GPLv3) — no server needed.
+- **Disc Suggest** — skill-aware recommendations (Beginner/Intermediate/Advanced) scored against each shot shape.
+- **Score** — a **dead-simple offline scorekeeper** for when UDisc won't load or there's no signal: hole-by-hole scoring, 1–8 players, running totals + vs-par, saved rounds. No account, no course lookup, no GPS.
+- **Settings** — throw view, skill level, Marshall Street reference images (opt-in), and **full backup & restore** (one file with discs + today's bag + settings + scorecards — move everything to a new phone, no server).
+
+Confirmed running on real hardware; **debug-signed preview APKs** are on the [Releases page](https://github.com/flyboy-byte/disc-tracker/releases) for sideloading (latest: `mobile-preview-0.12`). Play Store + F-Droid distribution is the next step. Build/plan docs live in [`app/PORT_PLAN.md`](app/PORT_PLAN.md). (Android-first — iOS stays possible on the same Expo/RN codebase, just deferred behind Android + F-Droid.)
 
 ---
 

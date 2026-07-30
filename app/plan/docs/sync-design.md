@@ -1,9 +1,15 @@
-# Sync / Backup Design (roadmap step R5)
+# Sync / Backup Design (roadmap step R5) — SUPERSEDED
 
-> **Status:** design locked 2026-07-25 (decisions below). **Build deferred to roadmap step
-> R5** — after app polish (R1–R3) and Marshall Street (R4), before the store track (R6/R7).
-> This is the authoritative design for sync; where it differs from the older minimal sketch
-> in [`../../PORT_PLAN.md`](../../PORT_PLAN.md) "Phase 10 — VPS Sync", this doc wins.
+> **⚠️ SUPERSEDED 2026-07-30 — R5 VPS sync was DROPPED (Logan's call), never built.** It was
+> replaced by **B4: full-device backup/restore** (`src/utils/backup.ts` + Settings "Back up
+> everything / Restore") — one local JSON file that moves discs + settings + rounds to a new
+> device, no server. Rationale: CSV already covered backup/migration/interop, and sync's unique
+> add was always narrow vs. its infra + F-Droid cost. **This doc is kept as a historical record
+> only — do not build from it.** See `PORT_PLAN.md` (R5 row) and B4.
+>
+> ---
+> _Original status (2026-07-25):_ design locked; build was deferred to R5 (after R1–R4, before
+> the store track). Authoritative sync design where it differed from PORT_PLAN's "Phase 10" sketch.
 >
 > Bound by the **Network-feature privacy bar** (PORT_PLAN.md, Post-v1 Roadmap) because the
 > developer reviews F-Droid MRs himself — this feature must pass PCAPdroid/permission review.

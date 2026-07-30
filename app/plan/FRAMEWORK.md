@@ -18,6 +18,14 @@ it" framing this packet adds.
 Update the checkboxes below as things actually happen. This file is the honest answer to
 "where are we" at any point in the future.
 
+> **STATUS (2026-07-30):** v1 shipped long ago; the app has grown well past this original
+> phase model. Latest release **`mobile-preview-0.12`**, now **5 tabs** (Bag / Flight Shaper /
+> Disc Suggest / **Score** / Settings). Post-v1 work all DONE: R1–R4.5, B1 (suggest rewrite),
+> B2 (big collections), B3 (offline scorekeeper), B4 (full backup/restore). **R5 VPS sync was
+> DROPPED** (→ B4). Only the store track (R6 Play → R7 F-Droid) remains, parked until Logan's
+> ready. The phase checkboxes below are the *original v1 build* record — the live roadmap is
+> the table in [`../PORT_PLAN.md`](../PORT_PLAN.md).
+
 ## Phase model
 
 ```

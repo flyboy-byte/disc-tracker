@@ -609,6 +609,13 @@ real signing/distribution setup:
 | `mobile-preview-0.3` | Fix: Flight Shaper showing stale bag data (see Phase 5) |
 | `mobile-preview-0.4` | + Disc Suggest tab, + CSV import/export (see Phases 6-7) |
 | `mobile-preview-0.5` | + today's-bag, + Settings tab, drag-reorder verified, tab icons, DB lock fix (Phase 9) |
+| `mobile-preview-0.6` | + per-disc bag flight arcs, Flight Shaper rework |
+| `mobile-preview-0.7` | + field view, custom hex colors, polish |
+| `mobile-preview-0.8` | + Marshall Street reference images (R4), opt-in |
+| `mobile-preview-0.9` | + Physics-sim on-device port (R4.5) |
+| `mobile-preview-0.10` | B1 — Disc Suggest accuracy rewrite (skill-aware scoring + band chips) |
+| `mobile-preview-0.11` | B2 — big-collection support (Bag/Collection split, pagination, move-to-top, incremental writes) |
+| `mobile-preview-0.12` | B3 offline scorekeeper (Score tab) + B4 full backup/restore; drag-reorder → ⤒/↑/↓ arrows; physics "two models" note |
 
 These are **debug-signed** (no production keystore exists yet — see Distribution
 Track D1 below), and the repo is public, so releases are visible to anyone, not just
