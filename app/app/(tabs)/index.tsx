@@ -3,7 +3,6 @@
 // CSV export/import (Phase 7) is wired in via CsvExportModal/CsvImportModal below.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist';
 import { FlatList } from 'react-native-gesture-handler';
 import { useFocusEffect } from 'expo-router';
 import ArcDetailModal from '../../src/components/ArcDetailModal';
@@ -212,36 +211,43 @@ export default function BagScreen() {
     setPage(0);
   }, [stabFilter, typeFilter, search, sortMode, bagScope]);
 
-  // Drag-reorder only makes sense on the full, unfiltered, custom-sorted collection shown as ONE
-  // page — a filtered/scoped/paged view has gaps, so dropping at index N wouldn't map to the real
-  // array position. (Today's bag is itself a subset, so it never drags.)
-  const dragEnabled =
-    bagScope === 'collection' &&
-    !paginated &&
-    viewMode === 'list' &&
-    sortMode === 'custom' &&
-    stabFilter === 'all' &&
-    typeFilter === 'all' &&
-    !search.trim();
+  // Reordering (⤒/↑/↓ arrows on each card) replaces drag-reorder — on-device drag was unreliable
+  // (long-press latency + cards visually stacking). Only makes sense on the full, unfiltered,
+  // custom-sorted Collection: a filtered/scoped view is a subset, so a swap wouldn't map to real
+  // array positions. Works with or without pagination (arrows cross page boundaries fine).
+  const reorderable =
+    bagScope === 'collection' && sortMode === 'custom' && stabFilter === 'all' && typeFilter === 'all' && !search.trim();
 
-  // Cross-page reordering for big collections: pull a disc to the front of the custom order.
-  // Only meaningful in custom sort (any other sort recomputes order and ignores sort_order).
-  const showMoveToTop =
-    paginated && bagScope === 'collection' && sortMode === 'custom' && stabFilter === 'all' && typeFilter === 'all' && !search.trim();
-  const moveToTop = useCallback(
-    async (id: number) => {
+  const persistOrder = useCallback(
+    async (reordered: Disc[]) => {
       if (userId == null) return;
-      const target = discs.find((d) => d.id === id);
-      if (!target) return;
-      const reordered = [target, ...discs.filter((d) => d.id !== id)];
       setDiscs(reordered);
-      setPage(0); // jump to the top so the move is visible
       await reorderDiscs(userId, reordered.map((d) => d.id ?? 0));
     },
-    // Depends on discs (not "stable"), but move-to-top only shows in a paginated collection and a
-    // reorder re-renders the list anyway — scroll (no discs change) still gets stable handlers.
-    [userId, discs]
+    [userId]
   );
+  const moveToTop = useCallback(
+    (id: number) => {
+      const target = discs.find((d) => d.id === id);
+      if (!target) return;
+      setPage(0); // jump to the top so the move is visible
+      persistOrder([target, ...discs.filter((d) => d.id !== id)]);
+    },
+    [discs, persistOrder]
+  );
+  const moveBy = useCallback(
+    (id: number, delta: -1 | 1) => {
+      const i = discs.findIndex((d) => d.id === id);
+      const j = i + delta;
+      if (i < 0 || j < 0 || j >= discs.length) return;
+      const next = [...discs];
+      [next[i], next[j]] = [next[j], next[i]];
+      persistOrder(next);
+    },
+    [discs, persistOrder]
+  );
+  const moveUp = useCallback((id: number) => moveBy(id, -1), [moveBy]);
+  const moveDown = useCallback((id: number) => moveBy(id, 1), [moveBy]);
 
   const filtersActive = stabFilter !== 'all' || typeFilter !== 'all' || !!search.trim();
   const clearFilters = () => {
@@ -322,13 +328,6 @@ export default function BagScreen() {
     setFormOpen(true);
   };
 
-  const handleDragEnd = async ({ data }: { data: Disc[] }) => {
-    if (userId == null) return;
-    setDiscs(data);
-    toast('Order saved');
-    await reorderDiscs(userId, data.map((d) => d.id ?? 0)); // rewrites sort_order only
-  };
-
   // Today's bag: flip a single disc's inBag flag and persist. Matches the website's
   // toggleBagged(). The card supplies nextInBag, so this reads no state → stable (useCallback)
   // + stale-safe (functional setDiscs), which lets DiscCard's React.memo hold during scroll.
@@ -341,8 +340,10 @@ export default function BagScreen() {
     [userId]
   );
 
-  // Stable renderItem for the (non-drag) list — all handlers stable, so memoized DiscCards only
-  // re-render when their own disc, the arcView, or a handler identity actually changes.
+  // Stable renderItem — all handlers stable, so memoized DiscCards only re-render when their own
+  // disc, the arcView, or a handler identity actually changes.
+  const firstId = reorderable ? discs[0]?.id : undefined;
+  const lastId = reorderable ? discs[discs.length - 1]?.id : undefined;
   const renderCard = useCallback(
     ({ item }: { item: Disc }) => (
       <DiscCard
@@ -351,10 +352,14 @@ export default function BagScreen() {
         onPress={openEdit}
         onPressArc={setDetailDisc}
         onToggleBag={toggleBag}
-        onMoveToTop={showMoveToTop ? moveToTop : undefined}
+        onMoveToTop={reorderable ? moveToTop : undefined}
+        onMoveUp={reorderable ? moveUp : undefined}
+        onMoveDown={reorderable ? moveDown : undefined}
+        canMoveUp={reorderable && item.id !== firstId}
+        canMoveDown={reorderable && item.id !== lastId}
       />
     ),
-    [arcView, openEdit, toggleBag, showMoveToTop, moveToTop]
+    [arcView, openEdit, toggleBag, reorderable, moveToTop, moveUp, moveDown, firstId, lastId]
   );
 
   const clearBag = () => {
@@ -471,11 +476,7 @@ export default function BagScreen() {
       </View>
       {bagScope === 'collection' && sortMode === 'custom' && (
         <Text style={styles.dragHint}>
-          {dragEnabled
-            ? 'long-press a card to reorder'
-            : paginated
-              ? 'tap ⤒ Top to move a disc to the front'
-              : 'clear search/filters to drag-reorder'}
+          {reorderable ? 'use ⤒ / ↑ / ↓ on a card to reorder' : 'clear search/filters to reorder'}
         </Text>
       )}
 
@@ -574,24 +575,6 @@ export default function BagScreen() {
             </>
           )}
         </ScrollView>
-      ) : dragEnabled ? (
-        <DraggableFlatList
-          data={filteredSorted}
-          keyExtractor={(d: Disc) => String(d.id)}
-          onDragEnd={handleDragEnd}
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item, drag, isActive }: RenderItemParams<Disc>) => (
-            <DiscCard
-              disc={item}
-              arcView={arcView}
-              onPress={openEdit}
-              onPressArc={setDetailDisc}
-              onLongPress={drag}
-              dragActive={isActive}
-              onToggleBag={toggleBag}
-            />
-          )}
-        />
       ) : (
         <FlatList
           data={pageItems}

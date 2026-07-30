@@ -23,15 +23,18 @@ interface Props {
   // scrolling a large list — the B2 scroll-jank fix (b2-spike.md).
   onPress: (d: Disc) => void;
   onPressArc?: (d: Disc) => void;
-  onLongPress?: () => void;
-  dragActive?: boolean;
   onToggleBag?: (id: number, nextInBag: boolean) => void;
-  // B2: cross-page reordering in a paginated collection (drag can't cross pages). When provided,
-  // shows a "Move to top" control that sends this disc to the front of the custom order.
+  // Reorder controls (custom sort, unfiltered Collection). Replaces drag-reorder, which was
+  // unreliable on-device (long-press latency + cards stacking). ⤒ top / ↑ up / ↓ down, keyed by id;
+  // canMoveUp/Down disable the arrows at the ends of the list.
   onMoveToTop?: (id: number) => void;
+  onMoveUp?: (id: number) => void;
+  onMoveDown?: (id: number) => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
 }
 
-function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onLongPress, dragActive, onToggleBag, onMoveToTop }: Props) {
+function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onToggleBag, onMoveToTop, onMoveUp, onMoveDown, canMoveUp, canMoveDown }: Props) {
   const s = STAB_META[stab(d)];
   const t = TYPE_META[discType(d)];
   const safeColor = d.color && HEX6.test(d.color) ? d.color : null;
@@ -41,12 +44,10 @@ function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onLongPress, drag
   return (
     <Pressable
       onPress={() => onPress(d)}
-      onLongPress={onLongPress}
       style={[
         styles.card,
         safeColor ? { borderLeftColor: safeColor, borderLeftWidth: 3 } : null,
         d.inBag ? styles.bagged : null,
-        dragActive ? styles.dragActive : null,
       ]}
     >
       <View style={styles.body}>
@@ -56,17 +57,6 @@ function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onLongPress, drag
               <Text style={styles.mfr}>{d.mfr}</Text>
               <Text style={styles.mold}>{d.mold}</Text>
             </View>
-            {onMoveToTop && d.id != null && (
-              <Pressable
-                onPress={() => onMoveToTop(d.id!)}
-                hitSlop={8}
-                style={styles.topBtn}
-                accessibilityRole="button"
-                accessibilityLabel={`Move ${d.mold} to top`}
-              >
-                <Text style={styles.topBtnText}>⤒ Top</Text>
-              </Pressable>
-            )}
             {onToggleBag && d.id != null && (
               // Nested Pressable: RN routes the touch to the inner control, so tapping this
               // toggles the bag flag without also firing the card's onPress (edit) — no
@@ -105,6 +95,13 @@ function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onLongPress, drag
             <View style={[styles.badge, { backgroundColor: s.color }]}>
               <Text style={styles.badgeText}>{s.short}</Text>
             </View>
+            {onMoveToTop && d.id != null && (
+              <View style={styles.reorder}>
+                <ReorderBtn label="⤒" a11y={`Move ${d.mold} to top`} disabled={!canMoveUp} onPress={() => onMoveToTop(d.id!)} />
+                <ReorderBtn label="↑" a11y={`Move ${d.mold} up`} disabled={!canMoveUp} onPress={() => onMoveUp?.(d.id!)} />
+                <ReorderBtn label="↓" a11y={`Move ${d.mold} down`} disabled={!canMoveDown} onPress={() => onMoveDown?.(d.id!)} />
+              </View>
+            )}
           </View>
         </View>
         <Pressable
@@ -136,6 +133,21 @@ function NumStat({ label, value }: { label: string; value: number }) {
   );
 }
 
+function ReorderBtn({ label, a11y, disabled, onPress }: { label: string; a11y: string; disabled?: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      hitSlop={6}
+      style={[styles.reorderBtn, disabled && styles.reorderBtnDisabled]}
+      accessibilityRole="button"
+      accessibilityLabel={a11y}
+    >
+      <Text style={styles.reorderBtnText}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.card,
@@ -146,7 +158,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   bagged: { borderColor: colors.accent },
-  dragActive: { backgroundColor: colors.cardHover, opacity: 0.9 },
   body: { flexDirection: 'row', gap: 10 },
   main: { flex: 1, minWidth: 0 },
   arcThumb: {
@@ -176,8 +187,10 @@ const styles = StyleSheet.create({
   bagCheckOn: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.15)' },
   bagCheckText: { color: colors.muted, fontSize: 11, fontWeight: '600' },
   bagCheckTextOn: { color: colors.accent },
-  topBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
-  topBtnText: { color: colors.muted, fontSize: 11, fontWeight: '600' },
+  reorder: { flexDirection: 'row', gap: 6, marginLeft: 'auto' },
+  reorderBtn: { width: 34, height: 30, borderRadius: 8, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  reorderBtnDisabled: { opacity: 0.3 },
+  reorderBtnText: { color: colors.accent, fontSize: 15, fontWeight: '700' },
   mfr: { color: colors.muted, fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
   mold: { color: colors.text, fontSize: 18, fontWeight: '700' },
   nums: { flexDirection: 'row', gap: 14, marginBottom: 6 },
