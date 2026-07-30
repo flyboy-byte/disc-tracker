@@ -24,14 +24,18 @@ EAS is dropped entirely, not kept as a fallback — DragTree proved local `./gra
 
 ## 2. Data Architecture: Local-First SQLite
 
-### Decision: Local-first + optional sync to own VPS
+### Decision: Local-first SQLite; portability via a local backup file (no server sync)
 
-The Flask app is a localhost server that can't serve a phone directly. Three paths considered:
+> **Updated 2026-07-30:** any server-sync path (D below) is **DROPPED.** The app is local-only,
+> and cross-device portability ships as **B4 — a full local backup/restore file** (discs +
+> settings + rounds; `src/utils/backup.ts`), no VPS involved. History of the paths considered:
+
+The Flask app is a localhost server that can't serve a phone directly. Paths considered:
 
 - **Path A (LAN bridge):** Phone calls Flask API over WiFi. Fragile, server-dependent, not a real app. Rejected.
-- **Path B (local SQLite only):** `expo-sqlite` on device. Fully offline, no server dependency. **Chosen for v1.**
-- **Path C (encrypted blob backup):** Encrypt disc data, push opaque blob to VPS. Originally planned for v1.1 — **replaced by Path D.**
-- **Path D (sync with own Flask server):** Local SQLite on device stays the source of truth. Optional manual sync pushes/pulls the full bag to/from the existing VPS via the Flask API. **Chosen** — now roadmap step **R5**; full locked design (transport, auth, protocol, transparency) in [`plan/docs/sync-design.md`](plan/docs/sync-design.md). Path C (E2E encrypted blob) stays documented there as a revisit path if the server is ever untrusted.
+- **Path B (local SQLite only):** `expo-sqlite` on device. Fully offline, no server dependency. **Chosen — and it stayed the whole story.**
+- **Path C (encrypted blob backup):** Encrypt disc data, push opaque blob to VPS. Considered, not built.
+- **Path D (sync with own Flask server):** was going to be roadmap step R5. **DROPPED 2026-07-30** — CSV already covered interop and sync's unique add was narrow vs. its infra + F-Droid cost. Replaced by B4's local backup file. `plan/docs/sync-design.md` is kept as a superseded record only.
 
 ### Path D — Sync Architecture
 
