@@ -21,6 +21,9 @@ export interface UserMeta {
   msRefEnabled: boolean;
   // Disc-suggestion skill preset — drives suggestScore.ts. Default 'intermediate'.
   skill: SkillPreset;
+  // Field view scope (B2). false = today's-bag discs only (default); true = whole filtered set
+  // when it's small enough to stay readable. See plan/docs/b2-spike.md.
+  fieldShowAll: boolean;
 }
 
 const DB_NAME = 'disc_tracker.db';
@@ -255,8 +258,8 @@ export function reorderDiscs(userId: number, orderedIds: number[]): Promise<void
 // Raw read shared by getMeta (serialized) and setMeta (serialized) — must NOT itself be
 // serialized, or setMeta would deadlock waiting on a slot queued behind its own.
 async function readMeta(db: SQLiteDatabase, userId: number): Promise<UserMeta> {
-  const row = await db.getFirstAsync<{ next_id: number; sort_mode: string; arc_view: string; ms_ref: number; skill: string }>(
-    'SELECT next_id, sort_mode, arc_view, ms_ref, skill FROM user_meta WHERE user_id = ?',
+  const row = await db.getFirstAsync<{ next_id: number; sort_mode: string; arc_view: string; ms_ref: number; skill: string; field_show_all: number }>(
+    'SELECT next_id, sort_mode, arc_view, ms_ref, skill, field_show_all FROM user_meta WHERE user_id = ?',
     [userId]
   );
   const skill = row?.skill;
@@ -266,6 +269,7 @@ async function readMeta(db: SQLiteDatabase, userId: number): Promise<UserMeta> {
     arcView: row?.arc_view ?? 'RHBH',
     msRefEnabled: !!row?.ms_ref,
     skill: skill === 'beginner' || skill === 'advanced' ? skill : 'intermediate',
+    fieldShowAll: !!row?.field_show_all,
   };
 }
 
@@ -279,11 +283,12 @@ export function setMeta(userId: number, updates: Partial<UserMeta>): Promise<voi
     const current = await readMeta(db, userId);
     const next = { ...current, ...updates };
     await db.runAsync(
-      `INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view, ms_ref, skill) VALUES (?, ?, ?, ?, ?, ?)
+      `INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view, ms_ref, skill, field_show_all) VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id) DO UPDATE SET
          next_id = excluded.next_id, sort_mode = excluded.sort_mode,
-         arc_view = excluded.arc_view, ms_ref = excluded.ms_ref, skill = excluded.skill`,
-      [userId, next.nextId, next.sortMode, next.arcView, next.msRefEnabled ? 1 : 0, next.skill]
+         arc_view = excluded.arc_view, ms_ref = excluded.ms_ref, skill = excluded.skill,
+         field_show_all = excluded.field_show_all`,
+      [userId, next.nextId, next.sortMode, next.arcView, next.msRefEnabled ? 1 : 0, next.skill, next.fieldShowAll ? 1 : 0]
     );
   });
 }

@@ -57,6 +57,10 @@ const COLUMN_MIGRATIONS: { ddl: string }[] = [
   // App-only column (no website counterpart yet): the disc-suggestion skill preset
   // (beginner | intermediate | advanced), default intermediate. Drives suggestScore.ts.
   { ddl: "ALTER TABLE user_meta ADD COLUMN skill TEXT DEFAULT 'intermediate'" },
+  // App-only column (B2): Field view scope. Default 0 = show only today's-bag discs (the full
+  // library is unreadable + slow to render as one SVG — see plan/docs/b2-spike.md). When 1, Field
+  // view instead draws the whole filtered set, but only while it's small enough to stay legible.
+  { ddl: 'ALTER TABLE user_meta ADD COLUMN field_show_all INTEGER DEFAULT 0' },
 ];
 
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {

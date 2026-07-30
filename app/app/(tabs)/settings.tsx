@@ -30,6 +30,7 @@ export default function SettingsScreen() {
   const [arcView, setArcView] = useState<ArcView>('RHBH');
   const [skill, setSkill] = useState<SkillPreset>('intermediate');
   const [msRefEnabled, setMsRefEnabled] = useState(false);
+  const [fieldShowAll, setFieldShowAll] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const userIdRef = useRef<number | null>(null);
@@ -45,6 +46,7 @@ export default function SettingsScreen() {
         setArcView((meta.arcView as ArcView) || 'RHBH');
         setSkill(meta.skill);
         setMsRefEnabled(meta.msRefEnabled);
+        setFieldShowAll(meta.fieldShowAll);
         setLoading(false);
       })();
     }, [])
@@ -63,6 +65,11 @@ export default function SettingsScreen() {
   const changeMsRef = async (v: boolean) => {
     setMsRefEnabled(v);
     if (userIdRef.current != null) await setMeta(userIdRef.current, { msRefEnabled: v });
+  };
+
+  const changeFieldShowAll = async (v: boolean) => {
+    setFieldShowAll(v);
+    if (userIdRef.current != null) await setMeta(userIdRef.current, { fieldShowAll: v });
   };
 
   const handleImport = async (imported: Disc[]) => {
@@ -152,6 +159,32 @@ export default function SettingsScreen() {
             </Pressable>
           ))}
         </View>
+      </View>
+
+      {/* Field view scope — B2. Off by default: Field view plots today's bag (few discs, legible).
+          On: it plots the whole filtered set instead, but only while it stays small enough to read. */}
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={styles.msTextCol}>
+            <Text style={styles.sectionLabel}>FIELD VIEW</Text>
+            <Text style={styles.sectionHint}>
+              Plot all filtered discs, not just today&apos;s bag — kept on only while the set is small enough to stay readable.
+            </Text>
+          </View>
+          <Switch
+            value={fieldShowAll}
+            onValueChange={changeFieldShowAll}
+            trackColor={{ false: colors.border, true: colors.accent }}
+            thumbColor="#fff"
+            accessibilityLabel="Show all discs in Field view"
+          />
+        </View>
+        <View style={styles.divider} />
+        <Text style={styles.sectionHint}>
+          {fieldShowAll
+            ? "On — Field view draws your whole filtered set when it's 25 discs or fewer, otherwise today's bag."
+            : "Off — Field view draws only the discs in today's bag."}
+        </Text>
       </View>
 
       {/* Marshall Street reference images — R4. Opt-in, off by default: the only feature that

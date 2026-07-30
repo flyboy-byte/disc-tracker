@@ -89,6 +89,9 @@ export default function BagScreen() {
   const [bagFilter, setBagFilter] = useState(false);
   // 'list' = card list; 'field' = all arcs overlaid on one field (website's viewMode).
   const [viewMode, setViewMode] = useState<'list' | 'field'>('list');
+  // B2: Field view scopes to today's-bag by default; the Settings toggle lets it draw the whole
+  // (filtered) set instead, but only while small enough to stay legible. Persisted in user_meta.
+  const [fieldShowAll, setFieldShowAll] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
   const [formIsNew, setFormIsNew] = useState(true);
@@ -114,6 +117,7 @@ export default function BagScreen() {
       setSortMode((meta.sortMode as SortMode) || 'speed-desc');
       setArcView((meta.arcView as ArcView) || 'RHBH');
       setMsRefEnabled(meta.msRefEnabled);
+      setFieldShowAll(meta.fieldShowAll);
       didInitialLoad.current = true;
       setLoading(false);
     })();
@@ -129,6 +133,7 @@ export default function BagScreen() {
         setDiscs(d);
         setArcView((meta.arcView as ArcView) || 'RHBH');
         setMsRefEnabled(meta.msRefEnabled);
+        setFieldShowAll(meta.fieldShowAll);
       })();
     }, [userId])
   );
@@ -175,6 +180,15 @@ export default function BagScreen() {
     // 'custom' — leave in array order
     return rows;
   }, [discs, stabFilter, typeFilter, search, sortMode, bagFilter]);
+
+  // B2: which discs the field overlay draws. Default = today's-bag only (the full library is
+  // ~1200 SVG nodes in one <Svg> and visually unreadable — b2-spike.md). With the Settings opt-in
+  // on, draw the whole filtered set, but only while it's small enough to stay legible.
+  const FIELD_SMALL_MAX = 25;
+  const fieldDiscs = useMemo(() => {
+    if (fieldShowAll && filteredSorted.length <= FIELD_SMALL_MAX) return filteredSorted;
+    return filteredSorted.filter((d) => d.inBag);
+  }, [fieldShowAll, filteredSorted]);
 
   // Drag-reorder only makes sense on the full, unfiltered custom-sorted list — a filtered
   // view has gaps, so dropping a card at index N wouldn't map to the real array position.
@@ -435,7 +449,25 @@ export default function BagScreen() {
         </View>
       ) : viewMode === 'field' ? (
         <ScrollView contentContainerStyle={styles.listContent}>
-          <FieldView discs={filteredSorted} arcView={arcView} onSelectDisc={setDetailDisc} />
+          {fieldDiscs.length === 0 ? (
+            <View style={styles.emptyWrap}>
+              <Text style={styles.emptyTitle}>Nothing to plot</Text>
+              <Text style={styles.emptyBody}>
+                {fieldShowAll
+                  ? `Field view draws today's bag, or your whole filtered set when it's ${FIELD_SMALL_MAX} discs or fewer. Mark some discs as "in bag", or narrow your filters.`
+                  : 'Field view shows the discs in today’s bag. Mark some discs as “in bag” to see them here.'}
+              </Text>
+            </View>
+          ) : (
+            <>
+              <FieldView discs={fieldDiscs} arcView={arcView} onSelectDisc={setDetailDisc} />
+              <Text style={styles.fieldScopeNote}>
+                {fieldShowAll && filteredSorted.length <= FIELD_SMALL_MAX
+                  ? `Showing all ${fieldDiscs.length} filtered ${fieldDiscs.length === 1 ? 'disc' : 'discs'}`
+                  : `Showing today's bag (${fieldDiscs.length})`}
+              </Text>
+            </>
+          )}
         </ScrollView>
       ) : dragEnabled ? (
         <DraggableFlatList
@@ -585,5 +617,6 @@ const styles = StyleSheet.create({
   emptyTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
   emptyBody: { color: colors.muted, fontSize: 14, textAlign: 'center', lineHeight: 20 },
   emptyActions: { flexDirection: 'row', gap: 10, marginTop: 6 },
+  fieldScopeNote: { color: colors.muted, fontSize: 11, textAlign: 'center', marginTop: 10 },
   listContent: { paddingBottom: 24 },
 });
