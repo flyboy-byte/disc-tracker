@@ -84,9 +84,11 @@ export default function BagScreen() {
   // arcView since Settings can toggle it while this screen stays mounted.
   const [msRefEnabled, setMsRefEnabled] = useState(false);
   const [search, setSearch] = useState('');
-  // Today's-bag filter — component state (not persisted): mirrors the website's
-  // sessionStorage `bagFilter`, which likewise resets when the session ends.
-  const [bagFilter, setBagFilter] = useState(false);
+  // B2 Bag/Collection IA split. 'today' = the discs you've marked in-bag (the primary view —
+  // small, fast, Field-view-able: "what am I throwing today"); 'collection' = the full archive
+  // (all discs, browse/manage/add). Component state, default 'today' each launch — a fresh
+  // session should open on today's bag, not wherever you last left the archive.
+  const [bagScope, setBagScope] = useState<'today' | 'collection'>('today');
   // 'list' = card list; 'field' = all arcs overlaid on one field (website's viewMode).
   const [viewMode, setViewMode] = useState<'list' | 'field'>('list');
   // B2: Field view scopes to today's-bag by default; the Settings toggle lets it draw the whole
@@ -170,8 +172,8 @@ export default function BagScreen() {
       const matchS = stabFilter === 'all' || stab(d) === stabFilter;
       const matchT = typeFilter === 'all' || discType(d) === typeFilter;
       const matchQ = !q || (d.mfr + d.mold + (d.plastic ?? '') + (d.use ?? '') + (d.notes ?? '')).toLowerCase().includes(q);
-      const matchB = !bagFilter || d.inBag;
-      return matchS && matchT && matchQ && matchB;
+      const matchScope = bagScope === 'collection' || d.inBag;
+      return matchS && matchT && matchQ && matchScope;
     });
     if (sortMode === 'speed-desc') rows = [...rows].sort((a, b) => b.speed - a.speed);
     else if (sortMode === 'speed-asc') rows = [...rows].sort((a, b) => a.speed - b.speed);
@@ -179,7 +181,7 @@ export default function BagScreen() {
     else if (sortMode === 'mfr') rows = [...rows].sort((a, b) => (a.mfr + a.mold).localeCompare(b.mfr + b.mold));
     // 'custom' — leave in array order
     return rows;
-  }, [discs, stabFilter, typeFilter, search, sortMode, bagFilter]);
+  }, [discs, stabFilter, typeFilter, search, sortMode, bagScope]);
 
   // B2: which discs the field overlay draws. Default = today's-bag only (the full library is
   // ~1200 SVG nodes in one <Svg> and visually unreadable — b2-spike.md). With the Settings opt-in
@@ -190,17 +192,30 @@ export default function BagScreen() {
     return filteredSorted.filter((d) => d.inBag);
   }, [fieldShowAll, filteredSorted]);
 
-  // Drag-reorder only makes sense on the full, unfiltered custom-sorted list — a filtered
-  // view has gaps, so dropping a card at index N wouldn't map to the real array position.
+  // Drag-reorder only makes sense on the full, unfiltered custom-sorted list — a filtered or
+  // scoped view has gaps, so dropping a card at index N wouldn't map to the real array position.
+  // Only in the Collection scope (today's bag is itself a subset).
   const dragEnabled =
-    viewMode === 'list' && sortMode === 'custom' && stabFilter === 'all' && typeFilter === 'all' && !search.trim() && !bagFilter;
+    bagScope === 'collection' &&
+    viewMode === 'list' &&
+    sortMode === 'custom' &&
+    stabFilter === 'all' &&
+    typeFilter === 'all' &&
+    !search.trim();
 
-  const filtersActive = stabFilter !== 'all' || typeFilter !== 'all' || !!search.trim() || bagFilter;
+  const filtersActive = stabFilter !== 'all' || typeFilter !== 'all' || !!search.trim();
   const clearFilters = () => {
     setStabFilter('all');
     setTypeFilter('all');
     setSearch('');
-    setBagFilter(false);
+  };
+
+  // Switching scope: leaving Collection for Today's Bag drops out of any field/list interplay
+  // cleanly; entering Collection exits field view (a 200-arc field is the whole cliff we scoped
+  // away). Field view stays a Today's-Bag affordance.
+  const changeScope = (scope: 'today' | 'collection') => {
+    setBagScope(scope);
+    if (scope === 'collection') setViewMode('list');
   };
 
   const openAdd = () => {
@@ -304,7 +319,6 @@ export default function BagScreen() {
         onPress: async () => {
           if (userId == null) return;
           setDiscs(discs.map((d) => (d.inBag ? { ...d, inBag: false } : d)));
-          setBagFilter(false);
           toast("Today's bag cleared");
           await clearTodaysBag(userId); // single UPDATE ... WHERE in_bag = 1
         },
@@ -348,6 +362,23 @@ export default function BagScreen() {
         </Text>
       </View>
 
+      {/* B2 IA split: Today's Bag (in-bag subset — the primary view) vs. Collection (full archive). */}
+      <View style={styles.segment}>
+        {(['today', 'collection'] as const).map((scope) => (
+          <Pressable
+            key={scope}
+            style={[styles.segmentBtn, bagScope === scope && styles.segmentBtnActive]}
+            onPress={() => changeScope(scope)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: bagScope === scope }}
+          >
+            <Text style={[styles.segmentText, bagScope === scope && styles.segmentTextActive]}>
+              {scope === 'today' ? `Today's Bag${bagCount > 0 ? ` (${bagCount})` : ''}` : `Collection (${discs.length})`}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       <TextInput
         style={styles.search}
         value={search}
@@ -370,35 +401,28 @@ export default function BagScreen() {
         <Pressable style={styles.ghostBtn} onPress={() => setExportOpen(true)} accessibilityRole="button" accessibilityLabel="Export discs to CSV">
           <Text style={styles.ghostBtnText}>Export</Text>
         </Pressable>
-        <Pressable
-          style={[styles.ghostBtn, bagFilter && styles.ghostBtnActive]}
-          onPress={() => setBagFilter((v) => !v)}
-          accessibilityRole="button"
-          accessibilityState={{ selected: bagFilter }}
-          accessibilityLabel={bagFilter ? 'Show all discs' : "Show only today's bag"}
-        >
-          <Text style={[styles.ghostBtnText, bagFilter && styles.ghostBtnTextActive]}>
-            {bagCount > 0 ? `In bag (${bagCount})` : 'In bag'}
-          </Text>
-        </Pressable>
-        {bagCount > 0 && (
+        {/* Field view + Clear bag are today's-bag affordances (Field view is scoped there; a
+            200-arc field is the cliff we deliberately avoid). Collection stays a browse/manage view. */}
+        {bagScope === 'today' && bagCount > 0 && (
           <Pressable style={styles.ghostBtn} onPress={clearBag} accessibilityRole="button" accessibilityLabel="Clear today's bag">
             <Text style={styles.ghostBtnText}>Clear bag</Text>
           </Pressable>
         )}
-        <Pressable
-          style={[styles.ghostBtn, viewMode === 'field' && styles.ghostBtnActive]}
-          onPress={() => setViewMode((m) => (m === 'field' ? 'list' : 'field'))}
-          accessibilityRole="button"
-          accessibilityState={{ selected: viewMode === 'field' }}
-          accessibilityLabel={viewMode === 'field' ? 'Switch to card list' : 'Switch to field view'}
-        >
-          <Text style={[styles.ghostBtnText, viewMode === 'field' && styles.ghostBtnTextActive]}>
-            {viewMode === 'field' ? 'Bag view' : 'Field view'}
-          </Text>
-        </Pressable>
+        {bagScope === 'today' && (
+          <Pressable
+            style={[styles.ghostBtn, viewMode === 'field' && styles.ghostBtnActive]}
+            onPress={() => setViewMode((m) => (m === 'field' ? 'list' : 'field'))}
+            accessibilityRole="button"
+            accessibilityState={{ selected: viewMode === 'field' }}
+            accessibilityLabel={viewMode === 'field' ? 'Switch to card list' : 'Switch to field view'}
+          >
+            <Text style={[styles.ghostBtnText, viewMode === 'field' && styles.ghostBtnTextActive]}>
+              {viewMode === 'field' ? 'Bag view' : 'Field view'}
+            </Text>
+          </Pressable>
+        )}
       </View>
-      {sortMode === 'custom' && (
+      {bagScope === 'collection' && sortMode === 'custom' && (
         <Text style={styles.dragHint}>{dragEnabled ? 'long-press a card to reorder' : 'clear search/filters to drag-reorder'}</Text>
       )}
 
@@ -446,6 +470,22 @@ export default function BagScreen() {
                   <Text style={styles.ghostBtnText}>Import CSV</Text>
                 </Pressable>
               </View>
+            </>
+          ) : bagScope === 'today' && !filtersActive ? (
+            // Collection has discs but none are marked in-bag yet.
+            <>
+              <Text style={styles.emptyTitle}>Today&apos;s bag is empty</Text>
+              <Text style={styles.emptyBody}>
+                Open the Collection and tap the bag icon on a disc to add it to today&apos;s bag.
+              </Text>
+              <Pressable
+                style={styles.addBtn}
+                onPress={() => changeScope('collection')}
+                accessibilityRole="button"
+                accessibilityLabel="Open the collection"
+              >
+                <Text style={styles.addBtnText}>Open Collection</Text>
+              </Pressable>
             </>
           ) : (
             <>
@@ -583,6 +623,12 @@ const styles = StyleSheet.create({
   header: { marginBottom: 10 },
   title: { color: colors.text, fontSize: 26, fontWeight: '800' },
   substat: { color: colors.muted, fontSize: 12, marginTop: 2 },
+  // Bag/Collection segmented control (B2)
+  segment: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: 10, padding: 3, marginBottom: 10, borderWidth: 1, borderColor: colors.border },
+  segmentBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
+  segmentBtnActive: { backgroundColor: 'rgba(145,94,255,0.16)' },
+  segmentText: { color: colors.muted, fontSize: 13, fontWeight: '600' },
+  segmentTextActive: { color: colors.accent },
   search: {
     backgroundColor: colors.card,
     borderWidth: 1,

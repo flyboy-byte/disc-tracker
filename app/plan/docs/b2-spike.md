@@ -45,9 +45,19 @@ signals** — hardware-independent or structural — are:
    `db.ts`'s header comment — **fine now that R5 sync is deferred**; revisit the comment.
 3. **Bag-scroll jank → memoize `DiscCard` + tune FlatList** (`windowSize`, `initialNumToRender`,
    `maxToRenderPerBatch`); optionally skip arc-thumbnail render mid-fling. Measure again after.
-4. **IA split (step 3)** — the flat 200 list *reads* poorly too; the bag/collection split (today's
-   bag primary, full set as searchable archive) stays the one deliberate UX change. This is the
-   judgment call to confirm with Logan before building.
+4. **IA split** — the flat 200 list *reads* poorly too; the bag/collection split (today's bag
+   primary, full set as searchable archive) is the one deliberate UX change. **Shape chosen by
+   Logan (2026-07-30): a segmented [Today's Bag | Collection] toggle at the top of the existing
+   Bag tab** (not a 5th tab, not collapsible sections). Today's Bag (in-bag subset) is the default
+   view and the only place Field view / Clear bag appear; Collection is the full searchable/
+   filterable/reorderable archive. The old "In bag (N)" filter button is subsumed by the segment.
 
-**Status:** step 1 (spike) DONE. Instrumentation reverted; tree clean. Fixture-seeding recipe above
-is repeatable for re-measuring after each fix.
+**Status (2026-07-30): ALL B2 STEPS DONE.**
+- Step 1 spike — DONE (this doc).
+- Step 2 incremental writes — DONE (commit fadc93b).
+- Step 2b Field view scope + Settings opt-in — DONE (commit 6f8032d).
+- Step 3 memoize DiscCard + FlatList tuning — DONE (commit 8c88ace); scroll is mount-bound, next
+  lever if a real device still janks is a thumbnail toggle.
+- Step 4 Bag/Collection IA split (segmented) — DONE.
+All verified on the 200-disc fixture on the emulator. Instrumentation reverted; 98/98 tests green.
+Fixture-seeding recipe above is repeatable for future re-measuring.
