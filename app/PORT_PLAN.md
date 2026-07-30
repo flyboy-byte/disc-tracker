@@ -616,6 +616,7 @@ real signing/distribution setup:
 | `mobile-preview-0.10` | B1 — Disc Suggest accuracy rewrite (skill-aware scoring + band chips) |
 | `mobile-preview-0.11` | B2 — big-collection support (Bag/Collection split, pagination, move-to-top, incremental writes) |
 | `mobile-preview-0.12` | B3 offline scorekeeper (Score tab) + B4 full backup/restore; drag-reorder → ⤒/↑/↓ arrows; physics "two models" note |
+| `mobile-preview-0.13` | Mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker |
 
 These are **debug-signed** (no production keystore exists yet — see Distribution
 Track D1 below), and the repo is public, so releases are visible to anyone, not just
