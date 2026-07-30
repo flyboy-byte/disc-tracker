@@ -17,7 +17,19 @@
 
 ---
 
-## Current Status (2026-07-24) — read this first
+## ⚡ CURRENT STATUS (2026-07-30) — read this first
+
+**Latest release: `mobile-preview-0.13`.** The app is well past v1 — **five tabs** (Bag / Flight
+Shaper / Disc Suggest / **Score** / Settings). Post-v1 work all DONE and shipped: R1–R4.5, **B1**
+disc-suggest rewrite (`0.10`), **B2** big-collection support (`0.11`), **B3** offline scorekeeper +
+**B4** full backup/restore (`0.12`), mobile-UX polish (tap-outside-close + RGB picker, `0.13`).
+**R5 VPS sync was DROPPED** (→ B4). Only the **store track (R6 Play → R7 F-Droid)** remains, parked
+until Logan's ready. The live roadmap is the **Post-v1 Roadmap table** below; the full release list
+is the **Release History** table near the end. Everything under this line is the *original v1 build
+record (2026-07-24 snapshot)* — kept for history, not current.
+
+<details>
+<summary>Original v1 status snapshot (2026-07-24)</summary>
 
 **Phases 0–9 are done and verified on a real Android emulator (not just typechecked).**
 The full v1 feature set shipped as `mobile-preview-0.4`; Phase 9 (the post-`0.4` polish +
@@ -79,6 +91,8 @@ this bug a second time.
 *perfect the app, then build the two deferred features, then ship to stores* (see the
 roadmap for the reasoning and sequencing). The old "pick distribution or the FS rework"
 framing is superseded by that ordered roadmap.
+
+</details>
 
 ---
 
