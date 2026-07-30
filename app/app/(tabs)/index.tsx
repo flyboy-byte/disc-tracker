@@ -15,7 +15,19 @@ import DiscLibraryModal from '../../src/components/DiscLibraryModal';
 import FieldView from '../../src/components/FieldView';
 import { useToast } from '../../src/components/Toast';
 import { colors } from '../../src/theme';
-import { getDiscs, getMeta, getOrCreateDefaultUser, saveDiscs, setMeta } from '../../src/db/db';
+import {
+  getDiscs,
+  getMeta,
+  getOrCreateDefaultUser,
+  saveDiscs,
+  setMeta,
+  setDiscInBag,
+  clearTodaysBag,
+  deleteDisc,
+  insertDisc,
+  updateDisc,
+  reorderDiscs,
+} from '../../src/db/db';
 import { discType, stab, STAB_META, type Disc, type DiscType, type Stability } from '../../src/utils/disc';
 import type { MasterDisc } from '../../src/utils/masterLibrary';
 
@@ -192,26 +204,31 @@ export default function BagScreen() {
   };
 
   const handleSave = async (saved: Disc) => {
-    let next: Disc[];
+    if (userId == null) return;
     if (formIsNew) {
       const nextId = (discs.reduce((max, d) => Math.max(max, d.id ?? 0), 0) || 100) + 1;
-      next = [...discs, { ...saved, id: saved.id ?? nextId }];
+      const added = { ...saved, id: saved.id ?? nextId };
+      setDiscs([...discs, added]);
+      setFormOpen(false);
+      toast(`${saved.mold} added`);
+      await insertDisc(userId, added); // single INSERT, not a full-table rewrite
     } else {
-      next = discs.map((d) => (d.id === saved.id ? { ...saved, inBag: d.inBag } : d));
+      // Preserve inBag — the edit form doesn't own it, and updateDisc leaves the column untouched.
+      const updated = { ...saved, inBag: discs.find((d) => d.id === saved.id)?.inBag ?? saved.inBag };
+      setDiscs(discs.map((d) => (d.id === saved.id ? updated : d)));
+      setFormOpen(false);
+      toast(`${saved.mold} updated`);
+      await updateDisc(userId, updated); // single UPDATE of editable fields
     }
-    setDiscs(next);
-    setFormOpen(false);
-    toast(formIsNew ? `${saved.mold} added` : `${saved.mold} updated`);
-    await persist(next);
   };
 
   const handleDelete = async (id: number) => {
+    if (userId == null) return;
     const removed = discs.find((d) => d.id === id);
-    const next = discs.filter((d) => d.id !== id);
-    setDiscs(next);
+    setDiscs(discs.filter((d) => d.id !== id));
     setFormOpen(false);
     toast(`${removed?.mold ?? 'Disc'} removed`);
-    await persist(next);
+    await deleteDisc(userId, id); // single DELETE
   };
 
   const handlePickFromLibrary = (m: MasterDisc) => {
@@ -236,17 +253,20 @@ export default function BagScreen() {
   };
 
   const handleDragEnd = async ({ data }: { data: Disc[] }) => {
+    if (userId == null) return;
     setDiscs(data);
     toast('Order saved');
-    await persist(data);
+    await reorderDiscs(userId, data.map((d) => d.id ?? 0)); // rewrites sort_order only
   };
 
   // Today's bag: flip a single disc's inBag flag and persist. Matches the website's
   // toggleBagged() — inBag is per-disc, stored the same way as everything else.
   const toggleBag = async (id: number) => {
-    const next = discs.map((d) => (d.id === id ? { ...d, inBag: !d.inBag } : d));
-    setDiscs(next);
-    await persist(next);
+    if (userId == null) return;
+    const target = discs.find((d) => d.id === id);
+    const nextInBag = !target?.inBag;
+    setDiscs(discs.map((d) => (d.id === id ? { ...d, inBag: nextInBag } : d)));
+    await setDiscInBag(userId, id, nextInBag); // single UPDATE
   };
 
   const clearBag = () => {
@@ -256,11 +276,11 @@ export default function BagScreen() {
         text: 'Clear bag',
         style: 'destructive',
         onPress: async () => {
-          const next = discs.map((d) => (d.inBag ? { ...d, inBag: false } : d));
-          setDiscs(next);
-          if (!next.some((d) => d.inBag)) setBagFilter(false);
+          if (userId == null) return;
+          setDiscs(discs.map((d) => (d.inBag ? { ...d, inBag: false } : d)));
+          setBagFilter(false);
           toast("Today's bag cleared");
-          await persist(next);
+          await clearTodaysBag(userId); // single UPDATE ... WHERE in_bag = 1
         },
       },
     ]);

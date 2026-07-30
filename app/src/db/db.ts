@@ -173,6 +173,85 @@ export function saveDiscs(userId: number, discs: Disc[]): Promise<void> {
   });
 }
 
+// ── Incremental single-row writes (B2) ────────────────────────────────────────
+// saveDiscs() above rewrites the WHOLE table on every call. That was fine at bag scale but is an
+// O(N) cliff at collection scale (measured ~400ms per in-bag toggle at 200 rows — b2-spike.md).
+// These targeted writes touch only the affected row(s). saveDiscs stays the path for bulk replace
+// (CSV import, delete-all, sync) where a full rewrite is genuinely what's wanted. discs are keyed
+// by (user_id, disc_id) — disc_id is the app-facing id, unique per user.
+
+// Flip one disc's in-bag flag. Single UPDATE — replaces a full-table rewrite for the most
+// frequent mutation there is (today's-bag toggling).
+export function setDiscInBag(userId: number, discId: number, inBag: boolean): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.runAsync('UPDATE discs SET in_bag = ? WHERE user_id = ? AND disc_id = ?', [inBag ? 1 : 0, userId, discId]);
+  });
+}
+
+// Unmark every in-bag disc in one statement (the "Clear bag" bulk action).
+export function clearTodaysBag(userId: number): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.runAsync('UPDATE discs SET in_bag = 0 WHERE user_id = ? AND in_bag = 1', [userId]);
+  });
+}
+
+// Delete one disc (ON DELETE CASCADE only matters for users; discs are leaf rows).
+export function deleteDisc(userId: number, discId: number): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.runAsync('DELETE FROM discs WHERE user_id = ? AND disc_id = ?', [userId, discId]);
+  });
+}
+
+// Insert one new disc at the end (sortOrder = current max + 1). Returns nothing; caller already
+// holds the disc object in UI state. Skips a blank mold, matching saveDiscs / app.py.
+export function insertDisc(userId: number, d: Disc): Promise<void> {
+  return serialize(async () => {
+    if (!d.mold?.trim()) return;
+    const db = await openDatabase();
+    const row = await db.getFirstAsync<{ maxSort: number | null }>(
+      'SELECT MAX(sort_order) AS maxSort FROM discs WHERE user_id = ?',
+      [userId]
+    );
+    const sortOrder = (row?.maxSort ?? -1) + 1;
+    await db.runAsync(
+      `INSERT INTO discs (user_id, disc_id, mfr, mold, plastic, weight,
+         speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, d.id ?? 0, d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', sortOrder, d.inBag ? 1 : 0]
+    );
+  });
+}
+
+// Update one disc's editable fields in place (edit form save). Does NOT touch sort_order or
+// in_bag — those have their own paths — so an edit can't accidentally reshuffle or un-bag a disc.
+export function updateDisc(userId: number, d: Disc): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.runAsync(
+      `UPDATE discs SET mfr = ?, mold = ?, plastic = ?, weight = ?, speed = ?, glide = ?,
+         turn = ?, fade = ?, use_desc = ?, thr = ?, notes = ?, color = ?
+       WHERE user_id = ? AND disc_id = ?`,
+      [d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', userId, d.id ?? 0]
+    );
+  });
+}
+
+// Persist a new custom order after a drag. Rewrites only sort_order (one UPDATE per row in a
+// single transaction — no DELETE, no reinsert of the other 15 columns), keyed by disc_id.
+export function reorderDiscs(userId: number, orderedIds: number[]): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.withExclusiveTransactionAsync(async (txn) => {
+      for (let i = 0; i < orderedIds.length; i++) {
+        await txn.runAsync('UPDATE discs SET sort_order = ? WHERE user_id = ? AND disc_id = ?', [i, userId, orderedIds[i]]);
+      }
+    });
+  });
+}
+
 // Raw read shared by getMeta (serialized) and setMeta (serialized) — must NOT itself be
 // serialized, or setMeta would deadlock waiting on a slot queued behind its own.
 async function readMeta(db: SQLiteDatabase, userId: number): Promise<UserMeta> {
