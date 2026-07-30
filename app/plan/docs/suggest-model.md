@@ -1,8 +1,15 @@
 # Disc-Suggestion Scoring Model (B1, step 2)
 
-> **Status:** DRAFT for review (2026-07-29). This is the "ideal profile + skill preset" data that
-> step 3's pure scorer (`suggestScore.ts`) will consume. Nothing is wired yet. Reviewed against the
-> step-1 baseline (`src/utils/__fixtures__/suggest-baseline.json`).
+> **Status:** BLESSED 2026-07-29 (Logan signed off on the caps/nudges/targets). Implemented as
+> `src/utils/suggestScore.ts` (steps 3 + 6 done, 98/98 tests green). This doc is the source of
+> truth for the numbers; keep it and `suggestScore.ts` in lockstep.
+>
+> **Refinement found during step-6 validation:** symmetric tolerances wrongly penalized *overshoot*
+> — a fade-4/5 disc scored ~0 for "Reliable Hyzer," excluding Firebird-class discs. Fixed by adding
+> **one-sided tolerances** (`tolLo`/`tolHi`): overstable scenarios let fade overshoot freely, max
+> distance lets fade undershoot freely, understable scenarios let turn go more-negative freely.
+> After the fix the top picks are recognizable real discs (Heat/Jade for hyzer flip, Archangel for
+> roller, FD3 for forehand, VRoc for approach). See the tolerance columns below.
 >
 > Replaces the old two-path logic (raw `bagTest` thresholds for the bag; `stability`-scalar filter
 > + `|stability − mid|` sort for the library) with **one** scoring function used for both. The
