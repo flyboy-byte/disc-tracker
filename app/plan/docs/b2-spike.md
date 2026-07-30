@@ -52,6 +52,16 @@ signals** — hardware-independent or structural — are:
    view and the only place Field view / Clear bag appear; Collection is the full searchable/
    filterable/reorderable archive. The old "In bag (N)" filter button is subsumed by the segment.
 
+### Step 5 — pagination + Move-to-top (2026-07-30, Logan-requested)
+Logan's own collection is ~25 discs and he values the website's drag-reorder for it, but wanted the
+port future-proofed for big collections. Resolution: **adaptive**. Collections ≤ `PAGE_SIZE` (30)
+render as a single drag-reorder list (unchanged website-like experience — his 25 fit here). Larger
+collections **paginate at 30/page** (footer `‹ Prev · Page X of Y · Next ›`) so only 30 cards ever
+mount — the size-independent cure for the mount-bound scroll cliff. Since drag can't cross pages,
+paginated cards get a per-card **"⤒ Top"** button (custom sort only) that pulls a disc to the front
+of the custom order via `reorderDiscs` and jumps to page 1. Verified on-device at 200: 7 pages,
+Prev/Next work, Move-to-top persists (disc → `sort_order` 0, order stays 0..199 contiguous).
+
 **Status (2026-07-30): ALL B2 STEPS DONE.**
 - Step 1 spike — DONE (this doc).
 - Step 2 incremental writes — DONE (commit fadc93b).

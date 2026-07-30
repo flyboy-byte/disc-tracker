@@ -89,6 +89,8 @@ export default function BagScreen() {
   // (all discs, browse/manage/add). Component state, default 'today' each launch — a fresh
   // session should open on today's bag, not wherever you last left the archive.
   const [bagScope, setBagScope] = useState<'today' | 'collection'>('today');
+  // B2 pagination: current page index for large collections (see PAGE_SIZE below).
+  const [page, setPage] = useState(0);
   // 'list' = card list; 'field' = all arcs overlaid on one field (website's viewMode).
   const [viewMode, setViewMode] = useState<'list' | 'field'>('list');
   // B2: Field view scopes to today's-bag by default; the Settings toggle lets it draw the whole
@@ -192,16 +194,54 @@ export default function BagScreen() {
     return filteredSorted.filter((d) => d.inBag);
   }, [fieldShowAll, filteredSorted]);
 
-  // Drag-reorder only makes sense on the full, unfiltered custom-sorted list — a filtered or
-  // scoped view has gaps, so dropping a card at index N wouldn't map to the real array position.
-  // Only in the Collection scope (today's bag is itself a subset).
+  // B2 pagination: keep the whole-list drag experience for normal-sized collections (a bag fits
+  // on one page → drag freely, like the website), but page big collections so only PAGE_SIZE cards
+  // ever mount — the size-independent fix for the mount-bound scroll cliff (b2-spike.md). Cross-page
+  // reordering is done with the per-card "Move to top" button instead of drag (drag can't cross pages).
+  const PAGE_SIZE = 30;
+  const paginated = filteredSorted.length > PAGE_SIZE;
+  const pageCount = Math.max(1, Math.ceil(filteredSorted.length / PAGE_SIZE));
+  const clampedPage = Math.min(page, pageCount - 1);
+  const pageItems = useMemo(
+    () => (paginated ? filteredSorted.slice(clampedPage * PAGE_SIZE, (clampedPage + 1) * PAGE_SIZE) : filteredSorted),
+    [paginated, filteredSorted, clampedPage]
+  );
+
+  // Any change to what's shown resets to the first page (a stale page index would show nothing).
+  useEffect(() => {
+    setPage(0);
+  }, [stabFilter, typeFilter, search, sortMode, bagScope]);
+
+  // Drag-reorder only makes sense on the full, unfiltered, custom-sorted collection shown as ONE
+  // page — a filtered/scoped/paged view has gaps, so dropping at index N wouldn't map to the real
+  // array position. (Today's bag is itself a subset, so it never drags.)
   const dragEnabled =
     bagScope === 'collection' &&
+    !paginated &&
     viewMode === 'list' &&
     sortMode === 'custom' &&
     stabFilter === 'all' &&
     typeFilter === 'all' &&
     !search.trim();
+
+  // Cross-page reordering for big collections: pull a disc to the front of the custom order.
+  // Only meaningful in custom sort (any other sort recomputes order and ignores sort_order).
+  const showMoveToTop =
+    paginated && bagScope === 'collection' && sortMode === 'custom' && stabFilter === 'all' && typeFilter === 'all' && !search.trim();
+  const moveToTop = useCallback(
+    async (id: number) => {
+      if (userId == null) return;
+      const target = discs.find((d) => d.id === id);
+      if (!target) return;
+      const reordered = [target, ...discs.filter((d) => d.id !== id)];
+      setDiscs(reordered);
+      setPage(0); // jump to the top so the move is visible
+      await reorderDiscs(userId, reordered.map((d) => d.id ?? 0));
+    },
+    // Depends on discs (not "stable"), but move-to-top only shows in a paginated collection and a
+    // reorder re-renders the list anyway — scroll (no discs change) still gets stable handlers.
+    [userId, discs]
+  );
 
   const filtersActive = stabFilter !== 'all' || typeFilter !== 'all' || !!search.trim();
   const clearFilters = () => {
@@ -305,9 +345,16 @@ export default function BagScreen() {
   // re-render when their own disc, the arcView, or a handler identity actually changes.
   const renderCard = useCallback(
     ({ item }: { item: Disc }) => (
-      <DiscCard disc={item} arcView={arcView} onPress={openEdit} onPressArc={setDetailDisc} onToggleBag={toggleBag} />
+      <DiscCard
+        disc={item}
+        arcView={arcView}
+        onPress={openEdit}
+        onPressArc={setDetailDisc}
+        onToggleBag={toggleBag}
+        onMoveToTop={showMoveToTop ? moveToTop : undefined}
+      />
     ),
-    [arcView, openEdit, toggleBag]
+    [arcView, openEdit, toggleBag, showMoveToTop, moveToTop]
   );
 
   const clearBag = () => {
@@ -423,7 +470,13 @@ export default function BagScreen() {
         )}
       </View>
       {bagScope === 'collection' && sortMode === 'custom' && (
-        <Text style={styles.dragHint}>{dragEnabled ? 'long-press a card to reorder' : 'clear search/filters to drag-reorder'}</Text>
+        <Text style={styles.dragHint}>
+          {dragEnabled
+            ? 'long-press a card to reorder'
+            : paginated
+              ? 'tap ⤒ Top to move a disc to the front'
+              : 'clear search/filters to drag-reorder'}
+        </Text>
       )}
 
       <View style={styles.arcBar}>
@@ -541,16 +594,44 @@ export default function BagScreen() {
         />
       ) : (
         <FlatList
-          data={filteredSorted}
+          data={pageItems}
           keyExtractor={(d) => String(d.id)}
           contentContainerStyle={styles.listContent}
           renderItem={renderCard}
-          // B2 scroll-perf tuning for large collections (b2-spike.md): render fewer cards per
-          // batch/window so a fast fling through 200 doesn't mount a wave of FlightArcSvgs at once.
+          // B2 scroll-perf tuning (b2-spike.md): render fewer cards per batch/window. With
+          // pagination on, a page is only PAGE_SIZE cards so this rarely bites, but it keeps a
+          // sub-PAGE_SIZE list (e.g. today's bag) smooth too.
           initialNumToRender={8}
           maxToRenderPerBatch={8}
           windowSize={7}
           removeClippedSubviews
+          ListFooterComponent={
+            paginated ? (
+              <View style={styles.pager}>
+                <Pressable
+                  style={[styles.pagerBtn, clampedPage === 0 && styles.pagerBtnDisabled]}
+                  onPress={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={clampedPage === 0}
+                  accessibilityRole="button"
+                  accessibilityLabel="Previous page"
+                >
+                  <Text style={[styles.pagerBtnText, clampedPage === 0 && styles.pagerBtnTextDisabled]}>‹ Prev</Text>
+                </Pressable>
+                <Text style={styles.pagerLabel}>
+                  Page {clampedPage + 1} of {pageCount}
+                </Text>
+                <Pressable
+                  style={[styles.pagerBtn, clampedPage >= pageCount - 1 && styles.pagerBtnDisabled]}
+                  onPress={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                  disabled={clampedPage >= pageCount - 1}
+                  accessibilityRole="button"
+                  accessibilityLabel="Next page"
+                >
+                  <Text style={[styles.pagerBtnText, clampedPage >= pageCount - 1 && styles.pagerBtnTextDisabled]}>Next ›</Text>
+                </Pressable>
+              </View>
+            ) : null
+          }
         />
       )}
 
@@ -674,5 +755,12 @@ const styles = StyleSheet.create({
   emptyBody: { color: colors.muted, fontSize: 14, textAlign: 'center', lineHeight: 20 },
   emptyActions: { flexDirection: 'row', gap: 10, marginTop: 6 },
   fieldScopeNote: { color: colors.muted, fontSize: 11, textAlign: 'center', marginTop: 10 },
+  // B2 pagination footer
+  pager: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, paddingHorizontal: 4 },
+  pagerBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: colors.border },
+  pagerBtnDisabled: { opacity: 0.4 },
+  pagerBtnText: { color: colors.accent, fontSize: 13, fontWeight: '600' },
+  pagerBtnTextDisabled: { color: colors.muted },
+  pagerLabel: { color: colors.muted, fontSize: 12, fontWeight: '600' },
   listContent: { paddingBottom: 24 },
 });

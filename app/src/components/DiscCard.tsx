@@ -26,9 +26,12 @@ interface Props {
   onLongPress?: () => void;
   dragActive?: boolean;
   onToggleBag?: (id: number, nextInBag: boolean) => void;
+  // B2: cross-page reordering in a paginated collection (drag can't cross pages). When provided,
+  // shows a "Move to top" control that sends this disc to the front of the custom order.
+  onMoveToTop?: (id: number) => void;
 }
 
-function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onLongPress, dragActive, onToggleBag }: Props) {
+function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onLongPress, dragActive, onToggleBag, onMoveToTop }: Props) {
   const s = STAB_META[stab(d)];
   const t = TYPE_META[discType(d)];
   const safeColor = d.color && HEX6.test(d.color) ? d.color : null;
@@ -53,6 +56,17 @@ function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onLongPress, drag
               <Text style={styles.mfr}>{d.mfr}</Text>
               <Text style={styles.mold}>{d.mold}</Text>
             </View>
+            {onMoveToTop && d.id != null && (
+              <Pressable
+                onPress={() => onMoveToTop(d.id!)}
+                hitSlop={8}
+                style={styles.topBtn}
+                accessibilityRole="button"
+                accessibilityLabel={`Move ${d.mold} to top`}
+              >
+                <Text style={styles.topBtnText}>⤒ Top</Text>
+              </Pressable>
+            )}
             {onToggleBag && d.id != null && (
               // Nested Pressable: RN routes the touch to the inner control, so tapping this
               // toggles the bag flag without also firing the card's onPress (edit) — no
@@ -162,6 +176,8 @@ const styles = StyleSheet.create({
   bagCheckOn: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.15)' },
   bagCheckText: { color: colors.muted, fontSize: 11, fontWeight: '600' },
   bagCheckTextOn: { color: colors.accent },
+  topBtn: { borderWidth: 1, borderColor: colors.border, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  topBtnText: { color: colors.muted, fontSize: 11, fontWeight: '600' },
   mfr: { color: colors.muted, fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
   mold: { color: colors.text, fontSize: 18, fontWeight: '700' },
   nums: { flexDirection: 'row', gap: 14, marginBottom: 6 },
