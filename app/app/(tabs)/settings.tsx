@@ -11,9 +11,15 @@ import { useToast } from '../../src/components/Toast';
 import { getDiscs, getMeta, getOrCreateDefaultUser, saveDiscs, setMeta } from '../../src/db/db';
 import { colors } from '../../src/theme';
 import type { Disc } from '../../src/utils/disc';
+import type { SkillPreset } from '../../src/utils/suggestScore';
 
 type ArcView = 'RHBH' | 'RHFH' | 'LHBH' | 'LHFH';
 const ARC_VIEWS: ArcView[] = ['RHBH', 'RHFH', 'LHBH', 'LHFH'];
+const SKILLS: { id: SkillPreset; label: string }[] = [
+  { id: 'beginner', label: 'Beginner' },
+  { id: 'intermediate', label: 'Intermediate' },
+  { id: 'advanced', label: 'Advanced' },
+];
 const SOURCE_URL = 'https://github.com/flyboy-byte/disc-tracker';
 const SHOTSHAPER_URL = 'https://github.com/kegiljarhus/shotshaper';
 
@@ -22,6 +28,7 @@ export default function SettingsScreen() {
   const [loading, setLoading] = useState(true);
   const [discs, setDiscs] = useState<Disc[]>([]);
   const [arcView, setArcView] = useState<ArcView>('RHBH');
+  const [skill, setSkill] = useState<SkillPreset>('intermediate');
   const [msRefEnabled, setMsRefEnabled] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -36,6 +43,7 @@ export default function SettingsScreen() {
         const [d, meta] = await Promise.all([getDiscs(userIdRef.current), getMeta(userIdRef.current)]);
         setDiscs(d);
         setArcView((meta.arcView as ArcView) || 'RHBH');
+        setSkill(meta.skill);
         setMsRefEnabled(meta.msRefEnabled);
         setLoading(false);
       })();
@@ -45,6 +53,11 @@ export default function SettingsScreen() {
   const changeArcView = async (v: ArcView) => {
     setArcView(v);
     if (userIdRef.current != null) await setMeta(userIdRef.current, { arcView: v });
+  };
+
+  const changeSkill = async (v: SkillPreset) => {
+    setSkill(v);
+    if (userIdRef.current != null) await setMeta(userIdRef.current, { skill: v });
   };
 
   const changeMsRef = async (v: boolean) => {
@@ -115,6 +128,27 @@ export default function SettingsScreen() {
               accessibilityLabel={`Default throw view ${v}`}
             >
               <Text style={[styles.pillText, arcView === v && styles.pillTextActive]}>{v}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      {/* Skill level — drives Disc Suggest ranking (B1). Caps recommended speed + nudges
+          understable/overstable targets. */}
+      <View style={styles.card}>
+        <Text style={styles.sectionLabel}>SKILL LEVEL</Text>
+        <Text style={styles.sectionHint}>Tunes Disc Suggest — caps recommended speed and shifts stability to match your arm.</Text>
+        <View style={styles.pillRow}>
+          {SKILLS.map((s) => (
+            <Pressable
+              key={s.id}
+              onPress={() => changeSkill(s.id)}
+              style={[styles.pill, skill === s.id && styles.pillActive]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: skill === s.id }}
+              accessibilityLabel={`Skill level ${s.label}`}
+            >
+              <Text style={[styles.pillText, skill === s.id && styles.pillTextActive]}>{s.label}</Text>
             </Pressable>
           ))}
         </View>

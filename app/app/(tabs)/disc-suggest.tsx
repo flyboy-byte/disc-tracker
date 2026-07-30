@@ -1,17 +1,20 @@
-// Disc Suggest screen — PORT_PLAN.md Phase 6. Ported from templates/discsuggestion.html:
-// pick a scenario, see bag matches (via filterBag) and top-15 library matches (via
-// filterLibrary), library results deduped against whatever's already shown in the bag
+// Disc Suggest screen — PORT_PLAN.md Phase 6, rewritten for B1 (accuracy rewrite). Pick a
+// scenario; both the bag and the full library are ranked by ONE scoring model (suggestScore.ts)
+// against the scenario's ideal flight profile and the user's skill preset, bucketed
+// great/good/marginal. Replaces the old two-path filter (raw bagTest for the bag, stability-scalar
+// filter + |stability-mid| sort for the library). Library results are deduped against the bag
 // section by name+mfr (case-insensitive), same as the website.
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import ScenarioGrid from '../../src/components/ScenarioGrid';
 import SuggestResultCard from '../../src/components/SuggestResultCard';
-import { getDiscs, getOrCreateDefaultUser } from '../../src/db/db';
+import { getDiscs, getMeta, getOrCreateDefaultUser } from '../../src/db/db';
 import { colors } from '../../src/theme';
 import { bagToDisc, type Disc, type ScenarioDisc } from '../../src/utils/disc';
 import { masterDiscs } from '../../src/utils/masterLibrary';
-import { filterBag, filterLibrary, SCENARIOS, type Scenario } from '../../src/utils/scenarios';
+import { SCENARIOS, type Scenario } from '../../src/utils/scenarios';
+import { rankDiscs, type Scored, type SkillPreset } from '../../src/utils/suggestScore';
 
 // Same shape check the website applies to the raw master JSON before treating a row as a
 // valid ScenarioDisc — bundled discs_master.json already satisfies this, but stay defensive
@@ -23,6 +26,7 @@ const LIBRARY_DISCS: ScenarioDisc[] = masterDiscs.filter(
 export default function DiscSuggestScreen() {
   const [loading, setLoading] = useState(true);
   const [bagDiscs, setBagDiscs] = useState<Disc[]>([]);
+  const [skill, setSkill] = useState<SkillPreset>('intermediate');
   const [activeId, setActiveId] = useState<string | null>(null);
   // Resolve the user once and hold it in a ref so the focus effect below has stable ([])
   // deps — depending on a `userId` state instead caused a double-fetch on cold open (the
@@ -36,8 +40,9 @@ export default function DiscSuggestScreen() {
     useCallback(() => {
       (async () => {
         if (userIdRef.current == null) userIdRef.current = await getOrCreateDefaultUser();
-        const discs = await getDiscs(userIdRef.current);
+        const [discs, meta] = await Promise.all([getDiscs(userIdRef.current), getMeta(userIdRef.current)]);
         setBagDiscs(discs);
+        setSkill(meta.skill);
         setLoading(false);
       })();
     }, [])
@@ -46,13 +51,16 @@ export default function DiscSuggestScreen() {
   const activeScenario = useMemo(() => SCENARIOS.find((s) => s.id === activeId) ?? null, [activeId]);
 
   const { bagMatches, libOnly } = useMemo(() => {
-    if (!activeScenario) return { bagMatches: [] as ScenarioDisc[], libOnly: [] as ScenarioDisc[] };
-    const bag = filterBag(activeScenario, bagDiscs).map(bagToDisc);
-    const lib = filterLibrary(activeScenario, LIBRARY_DISCS);
-    const bagNames = new Set(bag.map((d) => `${d.name}|${d.mfr}`.toLowerCase()));
-    const libOnly = lib.filter((d) => !bagNames.has(`${d.name}|${d.mfr}`.toLowerCase()));
+    if (!activeScenario) return { bagMatches: [] as Scored[], libOnly: [] as Scored[] };
+    // ONE scorer for both. Bag discs converted to the library shape first so they're scored
+    // identically (fixes the old bag/library criteria mismatch). No cap on bag matches; library
+    // capped inside rankDiscs.
+    const bag = rankDiscs(bagDiscs.map(bagToDisc), activeScenario.id, skill, bagDiscs.length || undefined);
+    const lib = rankDiscs(LIBRARY_DISCS, activeScenario.id, skill);
+    const bagNames = new Set(bag.map((s) => `${s.disc.name}|${s.disc.mfr}`.toLowerCase()));
+    const libOnly = lib.filter((s) => !bagNames.has(`${s.disc.name}|${s.disc.mfr}`.toLowerCase()));
     return { bagMatches: bag, libOnly };
-  }, [activeScenario, bagDiscs]);
+  }, [activeScenario, bagDiscs, skill]);
 
   const onSelect = (sc: Scenario) => setActiveId(sc.id);
 
@@ -82,7 +90,9 @@ export default function DiscSuggestScreen() {
           {bagMatches.length === 0 ? (
             <Text style={styles.emptyBag}>No matches in your bag for this scenario.</Text>
           ) : (
-            bagMatches.map((d) => <SuggestResultCard key={`bag-${d.name}-${d.mfr}`} disc={d} inBag />)
+            bagMatches.map((s) => (
+              <SuggestResultCard key={`bag-${s.disc.name}-${s.disc.mfr}`} disc={s.disc} inBag band={s.band} />
+            ))
           )}
 
           <View style={styles.divider} />
@@ -93,8 +103,8 @@ export default function DiscSuggestScreen() {
               <Text style={styles.countPillText}>{libOnly.length}</Text>
             </View>
           </View>
-          {libOnly.map((d) => (
-            <SuggestResultCard key={`lib-${d.name}-${d.mfr}`} disc={d} inBag={false} />
+          {libOnly.map((s) => (
+            <SuggestResultCard key={`lib-${s.disc.name}-${s.disc.mfr}`} disc={s.disc} inBag={false} band={s.band} />
           ))}
         </View>
       )}

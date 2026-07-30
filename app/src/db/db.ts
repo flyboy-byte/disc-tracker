@@ -9,6 +9,7 @@
 import * as SQLite from 'expo-sqlite';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import type { Disc } from '../utils/disc';
+import type { SkillPreset } from '../utils/suggestScore';
 import { runMigrations } from './migrations';
 
 export interface UserMeta {
@@ -18,6 +19,8 @@ export interface UserMeta {
   // Marshall Street reference images opt-in. Defaults OFF — the app stays fully offline until
   // the user turns this on in Settings (F-Droid privacy bar). See src/net/msPic.ts.
   msRefEnabled: boolean;
+  // Disc-suggestion skill preset — drives suggestScore.ts. Default 'intermediate'.
+  skill: SkillPreset;
 }
 
 const DB_NAME = 'disc_tracker.db';
@@ -173,15 +176,17 @@ export function saveDiscs(userId: number, discs: Disc[]): Promise<void> {
 // Raw read shared by getMeta (serialized) and setMeta (serialized) — must NOT itself be
 // serialized, or setMeta would deadlock waiting on a slot queued behind its own.
 async function readMeta(db: SQLiteDatabase, userId: number): Promise<UserMeta> {
-  const row = await db.getFirstAsync<{ next_id: number; sort_mode: string; arc_view: string; ms_ref: number }>(
-    'SELECT next_id, sort_mode, arc_view, ms_ref FROM user_meta WHERE user_id = ?',
+  const row = await db.getFirstAsync<{ next_id: number; sort_mode: string; arc_view: string; ms_ref: number; skill: string }>(
+    'SELECT next_id, sort_mode, arc_view, ms_ref, skill FROM user_meta WHERE user_id = ?',
     [userId]
   );
+  const skill = row?.skill;
   return {
     nextId: row?.next_id ?? 100,
     sortMode: row?.sort_mode ?? 'speed-desc',
     arcView: row?.arc_view ?? 'RHBH',
     msRefEnabled: !!row?.ms_ref,
+    skill: skill === 'beginner' || skill === 'advanced' ? skill : 'intermediate',
   };
 }
 
@@ -195,11 +200,11 @@ export function setMeta(userId: number, updates: Partial<UserMeta>): Promise<voi
     const current = await readMeta(db, userId);
     const next = { ...current, ...updates };
     await db.runAsync(
-      `INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view, ms_ref) VALUES (?, ?, ?, ?, ?)
+      `INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view, ms_ref, skill) VALUES (?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id) DO UPDATE SET
          next_id = excluded.next_id, sort_mode = excluded.sort_mode,
-         arc_view = excluded.arc_view, ms_ref = excluded.ms_ref`,
-      [userId, next.nextId, next.sortMode, next.arcView, next.msRefEnabled ? 1 : 0]
+         arc_view = excluded.arc_view, ms_ref = excluded.ms_ref, skill = excluded.skill`,
+      [userId, next.nextId, next.sortMode, next.arcView, next.msRefEnabled ? 1 : 0, next.skill]
     );
   });
 }

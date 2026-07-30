@@ -4,6 +4,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme';
 import { stabClass, stabShort, typeShort, type ScenarioDisc } from '../utils/disc';
+import type { Band } from '../utils/suggestScore';
 
 const STAB_COLOR: Record<ReturnType<typeof stabClass>, string> = {
   'stab-os': colors.os,
@@ -11,13 +12,22 @@ const STAB_COLOR: Record<ReturnType<typeof stabClass>, string> = {
   'stab-us': colors.us,
 };
 
+// Match-quality band (B1). Great = strong green, good = accent purple, marginal = muted amber.
+const BAND_META: Record<Band, { label: string; color: string }> = {
+  great: { label: 'Great fit', color: colors.st },
+  good: { label: 'Good fit', color: colors.accent },
+  marginal: { label: 'Marginal', color: colors.us },
+};
+
 interface Props {
   disc: ScenarioDisc;
   inBag: boolean;
+  band?: Band;
 }
 
-export default function SuggestResultCard({ disc: d, inBag }: Props) {
+export default function SuggestResultCard({ disc: d, inBag, band }: Props) {
   const cls = stabClass(d.stability);
+  const bandInfo = band ? BAND_META[band] : null;
 
   // Exact port of stabBar(): maps -4..+7 stability to a 0-100% position, zero pinned at
   // 4/11 of the track (matches the website's own bar so the visual reads identically).
@@ -32,7 +42,15 @@ export default function SuggestResultCard({ disc: d, inBag }: Props) {
 
   return (
     <View style={[styles.card, inBag && styles.cardInBag]}>
-      {inBag && <Text style={styles.inBagLabel}>In your bag</Text>}
+      <View style={styles.topLabels}>
+        {inBag && <Text style={styles.inBagLabel}>In your bag</Text>}
+        {bandInfo && (
+          <View style={[styles.bandChip, { borderColor: bandInfo.color }]}>
+            <View style={[styles.bandDot, { backgroundColor: bandInfo.color }]} />
+            <Text style={[styles.bandText, { color: bandInfo.color }]}>{bandInfo.label}</Text>
+          </View>
+        )}
+      </View>
       <Text style={styles.name}>{d.name}</Text>
       <Text style={styles.mfr}>{d.mfr}</Text>
       <View style={styles.metaRow}>
@@ -63,7 +81,11 @@ export default function SuggestResultCard({ disc: d, inBag }: Props) {
 const styles = StyleSheet.create({
   card: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, marginBottom: 8 },
   cardInBag: { borderColor: 'rgba(145,94,255,0.4)', backgroundColor: 'rgba(145,94,255,0.06)' },
+  topLabels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6, minHeight: 14 },
   inBagLabel: { color: colors.accent, fontSize: 9, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4 },
+  bandChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2, marginLeft: 'auto' },
+  bandDot: { width: 6, height: 6, borderRadius: 3 },
+  bandText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.3, textTransform: 'uppercase' },
   name: { color: colors.text, fontSize: 15, fontWeight: '700' },
   mfr: { color: colors.muted, fontSize: 11, marginBottom: 8 },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },

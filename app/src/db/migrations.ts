@@ -54,6 +54,9 @@ const COLUMN_MIGRATIONS: { ddl: string }[] = [
   // (0) so the app makes zero network connections until the user explicitly enables it —
   // the F-Droid privacy bar (PORT_PLAN.md "Network-feature privacy bar").
   { ddl: 'ALTER TABLE user_meta ADD COLUMN ms_ref INTEGER DEFAULT 0' },
+  // App-only column (no website counterpart yet): the disc-suggestion skill preset
+  // (beginner | intermediate | advanced), default intermediate. Drives suggestScore.ts.
+  { ddl: "ALTER TABLE user_meta ADD COLUMN skill TEXT DEFAULT 'intermediate'" },
 ];
 
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {
