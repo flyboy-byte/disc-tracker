@@ -28,7 +28,9 @@ import {
 } from '../../src/utils/roundMath';
 
 type Mode = 'list' | 'setup' | 'active' | 'summary';
-const MAX_PLAYERS = 4;
+// Casual-group cap. Bigger groups than this are rare on one card; the hole-by-hole view scrolls
+// fine, and the summary grid scrolls horizontally, so this is a UX guardrail, not a DB limit.
+const MAX_PLAYERS = 8;
 
 export default function ScoreScreen() {
   const [loading, setLoading] = useState(true);
@@ -271,7 +273,12 @@ function SetupView({ onCancel, onCreate }: { onCancel: () => void; onCreate: (in
         </View>
       ))}
       {players.length < MAX_PLAYERS && (
-        <Pressable style={styles.ghostBtn} onPress={() => setPlayers((prev) => [...prev, ''])} accessibilityRole="button" accessibilityLabel="Add a player">
+        <Pressable
+          style={styles.ghostBtn}
+          onPress={() => setPlayers((prev) => [...prev, `Player ${prev.length + 1}`])}
+          accessibilityRole="button"
+          accessibilityLabel="Add a player"
+        >
           <Text style={styles.ghostBtnText}>+ Add player</Text>
         </Pressable>
       )}

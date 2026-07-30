@@ -277,6 +277,19 @@ export default function FlightShaperScreen() {
           </View>
 
           {physicsSimOn && (
+            <View style={styles.simInfo}>
+              <Text style={styles.simInfoText}>
+                <Text style={styles.simInfoBold}>These are two different models.</Text> The physics sim runs a real
+                rigid-body flight model — more accurate to actual physics, but the research data only covers{' '}
+                <Text style={styles.simInfoBold}>4 driver archetypes</Text> (no putters or mids), so a disc is matched to
+                its nearest one. The default arc instead draws each disc&apos;s{' '}
+                <Text style={styles.simInfoBold}>real-world expected flight</Text> from its flight numbers — shaped to
+                look right, not simulated — so it covers every disc. Expect the two to disagree.
+              </Text>
+            </View>
+          )}
+
+          {physicsSimOn && (
             <View style={styles.archetypeRow}>
               <Text style={styles.archetypeLabel}>ARCHETYPE</Text>
               {ARCHETYPES.map((a) => {
@@ -519,6 +532,9 @@ const styles = StyleSheet.create({
   simToggleTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
   simToggleSub: { color: colors.muted, fontSize: 11, marginTop: 2 },
   simCreditLink: { color: '#38bdf8', fontWeight: '700' },
+  simInfo: { backgroundColor: 'rgba(56,189,248,0.07)', borderWidth: 1, borderColor: 'rgba(56,189,248,0.25)', borderRadius: 10, padding: 10, marginBottom: 12 },
+  simInfoText: { color: colors.muted, fontSize: 11, lineHeight: 16 },
+  simInfoBold: { color: colors.text, fontWeight: '700' },
   archetypeRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
   archetypeLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, color: colors.muted, marginRight: 2 },
   archPill: { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
