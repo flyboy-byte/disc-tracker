@@ -88,6 +88,15 @@
   }
   .dir-hint span { flex: 1; text-align: center; }
 
+  /* Release-angle reference panel (static block under the sliders) */
+  .ref-block { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px; }
+  .ref-eyebrow { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; opacity: 0.6; }
+  .ref-views { display: flex; gap: 8px; justify-content: center; }
+  .ref-view { text-align: center; }
+  .ref-view svg { display: block; margin: 0 auto; }
+  .ref-cap { font-size: 9px; color: var(--muted); margin-top: 3px; opacity: 0.7; letter-spacing: 0.5px; text-transform: uppercase; }
+  .angle-note { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; line-height: 1.5; opacity: 0.75; }
+
   /* Arc preview */
   .arc-preview { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .arc-svg { width: 100%; display: block; border-radius: 12px; background: rgba(255,255,255,0.015); border: 1px solid var(--border); }
@@ -229,19 +238,19 @@
         <div class="dir-hint" id="dirHints"></div>
 
         <!-- Release angle reference -->
-        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
-          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;opacity:0.6">Release angle</div>
-          <div style="display:flex;gap:8px;justify-content:center">
-            <div style="text-align:center">
-              <svg id="ref-back" viewBox="0 0 120 72" width="120" height="72" style="display:block;margin:0 auto"></svg>
-              <div style="font-size:9px;color:var(--muted);margin-top:3px;opacity:0.7;letter-spacing:0.5px;text-transform:uppercase">Back view</div>
+        <div class="ref-block">
+          <div class="ref-eyebrow">Release angle</div>
+          <div class="ref-views">
+            <div class="ref-view">
+              <svg id="ref-back" viewBox="0 0 120 72" width="120" height="72"></svg>
+              <div class="ref-cap">Back view</div>
             </div>
-            <div style="text-align:center">
-              <svg id="ref-side" viewBox="0 0 120 72" width="120" height="72" style="display:block;margin:0 auto"></svg>
-              <div style="font-size:9px;color:var(--muted);margin-top:3px;opacity:0.7;letter-spacing:0.5px;text-transform:uppercase">Side view</div>
+            <div class="ref-view">
+              <svg id="ref-side" viewBox="0 0 120 72" width="120" height="72"></svg>
+              <div class="ref-cap">Side view</div>
             </div>
           </div>
-          <div id="angle-note" style="font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5;opacity:0.75"></div>
+          <div id="angle-note" class="angle-note"></div>
 
           <!-- Hyzer reference diagram: X layout -->
           <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
@@ -294,7 +303,7 @@
         <div class="row-between" style="margin-bottom:14px">
           <div class="section-label" style="margin-bottom:0">Flight shape</div>
           <select id="arcViewSelect" onchange="arcView=this.value;localStorage.setItem('arcView',arcView);updateArc();document.getElementById('arcViewLabel').textContent=arcView;saveArcView(arcView);updateAngleRef()"
-                  style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
+                  class="mini-select">
             <option value="RHBH">RHBH</option>
             <option value="RHFH">RHFH</option>
             <option value="LHBH">LHBH</option>
@@ -302,11 +311,11 @@
           </select>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-          <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer;user-select:none">
+          <label class="toggle-label">
             <input type="checkbox" id="physicsSimToggle" onchange="onPhysicsSimToggle()" style="cursor:pointer">
             Physics sim (research)
           </label>
-          <select id="archetypeSelect" onchange="simArchetypeManual=true;simArchetype=this.value;updateArc()" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
+          <select id="archetypeSelect" onchange="simArchetypeManual=true;simArchetype=this.value;updateArc()" class="mini-select" style="display:none">
             <option value="fd2">Fairway driver</option>
             <option value="cd1">Control driver A</option>
             <option value="cd5">Control driver B</option>

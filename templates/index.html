@@ -271,13 +271,13 @@
     <span><span class="swatch" style="background:var(--st)"></span>Stable</span>
     <span><span class="swatch" style="background:var(--us)"></span>Understable</span>
     <span style="margin-left:auto; display:flex; align-items:center; gap:8px;">
-      <select id="arcViewSelect" onchange="arcView=this.value;localStorage.setItem('arcView',arcView);render();saveArcView(this.value)" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:11px;padding:3px 7px;outline:none;font-family:inherit;cursor:pointer">
+      <select id="arcViewSelect" onchange="arcView=this.value;localStorage.setItem('arcView',arcView);render();saveArcView(this.value)" class="mini-select">
         <option value="RHBH">RHBH</option>
         <option value="RHFH">RHFH</option>
         <option value="LHBH">LHBH</option>
         <option value="LHFH">LHFH</option>
       </select>
-      <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer;user-select:none">
+      <label class="toggle-label">
         <input type="checkbox" id="msApiToggle" onchange="localStorage.setItem('useMsApi', this.checked ? '1' : '0')" style="cursor:pointer">
         MS reference
       </label>
