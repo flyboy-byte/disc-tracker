@@ -5,13 +5,17 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
+import { Directory, File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
 import CsvExportModal from '../../src/components/CsvExportModal';
 import CsvImportModal from '../../src/components/CsvImportModal';
 import { useToast } from '../../src/components/Toast';
-import { getDiscs, getMeta, getOrCreateDefaultUser, saveDiscs, setMeta } from '../../src/db/db';
+import { getDiscs, getMeta, getOrCreateDefaultUser, listRounds, replaceRounds, saveDiscs, setMeta } from '../../src/db/db';
 import { colors } from '../../src/theme';
 import type { Disc } from '../../src/utils/disc';
 import type { SkillPreset } from '../../src/utils/suggestScore';
+import { buildBackup, parseBackup, backupSummary } from '../../src/utils/backup';
 
 type ArcView = 'RHBH' | 'RHFH' | 'LHBH' | 'LHFH';
 const ARC_VIEWS: ArcView[] = ['RHBH', 'RHFH', 'LHBH', 'LHFH'];
@@ -81,6 +85,78 @@ export default function SettingsScreen() {
     setImportOpen(false);
     toast(`${imported.length} disc${imported.length === 1 ? '' : 's'} imported`);
     await saveDiscs(uid, next);
+  };
+
+  // Full-device backup (B4): one JSON file with discs + settings + rounds → share sheet.
+  const [busy, setBusy] = useState(false);
+  const handleBackup = async () => {
+    const uid = userIdRef.current;
+    if (uid == null || busy) return;
+    setBusy(true);
+    try {
+      const [allDiscs, meta, rounds] = await Promise.all([getDiscs(uid), getMeta(uid), listRounds(uid)]);
+      const json = buildBackup(allDiscs, { sortMode: meta.sortMode, arcView: meta.arcView, skill: meta.skill, msRefEnabled: meta.msRefEnabled, fieldShowAll: meta.fieldShowAll }, rounds);
+      const dir = new Directory(Paths.cache, 'exports');
+      if (!dir.exists) dir.create({ intermediates: true });
+      const date = new Date().toISOString().slice(0, 10);
+      const file = new File(dir, `disc-tracker-backup-${date}.json`);
+      if (file.exists) file.delete();
+      file.create();
+      file.write(json);
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Back up Disc Tracker' });
+      }
+    } catch (e) {
+      Alert.alert('Backup failed', e instanceof Error ? e.message : 'Could not create the backup file.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Restore replaces ALL local data from a backup file (confirmed first). This is the move-to-a-new-
+  // device path — it's a full replace, not a merge, so the imported state is exactly the backup.
+  const handleRestore = async () => {
+    const uid = userIdRef.current;
+    if (uid == null || busy) return;
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ type: ['application/json', '*/*'], copyToCacheDirectory: true });
+      if (res.canceled || !res.assets?.[0]) return;
+      const text = await new File(res.assets[0].uri).text();
+      const backup = parseBackup(text);
+      Alert.alert(
+        'Restore from backup?',
+        `This replaces everything on this device with the backup (${backupSummary(backup)}). Your current data will be overwritten.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Restore',
+            style: 'destructive',
+            onPress: async () => {
+              setBusy(true);
+              try {
+                await saveDiscs(uid, backup.discs.map((d, i) => ({ ...d, id: d.id ?? 100 + i })));
+                await setMeta(uid, {
+                  sortMode: backup.meta.sortMode,
+                  arcView: backup.meta.arcView,
+                  skill: backup.meta.skill as SkillPreset,
+                  msRefEnabled: backup.meta.msRefEnabled,
+                  fieldShowAll: backup.meta.fieldShowAll,
+                });
+                await replaceRounds(uid, backup.rounds);
+                setDiscs(await getDiscs(uid));
+                toast(`Restored ${backupSummary(backup)}`);
+              } catch (e) {
+                Alert.alert('Restore failed', e instanceof Error ? e.message : 'Could not restore the backup.');
+              } finally {
+                setBusy(false);
+              }
+            },
+          },
+        ]
+      );
+    } catch (e) {
+      Alert.alert('Restore failed', e instanceof Error ? e.message : 'Could not read that file.');
+    }
   };
 
   const confirmDeleteAll = () => {
@@ -213,17 +289,35 @@ export default function SettingsScreen() {
         </Text>
       </View>
 
-      {/* Data */}
+      {/* Backup & restore (B4) — the full-device move path (replaces the old VPS-sync idea). */}
+      <View style={styles.card}>
+        <Text style={styles.sectionLabel}>BACKUP &amp; RESTORE</Text>
+        <Text style={styles.sectionHint}>
+          One file with everything — discs, today&apos;s bag, settings, and scorecards. Save it anywhere, or
+          restore it on a new phone. No account, no server.
+        </Text>
+        <Pressable style={styles.row} onPress={handleBackup} disabled={busy} accessibilityRole="button" accessibilityLabel="Back up everything to a file">
+          <Text style={[styles.rowText, busy && styles.rowDisabled]}>Back up everything</Text>
+          <Text style={styles.rowChevron}>›</Text>
+        </Pressable>
+        <View style={styles.divider} />
+        <Pressable style={styles.row} onPress={handleRestore} disabled={busy} accessibilityRole="button" accessibilityLabel="Restore from a backup file">
+          <Text style={[styles.rowText, busy && styles.rowDisabled]}>Restore from backup</Text>
+          <Text style={styles.rowChevron}>›</Text>
+        </Pressable>
+      </View>
+
+      {/* Data — CSV disc-list interop (spreadsheets / other apps) + delete-all. */}
       <View style={styles.card}>
         <Text style={styles.sectionLabel}>DATA</Text>
         <Text style={styles.sectionHint}>{discs.length} disc{discs.length === 1 ? '' : 's'} stored on this device.</Text>
-        <Pressable style={styles.row} onPress={() => setExportOpen(true)} accessibilityRole="button" accessibilityLabel="Back up discs to CSV">
-          <Text style={styles.rowText}>Back up (export CSV)</Text>
+        <Pressable style={styles.row} onPress={() => setExportOpen(true)} accessibilityRole="button" accessibilityLabel="Export discs to CSV">
+          <Text style={styles.rowText}>Export discs (CSV)</Text>
           <Text style={styles.rowChevron}>›</Text>
         </Pressable>
         <View style={styles.divider} />
         <Pressable style={styles.row} onPress={() => setImportOpen(true)} accessibilityRole="button" accessibilityLabel="Import discs from CSV">
-          <Text style={styles.rowText}>Import CSV</Text>
+          <Text style={styles.rowText}>Import discs (CSV)</Text>
           <Text style={styles.rowChevron}>›</Text>
         </Pressable>
         <View style={styles.divider} />
@@ -236,18 +330,6 @@ export default function SettingsScreen() {
         >
           <Text style={[styles.rowText, styles.danger, discs.length === 0 && styles.rowDisabled]}>Delete all discs</Text>
         </Pressable>
-      </View>
-
-      {/* Sync — v1.1 placeholder */}
-      <View style={styles.card}>
-        <Text style={styles.sectionLabel}>SYNC</Text>
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.rowText, styles.rowDisabled]}>Sync with your server</Text>
-            <Text style={styles.sectionHint}>Coming in a later version — push/pull your bag to your own VPS.</Text>
-          </View>
-          <Text style={styles.soonBadge}>Soon</Text>
-        </View>
       </View>
 
       {/* About */}
@@ -315,19 +397,6 @@ const styles = StyleSheet.create({
   danger: { color: colors.danger },
   link: { color: colors.accent },
   divider: { height: 1, backgroundColor: colors.border },
-  soonBadge: {
-    color: colors.muted,
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    overflow: 'hidden',
-  },
   aboutRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
   aboutBlurb: { color: colors.muted, fontSize: 13, lineHeight: 19, paddingVertical: 12 },
 });

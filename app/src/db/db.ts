@@ -449,6 +449,40 @@ export function deleteRound(roundId: number): Promise<void> {
   });
 }
 
+// Replace ALL of a user's rounds with the given set (backup restore, B4). player ids in the backup
+// are remapped to the new AUTOINCREMENT ids as each round's players are reinserted, so round_scores
+// stay correctly attached. One exclusive transaction — all-or-nothing.
+export function replaceRounds(userId: number, rounds: Round[]): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.withExclusiveTransactionAsync(async (txn) => {
+      await txn.runAsync('DELETE FROM rounds WHERE user_id = ?', [userId]); // cascades
+      for (const r of rounds) {
+        const res = await txn.runAsync(
+          'INSERT INTO rounds (user_id, label, course, played_on, hole_count, finished, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [userId, r.label ?? '', r.course ?? '', r.playedOn ?? '', r.holeCount ?? 18, r.finished ? 1 : 0, new Date().toISOString()]
+        );
+        const roundId = res.lastInsertRowId;
+        for (const h of r.holes ?? []) {
+          await txn.runAsync('INSERT INTO round_holes (round_id, hole, par) VALUES (?, ?, ?)', [roundId, h.hole, h.par]);
+        }
+        const idMap = new Map<number, number>();
+        let order = 0;
+        for (const p of r.players ?? []) {
+          const pr = await txn.runAsync('INSERT INTO round_players (round_id, name, sort_order) VALUES (?, ?, ?)', [roundId, p.name ?? '', order++]);
+          idMap.set(p.id, pr.lastInsertRowId);
+        }
+        for (const s of r.scores ?? []) {
+          const newPid = idMap.get(s.playerId);
+          if (newPid != null) {
+            await txn.runAsync('INSERT INTO round_scores (round_id, player_id, hole, strokes) VALUES (?, ?, ?, ?)', [roundId, newPid, s.hole, s.strokes]);
+          }
+        }
+      }
+    });
+  });
+}
+
 export function deleteUser(userId: number): Promise<void> {
   return serialize(async () => {
     const db = await openDatabase();
