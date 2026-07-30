@@ -66,6 +66,7 @@ function Content({ d, arcView, msRefEnabled, onClose, onEdit }: { d: Disc; arcVi
 
   return (
     <View style={styles.backdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
         <View style={styles.sheet}>
           <ScrollView>
             <View style={styles.head}>

@@ -46,6 +46,7 @@ export default function CsvExportModal({ visible, discs, onCancel }: Props) {
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onCancel}>
       <View style={styles.backdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} accessibilityRole="button" accessibilityLabel="Close" />
         <View style={styles.sheet}>
           <Text style={styles.title}>Export CSV</Text>
 

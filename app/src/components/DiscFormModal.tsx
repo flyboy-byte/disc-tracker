@@ -4,6 +4,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleShee
 import { colors } from '../theme';
 import type { Disc } from '../utils/disc';
 import { DISC_COLORS } from '../utils/discColors';
+import ColorPicker from './ColorPicker';
 import NumberInput from './NumberInput';
 
 const THROW_STYLES = ['RHBH', 'RHFH', 'LHBH', 'LHFH'] as const;
@@ -45,7 +46,6 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
     if (HEX6.test(v)) set('color', v);
     else if (v === '' || v === '#') set('color', '');
   };
-  const hexValid = HEX6.test(hexText);
 
   const handleSave = () => {
     if (!form.mold?.trim()) {
@@ -65,6 +65,8 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onCancel}>
       <KeyboardAvoidingView style={styles.backdrop} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        {/* Tap the dimmed area outside the sheet to dismiss (standard mobile affordance). */}
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} accessibilityRole="button" accessibilityLabel="Close" />
         <View style={styles.sheet}>
           <ScrollView keyboardShouldPersistTaps="handled">
             <Text style={styles.title}>{isNew ? 'Add disc' : 'Edit disc'}</Text>
@@ -128,16 +130,14 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
                 />
               ))}
             </View>
+            {/* Interactive RGB picker — drag the R/G/B tracks for any custom color. */}
+            <ColorPicker value={form.color || ''} onChange={pickColor} />
             <View style={styles.customColorRow}>
-              <View
-                style={[styles.customSwatch, hexValid ? { backgroundColor: hexText } : styles.swatchNone]}
-                accessibilityLabel="Custom color preview"
-              />
               <TextInput
                 style={[styles.input, styles.hexInput]}
                 value={hexText}
                 onChangeText={handleHex}
-                placeholder="#RRGGBB (custom)"
+                placeholder="or type #RRGGBB"
                 placeholderTextColor={colors.muted}
                 autoCapitalize="characters"
                 autoCorrect={false}
@@ -249,7 +249,6 @@ const styles = StyleSheet.create({
   swatchNone: { backgroundColor: colors.bg, borderColor: colors.border },
   swatchSelected: { borderColor: colors.accent },
   customColorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  customSwatch: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: colors.border },
   hexInput: { flex: 1 },
   btnRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   btn: { backgroundColor: colors.accent, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },

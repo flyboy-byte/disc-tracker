@@ -75,6 +75,7 @@ export default function CsvImportModal({ visible, existingDiscs, onCancel, onImp
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleCancel}>
       <View style={styles.backdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleCancel} accessibilityRole="button" accessibilityLabel="Close" />
         <View style={styles.sheet}>
           <Text style={styles.title}>Import CSV</Text>
           <Text style={styles.hint}>

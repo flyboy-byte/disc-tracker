@@ -17,6 +17,7 @@ export default function DiscLibraryModal({ visible, onCancel, onPick }: Props) {
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onCancel}>
       <View style={styles.backdrop}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} accessibilityRole="button" accessibilityLabel="Close" />
         <View style={styles.sheet}>
           <Text style={styles.title}>Disc library</Text>
           <TextInput
