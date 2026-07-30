@@ -6,7 +6,7 @@ import type { ColorValue } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 interface Props {
-  name: 'bag' | 'flight' | 'suggest' | 'settings';
+  name: 'bag' | 'flight' | 'suggest' | 'settings' | 'score';
   // The tab navigator passes its tint as ColorValue (string | OpaqueColorValue); our tokens
   // are plain hex strings, but accept the wider type so no cast is needed at the call site.
   color: ColorValue;
@@ -49,6 +49,21 @@ export default function TabBarIcon({ name, color, size = 24 }: Props) {
           strokeLinejoin="round"
         />
         <Circle cx={12} cy={12} r={3.1} stroke={color} strokeWidth={1.6} />
+      </Svg>
+    );
+  }
+  if (name === 'score') {
+    // A scorecard: clipboard with a clip on top and score lines.
+    return (
+      <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <Path
+          d="M6 5h12a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"
+          stroke={color}
+          strokeWidth={1.8}
+          strokeLinejoin="round"
+        />
+        <Path d="M9 5V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
+        <Path d="M8.5 10h7M8.5 13.5h7M8.5 17h4" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
       </Svg>
     );
   }

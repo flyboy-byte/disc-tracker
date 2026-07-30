@@ -27,6 +27,10 @@ export default function TabsLayout() {
         options={{ title: 'Disc Suggest', tabBarIcon: ({ color }) => <TabBarIcon name="suggest" color={color} /> }}
       />
       <Tabs.Screen
+        name="score"
+        options={{ title: 'Score', tabBarIcon: ({ color }) => <TabBarIcon name="score" color={color} /> }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{ title: 'Settings', tabBarIcon: ({ color }) => <TabBarIcon name="settings" color={color} /> }}
       />
