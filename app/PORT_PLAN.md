@@ -122,9 +122,11 @@ sessions without half-finished work in the tree.
 > `plan/docs/punch-list.md`.
 | **R4** | Marshall Street reference images | R3 mostly | ✅ DONE 2026-07-29 — "Marshall Street Flight Path Images" below |
 | **R4.5** | Physics-sim port (shotshaper) — **re-sequenced before R5 by Logan 2026-07-29** | R4 | ✅ DONE 2026-07-29 — Path B (on-device TS port). `src/physics/sim/`, parity-tested. Scoping: `plan/docs/physics-sim-port.md` |
-| **R5** | VPS sync (opt-in, own server) | — | **DEFERRED 2026-07-29 — researched-and-ready, NOT cut.** CSV is the shipping portability story; sync revisitable anytime (Logan values it). Decision 1 + `sync-design.md` |
+| **R5** | ~~VPS sync (opt-in, own server)~~ | — | **DROPPED 2026-07-30 (Logan).** Superseded by B4 — CSV covers backup/migration/interop and the *unique* add of push/pull sync was always narrow (infra + F-Droid cost > payoff). "Take the vps idea and make import/export much better and integrated instead." `sync-design.md` kept as a record; not the plan. |
 | **B1** | Disc-suggestion accuracy rewrite (scoring model + thrower setting + validation harness) | R4.5 | ✅ DONE 2026-07-30 — shipped `mobile-preview-0.10`. Unified `src/utils/suggestScore.ts` (skill presets, one-sided tolerances, band chips), `user_meta.skill`, frozen baseline harness. 98/98 tests + on-device verified. `plan/docs/direction-2026-07-29.md` Decision 3, `plan/docs/suggest-model.md` |
 | **B2** | Big-collection support (~200 discs: measurement spike → perf fixes + bag/collection IA) | — | ✅ DONE 2026-07-30 — shipped `mobile-preview-0.11`. Incremental DB writes, Field-view scope + Settings opt-in, memoized cards, Bag/Collection segmented split, 30/page pagination + per-card Move-to-top. Spike + results: `plan/docs/b2-spike.md` |
+| **B3** | Offline scorekeeper (UDisc-fallback scorecard) | — | Steps 1-5 DONE 2026-07-30 (verified on-device); step 6 (polish + release) left. `plan/docs/scorekeeper-scope.md` |
+| **B4** | Better, integrated import/export (replaces R5 sync) | — | **NEW 2026-07-30** — make CSV/JSON backup + restore of bag AND collection first-class: clearer entry points, share-sheet in/out, round-trip safety, maybe a single "backup everything" file. Local-only, no server. Scope TBD. |
 | **R6** | Release signing + Play closed testing | B1/B2 as desired | "Distribution Track → D1" below — now unblocked (no sync paperwork) |
 | **R7** | F-Droid (self-hosted → official index) | R6 proven | "Distribution Track → D2/D3" below; rubric = fdroiddata MR checklist in `plan/docs/fdroid-reference.md` |
 
