@@ -10,6 +10,7 @@ import * as SQLite from 'expo-sqlite';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import type { Disc } from '../utils/disc';
 import type { SkillPreset } from '../utils/suggestScore';
+import type { Round } from '../utils/roundMath';
 import { runMigrations } from './migrations';
 
 export interface UserMeta {
@@ -318,6 +319,133 @@ export function putCachedMsPic(lookupKey: string, pic: string): Promise<void> {
       'INSERT INTO ms_pic_cache (lookup_key, pic) VALUES (?, ?) ON CONFLICT(lookup_key) DO UPDATE SET pic = excluded.pic',
       [lookupKey, pic]
     );
+  });
+}
+
+// ── Offline scorekeeper (B3) ───────────────────────────────────────────────────
+// Round CRUD. The app-facing Round shape lives in src/utils/roundMath.ts (one source of truth for
+// the scoring math too). Totals/vs-par are never stored — always computed from round_scores. Score
+// writes are single-row UPSERTs (per-hole), never a table rewrite (the B2 lesson).
+
+export interface NewRoundInput {
+  label: string;
+  course: string;
+  playedOn: string;
+  holeCount: number;
+  pars: number[]; // length holeCount, par per hole (1-based → pars[0] is hole 1)
+  playerNames: string[]; // 1..4
+}
+
+export function createRound(userId: number, input: NewRoundInput): Promise<number> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    let roundId = 0;
+    await db.withExclusiveTransactionAsync(async (txn) => {
+      const res = await txn.runAsync(
+        'INSERT INTO rounds (user_id, label, course, played_on, hole_count, finished, created_at) VALUES (?, ?, ?, ?, ?, 0, ?)',
+        [userId, input.label ?? '', input.course ?? '', input.playedOn, input.holeCount, new Date().toISOString()]
+      );
+      roundId = res.lastInsertRowId;
+      for (let h = 1; h <= input.holeCount; h++) {
+        await txn.runAsync('INSERT INTO round_holes (round_id, hole, par) VALUES (?, ?, ?)', [roundId, h, input.pars[h - 1] ?? 3]);
+      }
+      let order = 0;
+      for (const name of input.playerNames) {
+        await txn.runAsync('INSERT INTO round_players (round_id, name, sort_order) VALUES (?, ?, ?)', [roundId, name || 'Player', order++]);
+      }
+    });
+    return roundId;
+  });
+}
+
+// Raw (non-serialized) assembler shared by getRound + listRounds — see readMeta's note on why
+// serialize()-wrapped fns must not call other serialize()-wrapped fns.
+async function loadRounds(db: SQLiteDatabase, where: string, params: (string | number)[]): Promise<Round[]> {
+  const rows = await db.getAllAsync<{ id: number; label: string; course: string; played_on: string; hole_count: number; finished: number }>(
+    `SELECT id, label, course, played_on, hole_count, finished FROM rounds ${where} ORDER BY created_at DESC`,
+    params
+  );
+  if (rows.length === 0) return [];
+  const ids = rows.map((r) => r.id);
+  const placeholders = ids.map(() => '?').join(',');
+  const holes = await db.getAllAsync<{ round_id: number; hole: number; par: number }>(
+    `SELECT round_id, hole, par FROM round_holes WHERE round_id IN (${placeholders}) ORDER BY hole`,
+    ids
+  );
+  const players = await db.getAllAsync<{ id: number; round_id: number; name: string }>(
+    `SELECT id, round_id, name FROM round_players WHERE round_id IN (${placeholders}) ORDER BY sort_order`,
+    ids
+  );
+  const scores = await db.getAllAsync<{ round_id: number; player_id: number; hole: number; strokes: number }>(
+    `SELECT round_id, player_id, hole, strokes FROM round_scores WHERE round_id IN (${placeholders})`,
+    ids
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    label: r.label,
+    course: r.course,
+    playedOn: r.played_on,
+    holeCount: r.hole_count,
+    finished: !!r.finished,
+    holes: holes.filter((h) => h.round_id === r.id).map((h) => ({ hole: h.hole, par: h.par })),
+    players: players.filter((p) => p.round_id === r.id).map((p) => ({ id: p.id, name: p.name })),
+    scores: scores.filter((s) => s.round_id === r.id).map((s) => ({ playerId: s.player_id, hole: s.hole, strokes: s.strokes })),
+  }));
+}
+
+export function listRounds(userId: number): Promise<Round[]> {
+  return serialize(async () => loadRounds(await openDatabase(), 'WHERE user_id = ?', [userId]));
+}
+
+export function getRound(roundId: number): Promise<Round | null> {
+  return serialize(async () => {
+    const rounds = await loadRounds(await openDatabase(), 'WHERE id = ?', [roundId]);
+    return rounds[0] ?? null;
+  });
+}
+
+// Enter/update one player's strokes on one hole (single UPSERT).
+export function setScore(roundId: number, playerId: number, hole: number, strokes: number): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.runAsync(
+      `INSERT INTO round_scores (round_id, player_id, hole, strokes) VALUES (?, ?, ?, ?)
+       ON CONFLICT(round_id, player_id, hole) DO UPDATE SET strokes = excluded.strokes`,
+      [roundId, playerId, hole, strokes]
+    );
+  });
+}
+
+// Edit a hole's par (setup or later correction).
+export function setPar(roundId: number, hole: number, par: number): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.runAsync(
+      `INSERT INTO round_holes (round_id, hole, par) VALUES (?, ?, ?)
+       ON CONFLICT(round_id, hole) DO UPDATE SET par = excluded.par`,
+      [roundId, hole, par]
+    );
+  });
+}
+
+export function updateRoundMeta(roundId: number, meta: { label?: string; course?: string; finished?: boolean }): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    const sets: string[] = [];
+    const vals: (string | number)[] = [];
+    if (meta.label !== undefined) (sets.push('label = ?'), vals.push(meta.label));
+    if (meta.course !== undefined) (sets.push('course = ?'), vals.push(meta.course));
+    if (meta.finished !== undefined) (sets.push('finished = ?'), vals.push(meta.finished ? 1 : 0));
+    if (sets.length === 0) return;
+    vals.push(roundId);
+    await db.runAsync(`UPDATE rounds SET ${sets.join(', ')} WHERE id = ?`, vals);
+  });
+}
+
+export function deleteRound(roundId: number): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.runAsync('DELETE FROM rounds WHERE id = ?', [roundId]); // cascades to holes/players/scores
   });
 }
 

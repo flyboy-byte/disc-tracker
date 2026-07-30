@@ -40,6 +40,40 @@ CREATE TABLE IF NOT EXISTS ms_pic_cache (
   lookup_key TEXT PRIMARY KEY,
   pic        TEXT
 );
+-- Offline scorekeeper (B3) — app-only, no website counterpart (like the physics sim). A round is
+-- rounds + its holes' pars + its players + a sparse score grid. Totals/vs-par are computed in JS
+-- (src/utils/roundMath.ts), never stored. ON DELETE CASCADE (needs PRAGMA foreign_keys = ON, set on
+-- every connection in db.ts) tears a round's holes/players/scores down with it. See
+-- app/plan/docs/scorekeeper-scope.md.
+CREATE TABLE IF NOT EXISTS rounds (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  label      TEXT DEFAULT '',
+  course     TEXT DEFAULT '',
+  played_on  TEXT,
+  hole_count INTEGER DEFAULT 18,
+  finished   INTEGER DEFAULT 0,
+  created_at TEXT
+);
+CREATE TABLE IF NOT EXISTS round_holes (
+  round_id INTEGER NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,
+  hole     INTEGER NOT NULL,
+  par      INTEGER DEFAULT 3,
+  PRIMARY KEY (round_id, hole)
+);
+CREATE TABLE IF NOT EXISTS round_players (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  round_id   INTEGER NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,
+  name       TEXT DEFAULT '',
+  sort_order INTEGER DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS round_scores (
+  round_id  INTEGER NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,
+  player_id INTEGER NOT NULL REFERENCES round_players(id) ON DELETE CASCADE,
+  hole      INTEGER NOT NULL,
+  strokes   INTEGER NOT NULL,
+  PRIMARY KEY (round_id, player_id, hole)
+);
 `;
 
 // Same three columns app.py has actually migrated in, in the same order, including the

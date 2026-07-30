@@ -1,8 +1,17 @@
 # Offline scorekeeper — scope (B3 candidate)
 
-**Status:** SCOPED, not greenlit. Logan floated it 2026-07-30 ("a real basic score keeper for when
-udisc dont load, or there's no Internet") right after B2 shipped. This doc is the concrete thing to
-react to. Nothing built yet. Assessment lives in memory `project-offline-scorekeeper-idea`.
+**Status:** GREENLIT 2026-07-30, building now. Logan floated it right after B2 shipped ("a real basic
+score keeper for when udisc dont load, or there's no Internet") and greenlit it the same day, choosing
+to build B3 *before* stores ("not emotionally ready for store release"). Assessment lives in memory
+`project-offline-scorekeeper-idea`.
+
+### Decisions (locked 2026-07-30)
+- **Sequencing:** B3 **before** stores. R6/R7 deferred until Logan's ready.
+- **Players:** 1–4 supported from the start (Logan: "we can do players").
+- The remaining calls Logan delegated ("done by u per what this app is about"):
+  - **Scoring UX:** hole-by-hole stepper for entry (big +/- thumb targets; a grid is only for review).
+  - **Par model:** per-hole editable, default 3 (respects par-4/5 holes without ceremony).
+  - **Tab name:** "Score" (shortest for a 5-tab bar).
 
 ## Positioning (why this, and why it's not a UDisc clone)
 
