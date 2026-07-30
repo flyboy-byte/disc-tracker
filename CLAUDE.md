@@ -6,7 +6,7 @@ Two things in one repo:
 
 1. **A live Flask web app** — personal disc golf bag tracker running on a VPS at `51.81.80.126`. Multi-user, local SQLite, no cloud, no accounts. The website is the canonical version and the spec for everything else.
 
-2. **An Android app port — v1 feature-complete** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. All four tabs (Bag / Flight Shaper / Disc Suggest / Settings) are built and verified, shipped as `mobile-preview-0.5` on GitHub Releases and **confirmed running on a real physical Android phone (2026-07-24)** — every Minimum Credible v1 Milestone item is met. Forward work follows the **Post-v1 Roadmap (R1–R7)** in `app/PORT_PLAN.md`: perfect the app → build the two deferred features (Marshall Street images, VPS sync) → then stores. **R1–R4 done** (R4 = Marshall Street images, opt-in, shipped 2026-07-29); **R5 (VPS sync) is next.** See "Mobile app — current state" below.
+2. **An Android app port — v1 feature-complete** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. All four tabs (Bag / Flight Shaper / Disc Suggest / Settings) are built and verified, first shipped as `mobile-preview-0.5` on GitHub Releases and **confirmed running on a real physical Android phone (2026-07-24)** — every Minimum Credible v1 Milestone item is met. Latest release is **`mobile-preview-0.10`** (B1 Disc Suggest accuracy rewrite, 2026-07-30). Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **R1–R4.5 done** (R4 Marshall Street images `0.8`; R4.5 physics-sim on-device port `0.9`); **B1 done** (`0.10`); **B2 (big collections) next; R5 VPS sync deferred (not cut).** See "Mobile app — current state" below.
 
 ---
 
@@ -182,8 +182,9 @@ a real reason to keep checking model agreement over time rather than the one-tim
 
 ## Mobile app — current state
 
-**Phases 0-9 done; v1 shipped as `mobile-preview-0.5`, confirmed on a real phone.** All
-four tabs are real and working, verified on an Android emulator and sideloaded on hardware:
+**Phases 0-9 done; v1 first shipped as `mobile-preview-0.5`, confirmed on a real phone;
+latest release `mobile-preview-0.10` (B1 Disc Suggest rewrite).** All four tabs are real
+and working, verified on an Android emulator and sideloaded on hardware:
 - **Bag** — full CRUD (manual add or from the 1,660+ disc library), edit, delete, sort,
   search, stability/type filters, color picker, CSV import/export (share sheet + document
   picker). SQLite-backed, survives app kills.
@@ -193,7 +194,11 @@ four tabs are real and working, verified on an Android emulator and sideloaded o
   in TypeScript (`app/src/physics/sim/`), running fully offline with no server; opt-in toggle,
   parity-tested against the real numpy/scipy engine (worst-case 0.005 mm). See "Mobile app —
   current state" and the physics-sim note below.
-- **Disc Suggest** — 12-scenario grid, bag + top-15 library matches, `useFocusEffect`-refreshed.
+- **Disc Suggest** — 12-scenario grid; **B1 rewrite (`0.10`)**: bag + full library ranked by
+  ONE unified scoring model (`src/utils/suggestScore.ts`) against each scenario's ideal flight
+  profile + the user's skill preset, bucketed great/good/marginal with band chips. Skill preset
+  (Beginner/Intermediate/Advanced) lives in Settings, persisted in `user_meta.skill`. Frozen
+  baseline validation harness (`src/utils/__fixtures__/suggest-baseline.json`). `useFocusEffect`-refreshed.
 - **Settings** (4th tab, gear icon) — default throw view (persisted, inherited by Flight
   Shaper), data backup/import/delete-all, a v1.1 sync placeholder, About (version, GPLv3,
   source link). Adding it required a `useFocusEffect` refetch on the Bag screen too, since
@@ -250,25 +255,22 @@ Minimum Credible v1 Milestone is fully met. See `app/PORT_PLAN.md` Phase 9.
 - Never run D1/D2/D3 in parallel
 
 ### Next immediate step:
-**v1 is functionally complete** — `mobile-preview-0.5` is released and confirmed working
-on a real physical Android phone (2026-07-24), so every Minimum Credible v1 Milestone item
-is met. The forward plan is now the **Post-v1 Roadmap** (`app/PORT_PLAN.md`, "Post-v1
-Roadmap (2026-07-25 replan)"), in priority order: **perfect the app → build the two
-deferred features → then stores.** Concretely, R1–R7:
-- **R1 Parity & Kink Audit** → a triaged punch-list (website feel/intent gaps + real-device
-  kinks). Start here.
-- **R2 Flight Shaper UX rework** — layout-only (arc not co-visible with sliders); do NOT
-  touch physics/arc geometry/slider semantics. See "Flight Shaper UX Rework".
-- **R3 App-wide polish & parity fixes** — grind the punch-list, incl. UI/settings polish.
-- **R4 Marshall Street images** + **R5 VPS sync** — the two features cut from v1 *scope*
-  (not rejected); pulled in **before** any store submission. VPS sync is opt-in, the
-  developer's own server, still local-first.
+**v1 complete; R1–R4.5 done; B1 (Disc Suggest accuracy rewrite) done.** Latest release is
+`mobile-preview-0.10` (B1, shipped 2026-07-30 — skill-aware unified scoring + band chips,
+verified on the emulator: skill persists across restart, ranking + bands correct). Earlier
+milestones: R4 Marshall Street images (`0.8`), R4.5 physics-sim on-device port (`0.9`), all
+on the **Post-v1 Roadmap** (`app/PORT_PLAN.md`, "Post-v1 Roadmap (2026-07-25 replan)").
+Forward priorities:
+- **B2 Big-collection support (~200 discs)** — next feature workstream.
+- **R5 VPS sync** — DEFERRED (2026-07-29), researched-and-ready, NOT cut; opt-in, the
+  developer's own server, still local-first. Must clear the F-Droid network-feature privacy bar.
 - **R6 Signing + Play closed testing** — production upload keystore (null-guard
   `local.properties`), Play App Signing, Data Safety form, privacy policy, content rating.
+  Bump `app/app.json` version (still 0.1.0) + pre-store manifest hygiene before this.
 - **R7 F-Droid** — **not dropped** (it's the FOSS destination), just sequenced after Play,
   since Play App Signing and F-Droid reproducible builds conflict.
 
-GitHub Releases stays the primary channel through R1–R5. To cut a release: build the
+GitHub Releases stays the primary channel pre-store. To cut a release: build the
 arm64/armeabi APK (`JAVA_HOME=/usr/lib/jvm/java-21-openjdk`, `./gradlew assembleRelease
 -PreactNativeArchitectures=arm64-v8a,armeabi-v7a`), then `gh release create`.
 
