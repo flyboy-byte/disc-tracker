@@ -6,7 +6,7 @@ Two things in one repo:
 
 1. **A live Flask web app** — personal disc golf bag tracker running on a VPS at `51.81.80.126`. Multi-user, local SQLite, no cloud, no accounts. The website is the canonical version and the spec for everything else.
 
-2. **An Android app port — v1 feature-complete** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. All four tabs (Bag / Flight Shaper / Disc Suggest / Settings) are built and verified, first shipped as `mobile-preview-0.5` on GitHub Releases and **confirmed running on a real physical Android phone (2026-07-24)** — every Minimum Credible v1 Milestone item is met. Latest release is **`mobile-preview-0.10`** (B1 Disc Suggest accuracy rewrite, 2026-07-30). Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **R1–R4.5 done** (R4 Marshall Street images `0.8`; R4.5 physics-sim on-device port `0.9`); **B1 done** (`0.10`); **B2 (big collections) next; R5 VPS sync deferred (not cut).** See "Mobile app — current state" below.
+2. **An Android app port — v1 feature-complete** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. All four tabs (Bag / Flight Shaper / Disc Suggest / Settings) are built and verified, first shipped as `mobile-preview-0.5` on GitHub Releases and **confirmed running on a real physical Android phone (2026-07-24)** — every Minimum Credible v1 Milestone item is met. Latest release is **`mobile-preview-0.11`** (B2 big-collection support, 2026-07-30). Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **R1–R4.5 done** (R4 Marshall Street images `0.8`; R4.5 physics-sim on-device port `0.9`); **B1 done** (`0.10`); **B2 done** (`0.11` — Bag/Collection split, pagination, move-to-top, incremental writes); **R5 VPS sync deferred (not cut); next up = stores (R6 Play → R7 F-Droid), unless a new feature is prioritized.** See "Mobile app — current state" below.
 
 ---
 
@@ -183,7 +183,7 @@ a real reason to keep checking model agreement over time rather than the one-tim
 ## Mobile app — current state
 
 **Phases 0-9 done; v1 first shipped as `mobile-preview-0.5`, confirmed on a real phone;
-latest release `mobile-preview-0.10` (B1 Disc Suggest rewrite).** All four tabs are real
+latest release `mobile-preview-0.11` (B2 big-collection support).** All four tabs are real
 and working, verified on an Android emulator and sideloaded on hardware:
 - **Bag** — full CRUD (manual add or from the 1,660+ disc library), edit, delete, sort,
   search, stability/type filters, color picker, CSV import/export (share sheet + document

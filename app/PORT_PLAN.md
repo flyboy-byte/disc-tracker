@@ -124,7 +124,7 @@ sessions without half-finished work in the tree.
 | **R4.5** | Physics-sim port (shotshaper) — **re-sequenced before R5 by Logan 2026-07-29** | R4 | ✅ DONE 2026-07-29 — Path B (on-device TS port). `src/physics/sim/`, parity-tested. Scoping: `plan/docs/physics-sim-port.md` |
 | **R5** | VPS sync (opt-in, own server) | — | **DEFERRED 2026-07-29 — researched-and-ready, NOT cut.** CSV is the shipping portability story; sync revisitable anytime (Logan values it). Decision 1 + `sync-design.md` |
 | **B1** | Disc-suggestion accuracy rewrite (scoring model + thrower setting + validation harness) | R4.5 | ✅ DONE 2026-07-30 — shipped `mobile-preview-0.10`. Unified `src/utils/suggestScore.ts` (skill presets, one-sided tolerances, band chips), `user_meta.skill`, frozen baseline harness. 98/98 tests + on-device verified. `plan/docs/direction-2026-07-29.md` Decision 3, `plan/docs/suggest-model.md` |
-| **B2** | Big-collection support (~200 discs: measurement spike → perf fixes + bag/collection IA) | — | **Next** — `plan/docs/direction-2026-07-29.md` Decision 2 |
+| **B2** | Big-collection support (~200 discs: measurement spike → perf fixes + bag/collection IA) | — | ✅ DONE 2026-07-30 — shipped `mobile-preview-0.11`. Incremental DB writes, Field-view scope + Settings opt-in, memoized cards, Bag/Collection segmented split, 30/page pagination + per-card Move-to-top. Spike + results: `plan/docs/b2-spike.md` |
 | **R6** | Release signing + Play closed testing | B1/B2 as desired | "Distribution Track → D1" below — now unblocked (no sync paperwork) |
 | **R7** | F-Droid (self-hosted → official index) | R6 proven | "Distribution Track → D2/D3" below; rubric = fdroiddata MR checklist in `plan/docs/fdroid-reference.md` |
 
