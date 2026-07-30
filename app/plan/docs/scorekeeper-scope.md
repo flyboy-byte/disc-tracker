@@ -100,14 +100,15 @@ scorekeeper is real and used.
 
 ## Followable build steps (each verifiable; mirrors how B1/B2 ran)
 
-1. **Data layer.** Migrations (4 tables) + `db.ts` CRUD (createRound, setPar, upsertScore,
-   listRounds, getRound, deleteRound, finishRound) + a pure `roundMath.ts` (total, vs-par, standings)
-   with unit tests. Ships behind tests before any UI.
-2. **5th tab + Rounds list** + empty state + new `TabBarIcon`.
-3. **New-round setup flow** (writes a round + holes + players).
-4. **Active scorecard** (hole-by-hole entry, live totals, per-hole score UPSERTs).
-5. **Round summary** (grid + vs par) + finish + delete.
-6. **Polish + on-device verify** (real round entry end-to-end), then a preview release.
+1. **Data layer.** ✅ DONE (`a31665e`) — migrations (4 tables) + `db.ts` CRUD + pure `roundMath.ts` + 10 tests.
+2. **5th tab + Rounds list** + empty state + new `TabBarIcon`. ✅ DONE (`c4b57ba`).
+3. **New-round setup flow.** ✅ DONE (`c4b57ba`).
+4. **Active scorecard** (hole-by-hole, editable par, live totals, per-hole UPSERTs). ✅ DONE.
+5. **Round summary** (ranked standings + grid) + finish + delete. ✅ DONE.
+6. **Polish + release.** ⏳ REMAINING. Verified end-to-end on the emulator (2-hole 2-player round;
+   math + persistence correct). Known small polish: an empty player row is silently dropped (could
+   default to "Player N"); title falls back to "Round" when label+course both blank (fine). Then a
+   preview release (`mobile-preview-0.12`).
 
 ## Decisions for Logan (before build)
 
