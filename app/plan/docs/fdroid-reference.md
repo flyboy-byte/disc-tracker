@@ -12,6 +12,71 @@ build (`Binaries:` byte comparison passing) and per-ABI splits. That took ~2 wee
 reviewer iteration — this doc exists so this project's D2/D3 doesn't repeat the same
 discovery process from zero.
 
+## Dependency reproducibility — done vs. DEFERRED (revisit before D2/D3)
+
+F-Droid builds the app **from source** via `npm ci` + `npx expo prebuild` + local Gradle, so the
+committed `package.json` + `package-lock.json` must reproduce `node_modules` deterministically.
+
+**Done (2026-07-31, commit `2601506`) — the minimal reproducibility fix:**
+- Declared the direct/required-peer deps the app imports that were previously only present
+  transitively: `expo-constants`, `expo-linking`, `react-native-safe-area-context`,
+  `react-native-screens`. (Their absence red-screened a clean `npm ci` at runtime.)
+- Removed two unused deps (`react-native-draggable-flatlist`, `@react-native-community/slider`).
+- Pinned the toolchain: `app/.nvmrc` (Node 20), `packageManager: npm@10.9.2`, `engines`, and
+  `app/.npmrc` (`legacy-peer-deps=true`, for expo-router's web-only react-dom peer noise — NOT a
+  pnpm hoisted-linker setting).
+- Acceptance bar met: `cd app && rm -rf node_modules && npx -y npm@10.9.2 ci` reproduces every
+  native module with zero `--no-save` patching; tsc clean, 115/115 jest, all five tabs verified.
+
+> **Toolchain gotcha:** this machine's *global* npm is broken (`npm 12.0.1` on Node 20 — it
+> mis-resolves installs). **Always** use `npx -y npm@10.9.2` for install/ci in `app/`, never bare
+> `npm`. See memory `reference_mobile-npm-toolchain`.
+
+**DEFERRED — SDK patch-alignment (do NOT skip before an F-Droid reproducible build):**
+We deliberately chose the *minimal* fix over a full SDK realignment to save time now, because a
+full `expo install --fix` bumps native packages and can only be validated with a fresh prebuild +
+APK rebuild (release-track work). As of 2026-07-31 `npx expo install --check` reports this drift
+(SDK moved 57.0.7 → 57.0.9 under us):
+
+| package | have | expo-expected |
+|---|---|---|
+| expo | 57.0.7 | ~57.0.9 |
+| expo-constants | 57.0.6 | ~57.0.8 |
+| expo-router | 57.0.7 | ~57.0.9 |
+| expo-sharing | 57.0.6 | ~57.0.8 |
+| expo-system-ui | 57.0.1 | ~57.0.2 |
+| react-native | 0.86.0 | 0.86.2 |
+| react-native-reanimated | 4.5.0 | 4.5.1 |
+| react-native-safe-area-context | 5.8.0 | ~5.7.0 |
+| react-native-worklets | 0.10.0 | 0.10.1 |
+
+(Dev-only `jest`/`@types/jest` drift is expo's web-preference — leave; not shipped, not F-Droid-relevant.)
+
+**How to tell the minimal fix was NOT enough** (i.e. you must do the realignment):
+- `fdroid build` / F-Droid CI fails at `npm ci` on a missing or unresolved dep, OR
+- `npx expo-doctor` flags version-mismatch / "invalid" native modules, OR
+- the release APK red-screens or crashes on a module that Metro (debug) masked, OR
+- a reviewer asks for it (Expo/RN version currency is common F-Droid feedback).
+
+**How to revisit (the procedure — run in `app/`, always via `npx npm@10.9.2`):**
+1. `npx -y expo install --fix` — aligns every package to the installed SDK's blessed versions
+   (or hand-edit `package.json` to the table above if `--fix` misbehaves with the broken npm).
+2. `npx -y npm@10.9.2 install` — regenerate the lockfile deterministically. Commit it.
+3. Clean-room proof: `rm -rf node_modules && npx -y npm@10.9.2 ci` must resolve
+   `expo-constants` / `expo-linking` / `react-native-safe-area-context` / `react-native-screens`
+   with zero patching. `@expo/metro-runtime` is a web-only expo-router peer — stays undeclared
+   (native app runs without it; re-confirm it's still not required).
+4. `npx expo prebuild -p android --clean` — regenerate `android/` (the F-Droid recipe runs this;
+   native bumps only take effect here, not over Metro).
+5. Rebuild the release APK and **sideload/emulator smoke-test all five tabs** — native version
+   bumps (RN 0.86.0→0.86.2 etc.) are invisible to a Metro debug run and only surface on a real
+   build.
+6. Re-run the GMS/Glide check (step 4 of the section below) in case a bumped dep pulled in a
+   proprietary/nondeterministic transitive dep.
+7. `tsc --noEmit` clean, `jest` green, then proceed to the two-run reproducible-build workflow.
+
+Keep this section in sync if the SDK drifts further before R7.
+
 ## What transfers directly to any Expo/RN F-Droid submission
 
 These four are **not DragTree-specific** — they're properties of the Expo/RN + AGP +

@@ -142,7 +142,7 @@ sessions without half-finished work in the tree.
 | **B3** | Offline scorekeeper (UDisc-fallback scorecard) | — | ✅ DONE 2026-07-30 (ships `0.12`). 5th "Score" tab, rounds list / setup / hole-by-hole card / summary, local SQLite (4 tables), up-to-8 players. `plan/docs/scorekeeper-scope.md` |
 | **B4** | Better, integrated import/export (replaces R5 sync) | — | ✅ DONE 2026-07-30 (ships `0.12`). Full-device JSON **Back up everything / Restore** (discs+in-bag+settings+rounds, share-sheet) + relabeled CSV disc interop. `src/utils/backup.ts`. |
 | **R6** | Release signing + Play closed testing | B1/B2 as desired | "Distribution Track → D1" below — now unblocked (no sync paperwork) |
-| **R7** | F-Droid (self-hosted → official index) | R6 proven | "Distribution Track → D2/D3" below; rubric = fdroiddata MR checklist in `plan/docs/fdroid-reference.md` |
+| **R7** | F-Droid (self-hosted → official index) | R6 proven | "Distribution Track → D2/D3" below; rubric = fdroiddata MR checklist in `plan/docs/fdroid-reference.md`. **Before building:** the dep tree got a *minimal* reproducibility fix (2026-07-31, commit `2601506`) — a deferred SDK patch-alignment + its full revisit procedure is documented in `plan/docs/fdroid-reference.md` § "Dependency reproducibility — done vs. DEFERRED". Do that first. |
 
 > **2026-07-29 direction pivot:** R5 sync **deferred (researched-and-ready, not cut)**; new
 > priorities **B1 (suggestion accuracy — thrower = skill presets)** and **B2 (big collections)**
