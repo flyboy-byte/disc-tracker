@@ -1,14 +1,19 @@
 // Add/edit form ported from showModal()/saveDisc() in templates/index.html.
+// Kept intentionally lean — this screen is for entering a disc's details and picking its color,
+// nothing more. Grouped into Details / Flight numbers / Color, with the custom RGB sliders tucked
+// behind a toggle (swatches cover the common case; no raw hex field).
 import { useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors } from '../theme';
 import type { Disc } from '../utils/disc';
 import { DISC_COLORS } from '../utils/discColors';
 import ColorPicker from './ColorPicker';
+import GradientButton from './GradientButton';
 import NumberInput from './NumberInput';
 
 const THROW_STYLES = ['RHBH', 'RHFH', 'LHBH', 'LHFH'] as const;
 const HEX6 = /^#[0-9A-Fa-f]{6}$/;
+const PRESET_HEXES = new Set(DISC_COLORS.map((c) => c.hex));
 
 interface Props {
   visible: boolean;
@@ -27,25 +32,15 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
   const [form, setForm] = useState<Disc>(initial);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [moldError, setMoldError] = useState(false);
-  // Raw text for the custom-hex field (the RN stand-in for the website's <input type="color">).
-  const [hexText, setHexText] = useState(initial.color ?? '');
+  // Show the custom RGB sliders only on request — or straight away if the disc already wears a
+  // custom color that isn't one of the preset swatches (so it's visible/editable, not hidden).
+  const [showCustom, setShowCustom] = useState(
+    () => !!initial.color && HEX6.test(initial.color) && !PRESET_HEXES.has(initial.color)
+  );
 
   const set = <K extends keyof Disc>(key: K, value: Disc[K]) => setForm((f) => ({ ...f, [key]: value }));
   const setNum = (key: 'speed' | 'glide' | 'turn' | 'fade', n: number) => set(key, n as never);
-
-  // Preset swatch tap and custom-hex entry both feed the same `color` field; keep the hex
-  // text box in sync so it reflects whatever's currently selected either way.
-  const pickColor = (hex: string) => {
-    set('color', hex);
-    setHexText(hex);
-  };
-  const handleHex = (t: string) => {
-    let v = t.trim();
-    if (v && !v.startsWith('#')) v = `#${v}`;
-    setHexText(v);
-    if (HEX6.test(v)) set('color', v);
-    else if (v === '' || v === '#') set('color', '');
-  };
+  const pickColor = (hex: string) => set('color', hex);
 
   const handleSave = () => {
     if (!form.mold?.trim()) {
@@ -68,7 +63,7 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
         {/* Tap the dimmed area outside the sheet to dismiss (standard mobile affordance). */}
         <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} accessibilityRole="button" accessibilityLabel="Close" />
         <View style={styles.sheet}>
-          <ScrollView keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             <Text style={styles.title}>{isNew ? 'Add disc' : 'Edit disc'}</Text>
             {isNew && onOpenLibrary && (
               <Pressable style={styles.libCta} onPress={onOpenLibrary}>
@@ -76,6 +71,9 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
                 <Text style={styles.libCtaArrow}>›</Text>
               </Pressable>
             )}
+
+            {/* Details */}
+            <Text style={styles.sectionLabel}>DETAILS</Text>
             <Field label="Manufacturer" value={form.mfr} onChangeText={(v) => set('mfr', v)} placeholder="e.g. Innova" />
             <Field
               label="Mold"
@@ -84,15 +82,24 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
               placeholder="e.g. Buzzz"
               error={moldError ? 'Mold name is required' : undefined}
             />
-            <Field label="Plastic" value={form.plastic ?? ''} onChangeText={(v) => set('plastic', v)} placeholder="e.g. Star" />
-            <Field label="Weight" value={form.weight ?? ''} onChangeText={(v) => set('weight', v)} placeholder="e.g. 173g" />
+            <View style={styles.pairRow}>
+              <View style={styles.pairCol}>
+                <Field label="Plastic" value={form.plastic ?? ''} onChangeText={(v) => set('plastic', v)} placeholder="e.g. Star" />
+              </View>
+              <View style={styles.pairCol}>
+                <Field label="Weight" value={form.weight ?? ''} onChangeText={(v) => set('weight', v)} placeholder="e.g. 173g" />
+              </View>
+            </View>
+            <Field label="Primary use" value={form.use ?? ''} onChangeText={(v) => set('use', v)} placeholder="e.g. Overstable utility" />
+
+            {/* Flight numbers */}
+            <Text style={styles.sectionLabel}>FLIGHT NUMBERS</Text>
             <View style={styles.fnGrid}>
               <NumField label="Speed" value={form.speed} onChange={(v) => setNum('speed', v)} />
               <NumField label="Glide" value={form.glide} onChange={(v) => setNum('glide', v)} />
               <NumField label="Turn" value={form.turn} onChange={(v) => setNum('turn', v)} />
               <NumField label="Fade" value={form.fade} onChange={(v) => setNum('fade', v)} />
             </View>
-            <Field label="Primary use" value={form.use ?? ''} onChangeText={(v) => set('use', v)} placeholder="e.g. Overstable utility" />
             <Text style={styles.label}>Throw style</Text>
             <View style={styles.thrRow}>
               {THROW_STYLES.map((t) => (
@@ -105,7 +112,9 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
                 </Pressable>
               ))}
             </View>
-            <Text style={styles.label}>Notes</Text>
+
+            {/* Notes */}
+            <Text style={styles.sectionLabel}>NOTES</Text>
             <TextInput
               style={[styles.input, styles.textarea]}
               value={form.notes ?? ''}
@@ -114,7 +123,9 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
               placeholderTextColor={colors.muted}
               multiline
             />
-            <Text style={styles.label}>Disc color</Text>
+
+            {/* Color — swatches for the common case, RGB sliders behind a toggle. No hex field. */}
+            <Text style={styles.sectionLabel}>COLOR</Text>
             <View style={styles.colorRow}>
               {DISC_COLORS.map((c) => (
                 <Pressable
@@ -126,24 +137,24 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
                     (form.color || '') === c.hex && styles.swatchSelected,
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel={c.hex ? `Color ${c.hex}` : 'No color'}
+                  accessibilityLabel={c.hex ? c.label ?? `Color ${c.hex}` : 'No color'}
                 />
               ))}
             </View>
-            {/* Interactive RGB picker — drag the R/G/B tracks for any custom color. */}
-            <ColorPicker value={form.color || ''} onChange={pickColor} />
-            <View style={styles.customColorRow}>
-              <TextInput
-                style={[styles.input, styles.hexInput]}
-                value={hexText}
-                onChangeText={handleHex}
-                placeholder="or type #RRGGBB"
-                placeholderTextColor={colors.muted}
-                autoCapitalize="characters"
-                autoCorrect={false}
-                maxLength={7}
-              />
-            </View>
+            <Pressable
+              style={styles.customToggle}
+              onPress={() => setShowCustom((v) => !v)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: showCustom }}
+              accessibilityLabel="Custom color"
+            >
+              <Text style={styles.customToggleText}>{showCustom ? '− Custom color' : '+ Custom color'}</Text>
+            </Pressable>
+            {showCustom && (
+              <View style={styles.customPicker}>
+                <ColorPicker value={form.color || ''} onChange={pickColor} />
+              </View>
+            )}
           </ScrollView>
           <View style={styles.btnRow}>
             {!isNew && onDelete && initial.id != null && (
@@ -158,18 +169,12 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
             <Pressable style={styles.btnGhost} onPress={onCancel}>
               <Text style={styles.btnGhostText}>Cancel</Text>
             </Pressable>
-            <Pressable style={styles.btn} onPress={handleSave}>
-              <Text style={styles.btnText}>{isNew ? 'Add' : 'Save'}</Text>
-            </Pressable>
+            <GradientButton style={styles.btn} textStyle={styles.btnText} onPress={handleSave} label={isNew ? 'Add' : 'Save'} />
           </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
   );
-}
-
-function blankDisc(): Disc {
-  return { mfr: '', mold: '', plastic: '', weight: '', speed: 7, glide: 4, turn: 0, fade: 2, use: '', thr: 'RHBH', notes: '', color: '' };
 }
 
 function Field({
@@ -212,7 +217,7 @@ function NumField({ label, value, onChange }: { label: string; value: number; on
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.card, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, maxHeight: '88%' },
-  title: { color: colors.text, fontSize: 20, fontWeight: '700', marginBottom: 12 },
+  title: { color: colors.text, fontSize: 20, fontWeight: '700', marginBottom: 14 },
   libCta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -220,10 +225,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.cardHover,
     borderRadius: 10,
     padding: 12,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   libCtaText: { color: colors.accent, fontWeight: '600' },
   libCtaArrow: { color: colors.accent, fontSize: 18 },
+  // Section headers group the form so it reads as three short sections, not one long list.
+  sectionLabel: {
+    color: colors.muted,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    marginTop: 18,
+    marginBottom: 10,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
   label: { color: colors.muted, fontSize: 12, marginBottom: 4 },
   input: {
     backgroundColor: colors.bg,
@@ -231,26 +248,29 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 8,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 9,
     color: colors.text,
   },
   inputError: { borderColor: colors.danger },
   errorText: { color: colors.danger, fontSize: 12, marginTop: 4 },
   textarea: { minHeight: 70, textAlignVertical: 'top' },
-  fnGrid: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  pairRow: { flexDirection: 'row', gap: 10 },
+  pairCol: { flex: 1 },
+  fnGrid: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   fnField: { flex: 1 },
-  thrRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-  thrPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: colors.border },
+  thrRow: { flexDirection: 'row', gap: 8 },
+  thrPill: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 8, borderWidth: 1, borderColor: colors.border },
   thrPillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.15)' },
   thrPillText: { color: colors.muted, fontSize: 13 },
   thrPillTextActive: { color: colors.accent, fontWeight: '600' },
-  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
-  swatch: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: 'transparent' },
+  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  swatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: 'transparent' },
   swatchNone: { backgroundColor: colors.bg, borderColor: colors.border },
-  swatchSelected: { borderColor: colors.accent },
-  customColorRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
-  hexInput: { flex: 1 },
-  btnRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  swatchSelected: { borderColor: colors.accent, borderWidth: 3 },
+  customToggle: { alignSelf: 'flex-start', marginTop: 14, paddingVertical: 6, paddingHorizontal: 2 },
+  customToggleText: { color: colors.accent, fontSize: 14, fontWeight: '600' },
+  customPicker: { marginTop: 6 },
+  btnRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border },
   btn: { backgroundColor: colors.accent, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
   btnText: { color: '#fff', fontWeight: '700' },
   btnGhost: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border },

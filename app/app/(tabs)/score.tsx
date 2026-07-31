@@ -17,6 +17,8 @@ import {
   updateRoundMeta,
 } from '../../src/db/db';
 import { colors } from '../../src/theme';
+import GradientButton from '../../src/components/GradientButton';
+import EmptyStateIcon from '../../src/components/EmptyStateIcon';
 import {
   coursePar,
   formatVsPar,
@@ -154,12 +156,11 @@ export default function ScoreScreen() {
       <Text style={styles.title}>Score</Text>
       <Text style={styles.substat}>Keep score offline — no signal, account, or course lookup needed</Text>
 
-      <Pressable style={styles.primaryBtn} onPress={() => setMode('setup')} accessibilityRole="button" accessibilityLabel="Start a new round">
-        <Text style={styles.primaryBtnText}>+ New round</Text>
-      </Pressable>
+      <GradientButton style={styles.primaryBtn} textStyle={styles.primaryBtnText} onPress={() => setMode('setup')} label="+ New round" accessibilityLabel="Start a new round" />
 
       {rounds.length === 0 ? (
         <View style={styles.empty}>
+          <EmptyStateIcon name="score" />
           <Text style={styles.emptyTitle}>No rounds yet</Text>
           <Text style={styles.emptyBody}>Start a round and keep score hole by hole. Everything stays on this device.</Text>
         </View>
@@ -287,9 +288,7 @@ function SetupView({ onCancel, onCreate }: { onCancel: () => void; onCreate: (in
         <Pressable style={styles.ghostBtn} onPress={onCancel} accessibilityRole="button" accessibilityLabel="Cancel">
           <Text style={styles.ghostBtnText}>Cancel</Text>
         </Pressable>
-        <Pressable style={styles.primaryBtn} onPress={start} accessibilityRole="button" accessibilityLabel="Start round">
-          <Text style={styles.primaryBtnText}>Start round</Text>
-        </Pressable>
+        <GradientButton style={styles.primaryBtn} textStyle={styles.primaryBtnText} onPress={start} label="Start round" accessibilityLabel="Start round" />
       </View>
     </ScrollView>
   );
@@ -392,9 +391,7 @@ function ActiveView({
         })}
 
         {isRoundComplete(round) && (
-          <Pressable style={styles.primaryBtn} onPress={onFinish} accessibilityRole="button" accessibilityLabel="Finish round">
-            <Text style={styles.primaryBtnText}>Finish round</Text>
-          </Pressable>
+          <GradientButton style={styles.primaryBtn} textStyle={styles.primaryBtnText} onPress={onFinish} label="Finish round" accessibilityLabel="Finish round" />
         )}
       </ScrollView>
     </View>

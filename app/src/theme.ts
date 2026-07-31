@@ -20,3 +20,10 @@ export const opacity = {
   op2: 0.7,
   op3: 0.85,
 } as const;
+
+// Subtle purple gradient for primary CTAs / active surfaces — a light violet → deep purple
+// diagonal that adds depth without leaving the established accent identity. Endpoints bracket
+// `accent` (#915EFF) so a flat-accent fallback anywhere still reads as the same colour.
+export const gradients = {
+  accent: ['#A574FF', '#7C48F0'] as const,
+} as const;

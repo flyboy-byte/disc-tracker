@@ -10,6 +10,7 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import CsvExportModal from '../../src/components/CsvExportModal';
 import CsvImportModal from '../../src/components/CsvImportModal';
+import GradientButton from '../../src/components/GradientButton';
 import { useToast } from '../../src/components/Toast';
 import { getDiscs, getMeta, getOrCreateDefaultUser, listRounds, replaceRounds, saveDiscs, setMeta } from '../../src/db/db';
 import { colors } from '../../src/theme';
@@ -103,8 +104,12 @@ export default function SettingsScreen() {
       if (file.exists) file.delete();
       file.create();
       file.write(json);
+      const summary = `${allDiscs.length} disc${allDiscs.length === 1 ? '' : 's'}${rounds.length ? ` · ${rounds.length} round${rounds.length === 1 ? '' : 's'}` : ''}`;
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Back up Disc Tracker' });
+        toast(`Backup ready — ${summary}`);
+      } else {
+        Alert.alert('Backup saved', `Saved ${summary} to:\n${file.uri}`);
       }
     } catch (e) {
       Alert.alert('Backup failed', e instanceof Error ? e.message : 'Could not create the backup file.');
@@ -289,21 +294,43 @@ export default function SettingsScreen() {
         </Text>
       </View>
 
-      {/* Backup & restore (B4) — the full-device move path (replaces the old VPS-sync idea). */}
+      {/* Backup & restore (B4) — the full-device move path (replaces the old VPS-sync idea).
+          The note below is deliberate: this is the FOSS answer to cloud sync / accounts, and the
+          card has to say so or it reads like a redundant second CSV export. */}
       <View style={styles.card}>
         <Text style={styles.sectionLabel}>BACKUP &amp; RESTORE</Text>
         <Text style={styles.sectionHint}>
-          One file with everything — discs, today&apos;s bag, settings, and scorecards. Save it anywhere, or
-          restore it on a new phone. No account, no server.
+          A full snapshot of the whole app in one file — every disc (with color, order and
+          today&apos;s-bag flags), your settings, and all your scorecards. Restore it on any phone to pick
+          up exactly where you left off.
         </Text>
-        <Pressable style={styles.row} onPress={handleBackup} disabled={busy} accessibilityRole="button" accessibilityLabel="Back up everything to a file">
-          <Text style={[styles.rowText, busy && styles.rowDisabled]}>Back up everything</Text>
-          <Text style={styles.rowChevron}>›</Text>
-        </Pressable>
-        <View style={styles.divider} />
-        <Pressable style={styles.row} onPress={handleRestore} disabled={busy} accessibilityRole="button" accessibilityLabel="Restore from a backup file">
-          <Text style={[styles.rowText, busy && styles.rowDisabled]}>Restore from backup</Text>
-          <Text style={styles.rowChevron}>›</Text>
+        <View style={styles.noteBox}>
+          <Text style={styles.noteText}>
+            This is the free-software alternative to cloud sync — no account, no server, nothing leaves your
+            phone until you send the file yourself. Unlike CSV (which only carries the disc list), this
+            backup moves your entire app.
+          </Text>
+        </View>
+        <GradientButton
+          style={styles.actionBtn}
+          onPress={handleBackup}
+          disabled={busy}
+          accessibilityLabel="Back up everything to a file"
+        >
+          {busy ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.actionBtnText}>Back up everything</Text>
+          )}
+        </GradientButton>
+        <Pressable
+          style={[styles.actionBtnGhost, busy && styles.actionBtnDisabled]}
+          onPress={handleRestore}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel="Restore from a backup file"
+        >
+          <Text style={styles.actionBtnGhostText}>Restore from backup</Text>
         </Pressable>
       </View>
 
@@ -397,6 +424,36 @@ const styles = StyleSheet.create({
   danger: { color: colors.danger },
   link: { color: colors.accent },
   divider: { height: 1, backgroundColor: colors.border },
+  noteBox: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: 'rgba(145,94,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(145,94,255,0.25)',
+  },
+  noteText: { color: colors.muted, fontSize: 12, lineHeight: 18 },
+  actionBtn: {
+    marginTop: 14,
+    backgroundColor: colors.accent,
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 46,
+  },
+  actionBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  actionBtnGhost: {
+    marginTop: 10,
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  actionBtnGhostText: { color: colors.text, fontSize: 15, fontWeight: '600' },
+  actionBtnDisabled: { opacity: 0.5 },
   aboutRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
   aboutBlurb: { color: colors.muted, fontSize: 13, lineHeight: 19, paddingVertical: 12 },
 });

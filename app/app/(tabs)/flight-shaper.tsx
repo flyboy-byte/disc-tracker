@@ -496,10 +496,12 @@ const styles = StyleSheet.create({
   discSelectName: { color: colors.text, fontSize: 15, fontWeight: '700' },
   discSelectSub: { color: colors.muted, fontSize: 11, marginTop: 1 },
   chevron: { color: colors.muted, fontSize: 12 },
-  arcViewRow: { flexDirection: 'row', gap: 3, flexWrap: 'wrap', maxWidth: 132, justifyContent: 'flex-end' },
-  arcViewPill: { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 3 },
+  // Fixed 2×2 grid (each pill a set width so exactly two fit per row) — avoids the ragged 3+1
+  // wrap the old maxWidth produced.
+  arcViewRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap', width: 128, justifyContent: 'flex-end' },
+  arcViewPill: { width: 62, alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingVertical: 4 },
   arcViewPillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.1)' },
-  arcViewPillText: { color: colors.muted, fontSize: 10 },
+  arcViewPillText: { color: colors.muted, fontSize: 10, fontWeight: '600' },
   arcViewPillTextActive: { color: colors.accent, fontWeight: '700' },
   // Pinned arc — fixed height so the sliders below stay on-screen. The SVG scales to fit.
   arcWrap: {

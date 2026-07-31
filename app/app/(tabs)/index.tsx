@@ -12,6 +12,8 @@ import DiscCard from '../../src/components/DiscCard';
 import DiscFormModal from '../../src/components/DiscFormModal';
 import DiscLibraryModal from '../../src/components/DiscLibraryModal';
 import FieldView from '../../src/components/FieldView';
+import GradientButton from '../../src/components/GradientButton';
+import EmptyStateIcon from '../../src/components/EmptyStateIcon';
 import { useToast } from '../../src/components/Toast';
 import { colors } from '../../src/theme';
 import {
@@ -95,6 +97,9 @@ export default function BagScreen() {
   // B2: Field view scopes to today's-bag by default; the Settings toggle lets it draw the whole
   // (filtered) set instead, but only while small enough to stay legible. Persisted in user_meta.
   const [fieldShowAll, setFieldShowAll] = useState(false);
+  // B-polish: stability/type/sort pills + arc-view + legend live behind a Filters expander so the
+  // most-used screen opens on search + cards, not six stacked control rows. Collapsed by default.
+  const [showFilters, setShowFilters] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
   const [formIsNew, setFormIsNew] = useState(true);
@@ -403,13 +408,14 @@ export default function BagScreen() {
   const stabCounts: Record<StabFilter, number> = { all: discs.length, overstable: 0, stable: 0, understable: 0 };
   discs.forEach((d) => stabCounts[stab(d)]++);
   const bagCount = discs.filter((d) => d.inBag).length;
+  const activeFilterCount = (stabFilter !== 'all' ? 1 : 0) + (typeFilter !== 'all' ? 1 : 0);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Bag</Text>
         <Text style={styles.substat}>
-          {discs.length} discs · {typeCounts.driver}D · {typeCounts.fairway}FD · {typeCounts.mid}M · {typeCounts.putter}P
+          {discs.length} disc{discs.length === 1 ? '' : 's'}
           {bagCount > 0 ? ` · ${bagCount} in bag` : ''}
         </Text>
       </View>
@@ -439,14 +445,61 @@ export default function BagScreen() {
         placeholderTextColor={colors.muted}
       />
 
-      <PillRow items={STAB_PILLS} active={stabFilter} counts={stabCounts} onPress={setStabFilter} />
-      <PillRow items={TYPE_PILLS} active={typeFilter} counts={typeCounts} onPress={setTypeFilter} />
-      <PillRow items={SORT_OPTIONS} active={sortMode} onPress={(m) => persistSortMode(m as SortMode)} />
+      {/* Filters expander — collapsed by default so the screen opens on search + cards. */}
+      <Pressable
+        style={styles.filterToggle}
+        onPress={() => setShowFilters((v) => !v)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: showFilters }}
+        accessibilityLabel="Filters, sort and arc view"
+      >
+        <Text style={styles.filterToggleText}>Filters &amp; sort</Text>
+        {activeFilterCount > 0 && (
+          <View style={styles.filterBadge}>
+            <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+          </View>
+        )}
+        <View style={{ flex: 1 }} />
+        <Text style={styles.filterChevron}>{showFilters ? '▴' : '▾'}</Text>
+      </Pressable>
+      {showFilters && (
+        <View style={styles.filterPanel}>
+          <Text style={styles.filterGroupLabel}>STABILITY</Text>
+          <PillRow items={STAB_PILLS} active={stabFilter} counts={stabCounts} onPress={setStabFilter} />
+          <Text style={styles.filterGroupLabel}>TYPE</Text>
+          <PillRow items={TYPE_PILLS} active={typeFilter} counts={typeCounts} onPress={setTypeFilter} />
+          <Text style={styles.filterGroupLabel}>SORT</Text>
+          <PillRow items={SORT_OPTIONS} active={sortMode} onPress={(m) => persistSortMode(m as SortMode)} />
+          <View style={styles.filterDivider} />
+          <View style={styles.arcBar}>
+            <View style={styles.legend}>
+              {STAB_LEGEND.map((l) => (
+                <View key={l.label} style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: l.color }]} />
+                  <Text style={styles.legendText}>{l.label}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.arcViewPills}>
+              {ARC_VIEWS.map((v) => (
+                <Pressable
+                  key={v}
+                  onPress={() => changeArcView(v)}
+                  style={[styles.arcViewPill, arcView === v && styles.arcViewPillActive]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: arcView === v }}
+                  accessibilityLabel={`Show arcs as ${v}`}
+                >
+                  <Text style={[styles.arcViewPillText, arcView === v && styles.arcViewPillTextActive]}>{v}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </View>
+      )}
 
       <View style={styles.actionsRow}>
-        <Pressable style={styles.addBtn} onPress={openAdd} accessibilityRole="button" accessibilityLabel="Add a disc">
-          <Text style={styles.addBtnText}>+ Add disc</Text>
-        </Pressable>
+        <GradientButton style={styles.addBtn} textStyle={styles.addBtnText} onPress={openAdd} label="+ Add disc" accessibilityLabel="Add a disc" />
         <Pressable style={styles.ghostBtn} onPress={() => setImportOpen(true)} accessibilityRole="button" accessibilityLabel="Import discs from CSV">
           <Text style={styles.ghostBtnText}>Import</Text>
         </Pressable>
@@ -480,46 +533,20 @@ export default function BagScreen() {
         </Text>
       )}
 
-      <View style={styles.arcBar}>
-        <View style={styles.legend}>
-          {STAB_LEGEND.map((l) => (
-            <View key={l.label} style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: l.color }]} />
-              <Text style={styles.legendText}>{l.label}</Text>
-            </View>
-          ))}
-        </View>
-        <View style={styles.arcViewPills}>
-          {ARC_VIEWS.map((v) => (
-            <Pressable
-              key={v}
-              onPress={() => changeArcView(v)}
-              style={[styles.arcViewPill, arcView === v && styles.arcViewPillActive]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: arcView === v }}
-              accessibilityLabel={`Show arcs as ${v}`}
-            >
-              <Text style={[styles.arcViewPillText, arcView === v && styles.arcViewPillTextActive]}>{v}</Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
       {filteredSorted.length === 0 ? (
         <View style={styles.emptyWrap}>
           {discs.length === 0 ? (
             // Truly empty bag — doubles as a first-run welcome (the app deliberately has no
             // separate welcome modal; see punch-list P2-4).
             <>
+              <EmptyStateIcon name="bag" />
               <Text style={styles.emptyTitle}>Your bag is empty</Text>
               <Text style={styles.emptyBody}>
                 Add a disc or import a CSV backup to get started. Everything stays on this device — no
                 account, no cloud.
               </Text>
               <View style={styles.emptyActions}>
-                <Pressable style={styles.addBtn} onPress={openAdd} accessibilityRole="button" accessibilityLabel="Add a disc">
-                  <Text style={styles.addBtnText}>+ Add disc</Text>
-                </Pressable>
+                <GradientButton style={styles.addBtn} textStyle={styles.addBtnText} onPress={openAdd} label="+ Add disc" accessibilityLabel="Add a disc" />
                 <Pressable style={styles.ghostBtn} onPress={() => setImportOpen(true)} accessibilityRole="button" accessibilityLabel="Import discs from CSV">
                   <Text style={styles.ghostBtnText}>Import CSV</Text>
                 </Pressable>
@@ -528,18 +555,18 @@ export default function BagScreen() {
           ) : bagScope === 'today' && !filtersActive ? (
             // Collection has discs but none are marked in-bag yet.
             <>
+              <EmptyStateIcon name="bag" />
               <Text style={styles.emptyTitle}>Today&apos;s bag is empty</Text>
               <Text style={styles.emptyBody}>
                 Open the Collection and tap the bag icon on a disc to add it to today&apos;s bag.
               </Text>
-              <Pressable
+              <GradientButton
                 style={styles.addBtn}
+                textStyle={styles.addBtnText}
                 onPress={() => changeScope('collection')}
-                accessibilityRole="button"
+                label="Open Collection"
                 accessibilityLabel="Open the collection"
-              >
-                <Text style={styles.addBtnText}>Open Collection</Text>
-              </Pressable>
+              />
             </>
           ) : (
             <>
@@ -704,10 +731,30 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 6 },
-  pill: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
-  pillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.12)' },
+  pill: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
+  pillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.28)' },
   pillText: { color: colors.muted, fontSize: 12 },
-  pillTextActive: { color: colors.accent, fontWeight: '600' },
+  pillTextActive: { color: colors.text, fontWeight: '700' },
+  // Filters expander
+  filterToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    marginBottom: 8,
+  },
+  filterToggleText: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  filterBadge: { minWidth: 18, height: 18, borderRadius: 9, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
+  filterBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  filterChevron: { color: colors.muted, fontSize: 12 },
+  filterPanel: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, marginBottom: 8 },
+  filterGroupLabel: { color: colors.muted, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
+  filterDivider: { height: 1, backgroundColor: colors.border, marginVertical: 10 },
   actionsRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginVertical: 8 },
   addBtn: { backgroundColor: colors.accent, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   addBtnText: { color: '#fff', fontWeight: '700' },

@@ -26,7 +26,12 @@ export default function ScenarioGrid({ scenarios, activeId, onSelect }: Props) {
             accessibilityState={{ selected: active }}
             accessibilityLabel={`${sc.title}: ${sc.desc}`}
           >
-            <Text style={styles.icon}>{sc.icon}</Text>
+            {/* Every icon sits in the same tinted circular badge — this unifies the full-color
+                emoji and the monochrome glyph-arrows into one visual language, and the explicit
+                light `color` rescues the arrow glyphs, which otherwise render dark-on-dark. */}
+            <View style={[styles.iconBadge, active && styles.iconBadgeActive]}>
+              <Text style={styles.icon}>{sc.icon}</Text>
+            </View>
             <Text style={styles.title}>{sc.title}</Text>
             <Text style={styles.desc}>{sc.desc}</Text>
           </Pressable>
@@ -51,7 +56,19 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   cardActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.1)' },
-  icon: { fontSize: 22, lineHeight: 26 },
+  iconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(145,94,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(145,94,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  iconBadgeActive: { backgroundColor: 'rgba(145,94,255,0.28)', borderColor: colors.accent },
+  icon: { fontSize: 22, lineHeight: 26, color: colors.text, textAlign: 'center' },
   title: { color: colors.text, fontSize: 13, fontWeight: '700', textAlign: 'center' },
   desc: { color: colors.muted, fontSize: 10, lineHeight: 14, textAlign: 'center' },
 });
