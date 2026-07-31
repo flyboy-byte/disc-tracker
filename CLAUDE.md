@@ -6,7 +6,7 @@ Two things in one repo:
 
 1. **A live Flask web app** — personal disc golf bag tracker running on a VPS at `51.81.80.126`. Multi-user, local SQLite, no cloud, no accounts. The website is the canonical version and the spec for everything else.
 
-2. **An Android app port — v1 feature-complete, actively growing** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest release is **`mobile-preview-0.13`** (2026-07-30). Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **DONE:** R1–R4.5, B1 disc-suggest rewrite (`0.10`), B2 big-collection support (`0.11`), B3 offline scorekeeper + B4 full backup/restore (`0.12`), mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker (`0.13`). **R5 VPS sync DROPPED** (superseded by B4 — Logan's call). **Next = stores (R6 Play → R7 F-Droid) when Logan's ready** ("not emotionally ready for store release" — building features first). See "Mobile app — current state" below.
+2. **An Android app port — v1 feature-complete, actively growing** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest release is **`mobile-preview-0.14`** (2026-07-31). Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **DONE:** R1–R4.5, B1 disc-suggest rewrite (`0.10`), B2 big-collection support (`0.11`), B3 offline scorekeeper + B4 full backup/restore (`0.12`), mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker (`0.13`), UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`). **R5 VPS sync DROPPED** (superseded by B4 — Logan's call). **Next = stores (R6 Play → R7 F-Droid) when Logan's ready** ("not emotionally ready for store release" — building features first). See "Mobile app — current state" below.
 
 ---
 
@@ -183,7 +183,7 @@ a real reason to keep checking model agreement over time rather than the one-tim
 ## Mobile app — current state
 
 **Phases 0-9 done; v1 first shipped as `mobile-preview-0.5`, confirmed on a real phone;
-latest release `mobile-preview-0.13` (UX polish).** All five tabs are real
+latest release `mobile-preview-0.14` (UI polish pass + F-Droid-reproducible deps).** All five tabs are real
 and working, verified on an Android emulator and sideloaded on hardware:
 - **Bag** — full CRUD (manual add or from the 1,660+ disc library), edit, delete, sort,
   search, stability/type filters, color picker, CSV import/export. SQLite-backed, survives app

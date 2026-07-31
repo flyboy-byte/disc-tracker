@@ -19,10 +19,11 @@
 
 ## ⚡ CURRENT STATUS (2026-07-30) — read this first
 
-**Latest release: `mobile-preview-0.13`.** The app is well past v1 — **five tabs** (Bag / Flight
+**Latest release: `mobile-preview-0.14`.** The app is well past v1 — **five tabs** (Bag / Flight
 Shaper / Disc Suggest / **Score** / Settings). Post-v1 work all DONE and shipped: R1–R4.5, **B1**
 disc-suggest rewrite (`0.10`), **B2** big-collection support (`0.11`), **B3** offline scorekeeper +
-**B4** full backup/restore (`0.12`), mobile-UX polish (tap-outside-close + RGB picker, `0.13`).
+**B4** full backup/restore (`0.12`), mobile-UX polish (tap-outside-close + RGB picker, `0.13`),
+UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`).
 **R5 VPS sync was DROPPED** (→ B4). Only the **store track (R6 Play → R7 F-Droid)** remains, parked
 until Logan's ready. The live roadmap is the **Post-v1 Roadmap table** below; the full release list
 is the **Release History** table near the end. Everything under this line is the *original v1 build
@@ -631,6 +632,7 @@ real signing/distribution setup:
 | `mobile-preview-0.11` | B2 — big-collection support (Bag/Collection split, pagination, move-to-top, incremental writes) |
 | `mobile-preview-0.12` | B3 offline scorekeeper (Score tab) + B4 full backup/restore; drag-reorder → ⤒/↑/↓ arrows; physics "two models" note |
 | `mobile-preview-0.13` | Mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker |
+| `mobile-preview-0.14` | UI "modern feel" pass — gradient CTAs, unified Disc Suggest icon badges, Bag Filters expander, 2×2 arc-view pills, empty-state icons, cleaner edit-disc sheet; + F-Droid-reproducible dependency tree (declared/pinned deps, `.nvmrc`/`.npmrc`) |
 
 These are **debug-signed** (no production keystore exists yet — see Distribution
 Track D1 below), and the repo is public, so releases are visible to anyone, not just
