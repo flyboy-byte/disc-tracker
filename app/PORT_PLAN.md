@@ -192,6 +192,12 @@ reads as a faithful, polished port of the website.
 >   pattern (never committed, same as DragTree), enroll in **Play App Signing** on first
 >   AAB upload. Nothing ships to Play without this. Deferring F-Droid to R7 is what lets
 >   R6 commit fully to Play App Signing without worrying about byte-reproducibility yet.
+>   **Signing strategy now proven (2026-08-01):** on DragTree, Logan set the Play
+>   *app signing key = the upload key* (Play Console → App integrity → Change app signing
+>   key), so one keystore signs Play + F-Droid + sideload and users move between channels
+>   without a reinstall. Do the same for disc-tracker, and do it **before** the first
+>   open-track publish (Play gates the change on that). Full write-up + fingerprint-capture
+>   steps in `plan/docs/fdroid-reference.md` § "Signing-key strategy".
 > - **R5 (VPS sync) must land before R6's store paperwork**, because the Play Data Safety
 >   form + privacy policy have to describe sync accurately (see "Before submitting v1.1"
 >   under Phase 10). Building sync after the forms means redoing them.

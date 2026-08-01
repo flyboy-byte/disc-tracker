@@ -109,6 +109,29 @@ F-Droid buildserver combination and apply here too:
    `kaptReleaseKotlin` to rename the output deterministically (DragTree's
    `scripts/glide-deterministic.init.gradle`, copyable if this ever applies).
 
+## Why we ship only arm64-v8a + armeabi-v7a (the DragTree 100 MB lesson)
+
+RN ships prebuilt native `.so` libs (Hermes, RN core, react-native-svg, …) **once per
+ABI**. A universal APK carrying all four (`arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`)
+is ~4× the native payload — DragTree's landed at **~100 MB**, and the x86/x86_64 halves
+are dead weight (those ABIs are emulators + a near-extinct sliver of Intel Android; no
+real phone uses them). That size pushed DragTree into **per-ABI splits** — multiple APKs
+per release, each with its own `versionCode` offset, all enumerated in the F-Droid
+metadata — i.e. a messier MR.
+
+disc-tracker pre-solves this at the ABI-selection step: **only arm64-v8a + armeabi-v7a**
+(every real Android device, ~50 MB), so a single universal APK stays small enough to
+likely ship as **one artifact / one `versionCode` / one MR** instead of a split matrix.
+
+**Caveat for F-Droid from-source builds:** locally we restrict ABIs with the
+`-PreactNativeArchitectures=arm64-v8a,armeabi-v7a` CLI flag — but **F-Droid won't pass
+that flag**; its recipe just runs `expo prebuild` + Gradle. So the ABI restriction must
+live in **committed build config** (`android/app/build.gradle`, via `android.splits.abi`
+per the section below — *not* only the CLI flag), or F-Droid's build balloons back to all
+four ABIs and you're at DragTree's 100 MB. Verify with `unzip -l <fdroid-built.apk> |
+grep lib/` before assuming the from-source build stayed at two ABIs. (linsui may request
+splits anyway for D3 — see the split-caveat note below.)
+
 ## ABI splits: `android.splits.abi`, not `abiFilters` — with a caveat
 
 DragTree found that `ndk { abiFilters }` (and `packagingOptions.exclude`) **appear** to
@@ -133,6 +156,38 @@ lib/` check before assuming it's something else**, and fall back to
 *index* submission specifically (D3), splits may be requested anyway regardless of this
 — DragTree's reviewer (linsui) called per-ABI splits "highly encouraged" for RN apps
 even once the universal build passed, so budget for it as likely reviewer feedback.
+
+## Signing-key strategy — make Play App Signing == the upload key (DragTree, solved 2026-08-01)
+
+The trap: with **Play App Signing** on, Google re-signs every Play release with a key you
+never hold — so Play installs are signed by *Google's* key, while a self-built F-Droid /
+sideload APK is signed by *your* upload/keystore key. Different signing certs =
+**different apps** to Android: a user can't update from one channel to the other without a
+full uninstall (losing local data), and F-Droid's `AllowedAPKSigningKeys` can only ever
+match one of the two.
+
+**DragTree's fix (done, verified in Play Console 2026-08-01):** use Play Console →
+*App integrity → App signing → Change app signing key* to set the **app signing key equal
+to the upload key**. After that, the "App signing" cert fingerprints and the "Upload key
+certificate" fingerprints are **identical** (DragTree: SHA-256
+`FF:73:9C:F5:65:D8:FE:3A:F4:FF:97:E6:41:F6:33:6F:A6:9E:BC:F3:EE:C2:22:A7:A7:C5:AB:9F:8E:3D:83:7A`,
+same MD5/SHA-1/SHA-256 in both blocks). Now **one keystore signs everything** — Play,
+F-Droid reference APK, and sideload — so `AllowedAPKSigningKeys` matches all channels and
+users move between Play and F-Droid installs without a reinstall.
+
+**For disc-tracker (R6, before D1):**
+- The upload keystore lives in `android/local.properties` (null-guard pattern, never
+  committed — see `../../CLAUDE.md`). Logan has the DragTree keystore + this strategy
+  proven; point to the disc-tracker keystore path/alias when R6 starts.
+- Do the "change app signing key to match upload key" step **before** publishing to an
+  open track — Play Console only allows the change *before* first open-track publish
+  (the "Change your app signing key" link in the screenshot is gated on that).
+- Get the fingerprint for `AllowedAPKSigningKeys` via
+  `apksigner verify --print-certs <apk>` (or copy the SHA-256 straight from the Play
+  Console App-signing block, since they'll be equal).
+- Caveat: this is a **one-way, one-time** decision per app — plan it, don't stumble into
+  it. It's why R6 (Play signing) must be settled *before* R7 (F-Droid), not in parallel
+  (matches the "never run D1/D2/D3 in parallel" rule in `../../CLAUDE.md`).
 
 ## The reviewer's actual requirements (linsui, F-Droid)
 
