@@ -17,15 +17,22 @@
 
 ---
 
-## ⚡ CURRENT STATUS (2026-07-30) — read this first
+## ⚡ CURRENT STATUS (2026-08-08) — read this first
 
-**Latest release: `mobile-preview-0.14`.** The app is well past v1 — **five tabs** (Bag / Flight
+**Latest release: `mobile-preview-0.15`** (2026-08-01) — first **production-signed** preview
+(same UI as `0.14`, signed with the real upload keystore aligned to Play App Signing; see the
+signing-key note under R6). The app is well past v1 — **five tabs** (Bag / Flight
 Shaper / Disc Suggest / **Score** / Settings). Post-v1 work all DONE and shipped: R1–R4.5, **B1**
 disc-suggest rewrite (`0.10`), **B2** big-collection support (`0.11`), **B3** offline scorekeeper +
 **B4** full backup/restore (`0.12`), mobile-UX polish (tap-outside-close + RGB picker, `0.13`),
 UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`).
-**R5 VPS sync was DROPPED** (→ B4). Only the **store track (R6 Play → R7 F-Droid)** remains, parked
-until Logan's ready. The live roadmap is the **Post-v1 Roadmap table** below; the full release list
+**R5 VPS sync was DROPPED** (→ B4). **Active forward plan (2026-08-08 re-plan): the C-series
+(C1–C7)** — turning the app from a disc *database* into a **personal disc-intelligence system**
+(loadouts → "what should I throw?" → fieldwork → Learn My Bag → throw advisor → overlap/compare →
+shareable bag report). The **store track (R6 Play → R7 F-Droid) stays deliberately parked** —
+Logan's call is features + future-proofing + audience planning *before* any public release. See
+`plan/docs/direction-2026-08-08.md` (distills `plan/research/strategy-review-2026-08-08.md`).
+The live roadmap is the **Post-v1 Roadmap table** below; the full release list
 is the **Release History** table near the end. Everything under this line is the *original v1 build
 record (2026-07-24 snapshot)* — kept for history, not current.
 
@@ -144,11 +151,30 @@ sessions without half-finished work in the tree.
 | **B4** | Better, integrated import/export (replaces R5 sync) | — | ✅ DONE 2026-07-30 (ships `0.12`). Full-device JSON **Back up everything / Restore** (discs+in-bag+settings+rounds, share-sheet) + relabeled CSV disc interop. `src/utils/backup.ts`. |
 | **R6** | Release signing + Play closed testing | B1/B2 as desired | "Distribution Track → D1" below — now unblocked (no sync paperwork) |
 | **R7** | F-Droid (self-hosted → official index) | R6 proven | "Distribution Track → D2/D3" below; rubric = fdroiddata MR checklist in `plan/docs/fdroid-reference.md`. **Before building:** the dep tree got a *minimal* reproducibility fix (2026-07-31, commit `2601506`) — a deferred SDK patch-alignment + its full revisit procedure is documented in `plan/docs/fdroid-reference.md` § "Dependency reproducibility — done vs. DEFERRED". Do that first. |
+| **C1** | **Named loadouts** (Woods/Windy/Glow/Travel/Tournament…) | — | 📋 PLANNED. Relational `loadouts` + `loadout_discs`; Today's Bag → active loadout. Infrastructure for C2/C5/C6/C7 + useful solo. `plan/docs/direction-2026-08-08.md` |
+| **C2** | **"What should I throw?"** free-form shot screen | C1 | 📋 PLANNED. Describe the shot (distance/throw/shape/wind) → best 3 from active loadout + reasons. Reuses Suggest+Flight Shaper+physics; no personal data needed for v1. |
+| **C3** | **Fieldwork sessions** (manual + rangefinder + GPS) | — | 📋 PLANNED. Batch-throw logging = the recurring data engine; raw observations source-of-truth. **Derived-only location by default** (privacy). Highest effort/payoff. |
+| **C4** | **Learn My Bag** (observed per-disc profiles) | C3 | 📋 PLANNED. Shrinkage prior→personal; distance + 2-D dispersion (bias+covariance), robust estimators. Observed ≠ new flight numbers (3-layer rule). |
+| **C5** | **Throw Advisor v2** (personalized) | C2, C4 | 📋 PLANNED. Re-rank by observed distributions: P(target zone), hazard penalties, calibrated power. Deterministic template explanations (no LLM). |
+| **C6** | **Overlap / Compare / Replace-this-disc** | C4 | 📋 PLANNED. Multi-dim role overlap (NOT net stability); Flight-Shaper path overlay; closest-in-bag / closest-in-catalog. |
+| **C7** | **Shareable Bag Report** (image → share sheet) | C1 | 📋 PLANNED. Account-free organic acquisition; renders + exports PNG locally; no location/notes by default. |
 
 > **2026-07-29 direction pivot:** R5 sync **deferred (researched-and-ready, not cut)**; new
 > priorities **B1 (suggestion accuracy — thrower = skill presets)** and **B2 (big collections)**
 > inserted ahead of the distribution track. `physicsV2.ts` parked/obsolete (RESEARCH §7). Full
 > rationale + B1 step-by-step in `plan/docs/direction-2026-07-29.md`.
+
+> **2026-08-08 strategy re-plan (C-series):** a competitor-grounded strategy review
+> (`plan/research/strategy-review-2026-08-08.md`) reframes the goal — turn the app from a *disc
+> database* into a **personal disc-intelligence system** (own it → measure your throws → learn its
+> real behavior → know what to throw). New **C1–C7** items above. **Logan's sequencing call:
+> features + future-proofing + audience planning FIRST; store track (R6/R7) stays deliberately
+> parked** — a conscious override of the review's "ship now." Rough order **C1 → C2 → C7** (reuse
+> existing machinery), then the heavier **C3 → C4 → C5**, then **C6**. Bank the future-proofing
+> early: backup `schemaVersion`, loadouts-as-canonical, derived-only location. One architectural
+> rule everywhere — **factory / user-declared / observed are three separate flight layers, never
+> conflated.** Full distillation + cautions (GPS vs. F-Droid privacy bar; no-analytics vs. metrics)
+> in `plan/docs/direction-2026-08-08.md`.
 
 ### R1 — Parity & Kink Audit (short; produces the punch-list R2/R3 work from)
 
