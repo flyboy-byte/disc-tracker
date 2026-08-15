@@ -6,7 +6,7 @@ Two things in one repo:
 
 1. **A live Flask web app** — personal disc golf bag tracker running on a VPS at `51.81.80.126`. Multi-user, local SQLite, no cloud, no accounts. The website is the canonical version and the spec for everything else.
 
-2. **An Android app port — v1 feature-complete, actively growing** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest release is **`mobile-preview-0.14`** (2026-07-31). Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **DONE:** R1–R4.5, B1 disc-suggest rewrite (`0.10`), B2 big-collection support (`0.11`), B3 offline scorekeeper + B4 full backup/restore (`0.12`), mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker (`0.13`), UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`). **R5 VPS sync DROPPED** (superseded by B4 — Logan's call). **Next = stores (R6 Play → R7 F-Droid) when Logan's ready** ("not emotionally ready for store release" — building features first). See "Mobile app — current state" below.
+2. **An Android app port — v1 feature-complete, actively growing** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest numbered release is **`mobile-preview-0.15`** (2026-08-01, first production-signed preview). Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **DONE:** R1–R4.5, B1 disc-suggest rewrite (`0.10`), B2 big-collection support (`0.11`), B3 offline scorekeeper + B4 full backup/restore (`0.12`), mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker (`0.13`), UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`), production signing (`0.15`), and the Disc Suggest **Phase 1** accuracy pass — Flex Shot scenario (13th), Throw Style modifier, personal stability adjustment (`plan/docs/suggest-engine-plan.md`, not yet cut as a numbered release). **R5 VPS sync DROPPED** (superseded by B4 — Logan's call). **Next = Phase 2/3/4 of the suggest-engine plan, or stores (R6 Play → R7 F-Droid) when Logan's ready** ("not emotionally ready for store release" — building features first). See "Mobile app — current state" below.
 
 ---
 
@@ -183,7 +183,10 @@ a real reason to keep checking model agreement over time rather than the one-tim
 ## Mobile app — current state
 
 **Phases 0-9 done; v1 first shipped as `mobile-preview-0.5`, confirmed on a real phone;
-latest release `mobile-preview-0.14` (UI polish pass + F-Droid-reproducible deps).** All five tabs are real
+latest numbered release `mobile-preview-0.15` (production signing). Disc Suggest Phase 1
+(Flex Shot scenario, Throw Style, personal stability adjustment) is code-complete and
+verified on-device 2026-08-15, not yet cut as its own release — see
+`app/plan/docs/suggest-engine-plan.md`.** All five tabs are real
 and working, verified on an Android emulator and sideloaded on hardware:
 - **Bag** — full CRUD (manual add or from the 1,660+ disc library), edit, delete, sort,
   search, stability/type filters, color picker, CSV import/export. SQLite-backed, survives app
@@ -196,11 +199,15 @@ and working, verified on an Android emulator and sideloaded on hardware:
   in TypeScript (`app/src/physics/sim/`), running fully offline with no server; opt-in toggle,
   parity-tested against the real numpy/scipy engine (worst-case 0.005 mm). See "Mobile app —
   current state" and the physics-sim note below.
-- **Disc Suggest** — 12-scenario grid; **B1 rewrite (`0.10`)**: bag + full library ranked by
-  ONE unified scoring model (`src/utils/suggestScore.ts`) against each scenario's ideal flight
-  profile + the user's skill preset, bucketed great/good/marginal with band chips. Skill preset
-  (Beginner/Intermediate/Advanced) lives in Settings, persisted in `user_meta.skill`. Frozen
-  baseline validation harness (`src/utils/__fixtures__/suggest-baseline.json`). `useFocusEffect`-refreshed.
+- **Disc Suggest** — 13-scenario grid (12 original + Flex Shot); **B1 rewrite (`0.10`)**: bag +
+  full library ranked by ONE unified scoring model (`src/utils/suggestScore.ts`) against each
+  scenario's ideal flight profile + the user's skill preset, bucketed great/good/marginal with
+  band chips. Skill preset (Beginner/Intermediate/Advanced) lives in Settings, persisted in
+  `user_meta.skill`. Frozen baseline validation harness (`src/utils/__fixtures__/suggest-baseline.json`).
+  `useFocusEffect`-refreshed. **Phase 1 (2026-08-15, `f9925fb`)** added the Flex Shot scenario,
+  a Throw Style (backhand/forehand) modifier, and a per-disc personal stability adjustment —
+  the "user-declared" layer of the 3-layer flight-data rule. See
+  `app/plan/docs/suggest-engine-plan.md`.
 - **Score** (4th tab, `0.12`) — **offline scorekeeper** (B3), the UDisc-fallback for no-signal
   rounds. One screen, four internal views (rounds list → setup → hole-by-hole active card →
   summary standings+grid). 1–8 players, editable par, live totals + vs-par. 4 app-only SQLite
@@ -263,20 +270,23 @@ Minimum Credible v1 Milestone is fully met. See `app/PORT_PLAN.md` Phase 9.
 - Never run D1/D2/D3 in parallel
 
 ### Next immediate step:
-**v1 complete; R1–R4.5 done; B1 (Disc Suggest accuracy rewrite) done.** Latest release is
-`mobile-preview-0.10` (B1, shipped 2026-07-30 — skill-aware unified scoring + band chips,
-verified on the emulator: skill persists across restart, ranking + bands correct). Earlier
-milestones: R4 Marshall Street images (`0.8`), R4.5 physics-sim on-device port (`0.9`), all
-on the **Post-v1 Roadmap** (`app/PORT_PLAN.md`, "Post-v1 Roadmap (2026-07-25 replan)").
-Forward priorities:
-- **B2 Big-collection support (~200 discs)** — next feature workstream.
-- **R5 VPS sync** — DEFERRED (2026-07-29), researched-and-ready, NOT cut; opt-in, the
-  developer's own server, still local-first. Must clear the F-Droid network-feature privacy bar.
-- **R6 Signing + Play closed testing** — production upload keystore (null-guard
-  `local.properties`), Play App Signing, Data Safety form, privacy policy, content rating.
-  Bump `app/app.json` version (still 0.1.0) + pre-store manifest hygiene before this.
+**v1 complete; R1–R4.5, B1–B4, production signing (R6 keystore step), and Disc Suggest
+Phase 1 all done.** Latest numbered release is `mobile-preview-0.15` (2026-08-01, first
+production-signed preview — upload key = Play app signing key, one keystore signs
+Play+F-Droid+sideload). Phase 1 of the suggest-engine plan (Flex Shot, Throw Style, personal
+stability adjustment) landed 2026-08-15 (`f9925fb`), verified on-device, not yet cut as its
+own preview build. Forward priorities:
+- **Suggest-engine Phase 2/3/4** — see `app/plan/docs/suggest-engine-plan.md` for the
+  full roadmap (data audit, personal role tags, bag analysis/C6) and the open design note
+  on below-marginal-band UX (a disc that's the only one in the bag but still filtered out).
+- **R5 VPS sync** — DROPPED (2026-07-29), superseded by B4 backup/restore. Not being revisited.
+- **R6 Play closed testing** — signing is done (upload key = Play app signing key); still
+  needs the actual Play Console submission (Data Safety form, privacy policy, content
+  rating) whenever Logan is ready to open that track.
 - **R7 F-Droid** — **not dropped** (it's the FOSS destination), just sequenced after Play,
   since Play App Signing and F-Droid reproducible builds conflict.
+- Both R6/R7 store submission are **deliberately parked** — Logan's call, building
+  features first (2026-08-08 strategy re-plan, C-series).
 
 GitHub Releases stays the primary channel pre-store. To cut a release: build the
 arm64/armeabi APK (`JAVA_HOME=/usr/lib/jvm/java-21-openjdk`, `./gradlew assembleRelease

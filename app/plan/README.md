@@ -17,6 +17,7 @@ PORT_PLAN.md's phase list doesn't itself carry.
 | Doc | Tier | Purpose |
 | --- | --- | --- |
 | [`FRAMEWORK.md`](./FRAMEWORK.md) | Meta | Phase-gated status tracker — where this project actually is and what's next |
+| [`DECISIONS.md`](./DECISIONS.md) | Meta | Numbered index of *why*, pointing into the docs where each decision was actually made |
 | [`docs/documentation-guide.md`](./docs/documentation-guide.md) | Meta | Explains the tiers below, who each doc is for, and how they fit together |
 | [`docs/overview.md`](./docs/overview.md) | High-level | What it is, who it's for, why it exists, what it's explicitly not |
 | [`docs/approach.md`](./docs/approach.md) | High-level | Is this worth doing this way — alternatives considered, tradeoffs |
@@ -38,10 +39,10 @@ PORT_PLAN.md's phase list doesn't itself carry.
 6. For the actual step-by-step build work, go to `../PORT_PLAN.md` — this packet frames
    the project, PORT_PLAN.md executes it.
 
-Status (updated 2026-07-25): the framing below was written pre-build, but the build has
-since caught up and passed it — all four screens are implemented, Phase 9 polish is done,
-and v1 shipped as `mobile-preview-0.5`, **confirmed running on a real physical Android
-phone (2026-07-24)**. Every Minimum Credible v1 Milestone item is met. Forward work now
-follows the **Post-v1 Roadmap (R1–R7)** in `../PORT_PLAN.md` (perfect the app → the two
-deferred features → stores). Where a doc below still reads as forward-looking about
-something now built, `FRAMEWORK.md` and `../PORT_PLAN.md` are authoritative on current state.
+Status (updated 2026-08-15): the framing below was written pre-build, but the build has
+since caught up and passed it — all five screens are implemented, v1 shipped as
+`mobile-preview-0.5` and confirmed on a real phone, and the app has since grown through
+the full Post-v1 Roadmap (R1–R4.5, B1–B4, R6 signing) plus Phase 1 of the suggest-engine
+plan. Where a doc below still reads as forward-looking about something now built,
+`FRAMEWORK.md`, `../PORT_PLAN.md`, and `docs/suggest-engine-plan.md` are authoritative on
+current state.

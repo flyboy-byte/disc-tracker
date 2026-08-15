@@ -3,7 +3,7 @@
 // website first (see CLAUDE.md) — these were hand-verified against the real site during
 // Phase 0 (see PORT_PLAN.md §0D).
 
-import type { Disc, ScenarioDisc } from './disc';
+import type { Disc } from './disc';
 
 export interface Scenario {
   id: string;
@@ -147,23 +147,3 @@ export const SCENARIOS: Scenario[] = [
     bagTest: (d) => d.speed >= 10 && d.turn <= -1.5 && d.turn >= -3 && d.fade >= 1 && d.fade <= 3,
   },
 ];
-
-export function filterBag(sc: Scenario, bagDiscs: Disc[]): Disc[] {
-  return bagDiscs.filter((d) => sc.bagTest(d));
-}
-
-export function filterLibrary(sc: Scenario, allDiscs: ScenarioDisc[]): ScenarioDisc[] {
-  return allDiscs
-    .filter((d) => {
-      if (sc.stabMin !== undefined && d.stability < sc.stabMin) return false;
-      if (sc.stabMax !== undefined && d.stability > sc.stabMax) return false;
-      if (sc.speedMin !== undefined && d.speed < sc.speedMin) return false;
-      if (sc.types && !sc.types.includes(d.type)) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      const mid = ((sc.stabMin ?? -4) + (sc.stabMax ?? 7)) / 2;
-      return Math.abs(a.stability - mid) - Math.abs(b.stability - mid);
-    })
-    .slice(0, 15);
-}

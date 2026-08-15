@@ -57,7 +57,7 @@ not a blocker.
   picker, with a today's-bag export scope), SQLite-backed, survives app kills.
 - **Flight Shaper tab** — disc picker (bag or manual), 5 working sliders, live arc
   redraw with ghost-arc comparison, distance estimate, throw-style switcher.
-- **Disc Suggest tab** — 12-scenario grid, bag matches + top-15 library matches per
+- **Disc Suggest tab** — 13-scenario grid, bag matches + top-15 library matches per
   scenario, deduped, `useFocusEffect`-refreshed.
 - **Settings tab** — default throw view (persisted, inherited by Flight Shaper), data
   backup/import/delete-all, a v1.1 sync placeholder, and About (version, GPLv3, source
@@ -493,7 +493,7 @@ Scenario recommendation matching `discsuggestion.html` behavior.
 
 | # | Feature | Status |
 |---|---------|--------|
-| 1 | 12-scenario grid | ✅ done (fixed 2-column — phone-only app, skipped the website's 3/6-col desktop breakpoints as not applicable) |
+| 1 | 13-scenario grid | ✅ done (fixed 2-column — phone-only app, skipped the website's 3/6-col desktop breakpoints as not applicable; Flex Shot added 2026-08-15) |
 | 2 | Tap scenario → bag matches + library matches | ✅ done |
 | 3 | Bag matches: "In your bag" highlighted cards | ✅ done |
 | 4 | Library matches: top 15 by proximity to scenario midpoint, deduped against bag | ✅ done |
