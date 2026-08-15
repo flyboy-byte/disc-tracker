@@ -24,6 +24,21 @@ export function buildCSV(discs: Disc[]): string {
   return hdr + rows;
 }
 
+// "Both" export scope: two independent tables (Today's Bag, then the full collection) in one
+// file, each with its own header row and a "# label (count)" comment line above it so a human
+// opening the file can tell the sections apart. Meant for sharing/reference — the existing CSV
+// import only ever reads a single table, so this isn't a round-trip format (Backup & Restore
+// covers full round-trips).
+export function buildSplitCSV(bagDiscs: Disc[], allDiscs: Disc[]): string {
+  return [
+    `# Today's Bag (${bagDiscs.length})`,
+    buildCSV(bagDiscs),
+    '',
+    `# All Discs (${allDiscs.length})`,
+    buildCSV(allDiscs),
+  ].join('\n');
+}
+
 function splitRow(row: string): string[] {
   const cells: string[] = [];
   let cell = '';

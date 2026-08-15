@@ -31,6 +31,6 @@ describe('scenario bagTest predicates (Phase 0 §0D fixtures)', () => {
   });
 });
 
-it('SCENARIOS has all 12 scenarios from the website, not just the 6 sampled above', () => {
-  expect(SCENARIOS).toHaveLength(12);
+it('SCENARIOS has all 13 scenarios (12 from the website + the app-only Flex Shot), not just the 6 sampled above', () => {
+  expect(SCENARIOS).toHaveLength(13);
 });

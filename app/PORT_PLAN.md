@@ -158,6 +158,7 @@ sessions without half-finished work in the tree.
 | **C5** | **Throw Advisor v2** (personalized) | C2, C4 | 📋 PLANNED. Re-rank by observed distributions: P(target zone), hazard penalties, calibrated power. Deterministic template explanations (no LLM). |
 | **C6** | **Overlap / Compare / Replace-this-disc** | C4 | 📋 PLANNED. Multi-dim role overlap (NOT net stability); Flight-Shaper path overlay; closest-in-bag / closest-in-catalog. |
 | **C7** | **Shareable Bag Report** (image → share sheet) | C1 | 📋 PLANNED. Account-free organic acquisition; renders + exports PNG locally; no location/notes by default. |
+| **B5** | Disc Suggest — user-declared layer (Phase 1 of a ChatGPT-drafted handoff, audited before building) | B1 | 🚧 CODE DONE 2026-08-15, not yet on-device-verified or committed. Flex Shot scenario (13th), throw-style modifier (Backhand/Forehand), per-disc personal stability adjustment (`discs.stability_adj`, the empty "user-declared" slot in Decision 1). 121/121 tests. Full status + Phase 2+ (scoped-down Data Audit, personal role tags) in `plan/docs/suggest-engine-plan.md`. |
 
 > **2026-07-29 direction pivot:** R5 sync **deferred (researched-and-ready, not cut)**; new
 > priorities **B1 (suggestion accuracy — thrower = skill presets)** and **B2 (big collections)**

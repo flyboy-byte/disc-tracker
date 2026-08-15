@@ -611,6 +611,11 @@ export default function BagScreen() {
         <Pressable style={styles.ghostBtn} onPress={() => setExportOpen(true)} accessibilityRole="button" accessibilityLabel="Export discs to CSV">
           <Text style={styles.ghostBtnText}>Export</Text>
         </Pressable>
+        {customDiscs.length > 0 && (
+          <Pressable style={styles.ghostBtn} onPress={() => setLibraryOpen(true)} accessibilityRole="button" accessibilityLabel="Browse or manage your custom disc library">
+            <Text style={styles.ghostBtnText}>My library ({customDiscs.length})</Text>
+          </Pressable>
+        )}
         {/* Field view + Clear bag are today's-bag affordances (Field view is scoped there; a
             200-arc field is the cliff we deliberately avoid). Collection stays a browse/manage view. */}
         {bagScope === 'today' && bagCount > 0 && (
@@ -758,10 +763,8 @@ export default function BagScreen() {
         onCancel={() => setFormOpen(false)}
         onSave={handleSave}
         onDelete={handleDelete}
-        onOpenLibrary={() => {
-          setFormOpen(false);
-          setLibraryOpen(true);
-        }}
+        customDiscs={customDiscs}
+        onAddCustom={handleAddCustom}
       />
       <ArcDetailModal
         disc={detailDisc}

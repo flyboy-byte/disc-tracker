@@ -59,6 +59,11 @@ export const PROFILES: Record<string, Profile> = {
   accurate_mid: { speed: { target: 5,  tol: 1.5, wt: 1.5 }, glide: { target: 5, tol: 2, wt: 0.5 }, turn: { target: -0.5, tol: 1,   wt: 1   },            fade: { target: 1.5, tol: 1,   wt: 1.5 } },
   hyzerflip:    { speed: { target: 9,  tol: 3,   wt: 1   }, glide: { target: 6, tol: 1, wt: 1   }, turn: { target: -2.5, tol: 1,   wt: 2   },            fade: { target: 1,   tol: 1,   wt: 1   } },
   roller:       { speed: { target: 10, tol: 3,   wt: 0.5 }, glide: { target: 6, tol: 1, wt: 1   }, turn: { target: -4,   tol: 1,   wt: 2.5, tolLo: 1.5 }, fade: { target: 0.5, tol: 1,   wt: 1   } },
+  // Flex Shot (added post-B1): flat/anhyzer release that turns over at speed then fades back
+  // straight — distinct from turnover (holds the anhyzer, barely fades) and hyzerflip (starts
+  // hyzer, flips flat at fairway/mid speed). tolLo on turn: more understable still flexes fine;
+  // tolHi on fade: a touch more fade still brings it back, it just doesn't hold turned as long.
+  flex:         { speed: { target: 12, tol: 3,   wt: 1   }, glide: { target: 5, tol: 1.5, wt: 0.5 }, turn: { target: -2, tol: 1, wt: 2, tolLo: 1.5 }, fade: { target: 2, tol: 1, wt: 1.5, tolHi: 1.5 } },
 };
 
 interface PresetCfg {
@@ -70,6 +75,22 @@ export const PRESETS: Record<SkillPreset, PresetCfg> = {
   beginner:     { speedCap: 9,  stabilityBias: -0.5, glideBias: 0.5 },
   intermediate: { speedCap: 13, stabilityBias: 0,    glideBias: 0   },
   advanced:     { speedCap: 14, stabilityBias: 0.5,  glideBias: 0   },
+};
+
+// Throw style is a modifier applied on top of whichever scenario is active, not a scenario of
+// its own — a forehand thrower doesn't just want "the Forehand scenario," they forehand
+// turnovers, hyzer flips, flex shots, power hyzers, etc. Forehand power naturally overpowers
+// turn and benefits from a touch more fade for control, so both targets nudge toward overstable
+// (same additive-bias mechanism as PRESETS' stabilityBias/glideBias, just a second, independent
+// axis). Backhand is the authored baseline — its bias is a deliberate no-op.
+export type ThrowStyle = 'backhand' | 'forehand';
+interface ThrowStyleCfg {
+  turnBias: number;
+  fadeBias: number;
+}
+export const THROW_STYLE_BIAS: Record<ThrowStyle, ThrowStyleCfg> = {
+  backhand: { turnBias: 0, fadeBias: 0 },
+  forehand: { turnBias: 0.5, fadeBias: 0.5 },
 };
 
 const BAND_GREAT = 0.75;
@@ -89,21 +110,25 @@ function speedCapPenalty(speed: number, cap: number): number {
 }
 
 /** Score a disc 0..1 for a scenario at a skill level. Unknown scenario → 0. */
-export function score(disc: ScenarioDisc, scenarioId: string, skill: SkillPreset): number {
+export function score(disc: ScenarioDisc, scenarioId: string, skill: SkillPreset, throwStyle: ThrowStyle = 'backhand'): number {
   const p = PROFILES[scenarioId];
   if (!p) return 0;
   const preset = PRESETS[skill];
+  const throwBias = THROW_STYLE_BIAS[throwStyle];
 
-  // Apply the preset's gentle biases on top of the authored (Intermediate) targets.
-  const turnT: FieldTarget = { ...p.turn, target: p.turn.target + preset.stabilityBias };
+  // Apply the preset's + throw-style's gentle biases on top of the authored (Intermediate,
+  // Backhand) targets. Both are additive nudges on the same target — they compose rather than
+  // fight (e.g. an advanced forehand thrower stacks both overstable nudges).
+  const turnT: FieldTarget = { ...p.turn, target: p.turn.target + preset.stabilityBias + throwBias.turnBias };
   const glideT: FieldTarget = { ...p.glide, target: p.glide.target + preset.glideBias };
+  const fadeT: FieldTarget = { ...p.fade, target: p.fade.target + throwBias.fadeBias };
 
   const num =
     p.speed.wt * fieldScore(disc.speed, p.speed) +
     glideT.wt * fieldScore(disc.glide, glideT) +
     turnT.wt * fieldScore(disc.turn, turnT) +
-    p.fade.wt * fieldScore(disc.fade, p.fade);
-  const den = p.speed.wt + glideT.wt + turnT.wt + p.fade.wt;
+    fadeT.wt * fieldScore(disc.fade, fadeT);
+  const den = p.speed.wt + glideT.wt + turnT.wt + fadeT.wt;
   const raw = num / den;
 
   return raw * speedCapPenalty(disc.speed, preset.speedCap);
@@ -125,13 +150,14 @@ export function rankDiscs(
   discs: ScenarioDisc[],
   scenarioId: string,
   skill: SkillPreset,
-  limit = 15
+  limit = 15,
+  throwStyle: ThrowStyle = 'backhand'
 ): Scored[] {
   const p = PROFILES[scenarioId];
   if (!p) return [];
   const scored: Scored[] = [];
   for (const disc of discs) {
-    const s = score(disc, scenarioId, skill);
+    const s = score(disc, scenarioId, skill, throwStyle);
     const band = bandFor(s);
     if (band) scored.push({ disc, score: s, band });
   }

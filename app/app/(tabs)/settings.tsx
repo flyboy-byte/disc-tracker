@@ -15,7 +15,7 @@ import { useToast } from '../../src/components/Toast';
 import { getDiscs, getMeta, getOrCreateDefaultUser, listRounds, replaceRounds, saveDiscs, setMeta, getCustomDiscs, replaceCustomDiscs } from '../../src/db/db';
 import { colors } from '../../src/theme';
 import type { Disc } from '../../src/utils/disc';
-import type { SkillPreset } from '../../src/utils/suggestScore';
+import type { SkillPreset, ThrowStyle } from '../../src/utils/suggestScore';
 import { buildBackup, parseBackup, backupSummary } from '../../src/utils/backup';
 
 type ArcView = 'RHBH' | 'RHFH' | 'LHBH' | 'LHFH';
@@ -24,6 +24,10 @@ const SKILLS: { id: SkillPreset; label: string }[] = [
   { id: 'beginner', label: 'Beginner' },
   { id: 'intermediate', label: 'Intermediate' },
   { id: 'advanced', label: 'Advanced' },
+];
+const THROW_STYLES: { id: ThrowStyle; label: string }[] = [
+  { id: 'backhand', label: 'Backhand' },
+  { id: 'forehand', label: 'Forehand' },
 ];
 const SOURCE_URL = 'https://github.com/flyboy-byte/disc-tracker';
 const SHOTSHAPER_URL = 'https://github.com/kegiljarhus/shotshaper';
@@ -34,6 +38,7 @@ export default function SettingsScreen() {
   const [discs, setDiscs] = useState<Disc[]>([]);
   const [arcView, setArcView] = useState<ArcView>('RHBH');
   const [skill, setSkill] = useState<SkillPreset>('intermediate');
+  const [throwStyle, setThrowStyle] = useState<ThrowStyle>('backhand');
   const [msRefEnabled, setMsRefEnabled] = useState(false);
   const [fieldShowAll, setFieldShowAll] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -50,6 +55,7 @@ export default function SettingsScreen() {
         setDiscs(d);
         setArcView((meta.arcView as ArcView) || 'RHBH');
         setSkill(meta.skill);
+        setThrowStyle(meta.throwStyle);
         setMsRefEnabled(meta.msRefEnabled);
         setFieldShowAll(meta.fieldShowAll);
         setLoading(false);
@@ -65,6 +71,11 @@ export default function SettingsScreen() {
   const changeSkill = async (v: SkillPreset) => {
     setSkill(v);
     if (userIdRef.current != null) await setMeta(userIdRef.current, { skill: v });
+  };
+
+  const changeThrowStyle = async (v: ThrowStyle) => {
+    setThrowStyle(v);
+    if (userIdRef.current != null) await setMeta(userIdRef.current, { throwStyle: v });
   };
 
   const changeMsRef = async (v: boolean) => {
@@ -96,7 +107,7 @@ export default function SettingsScreen() {
     setBusy(true);
     try {
       const [allDiscs, meta, rounds, custom] = await Promise.all([getDiscs(uid), getMeta(uid), listRounds(uid), getCustomDiscs(uid)]);
-      const json = buildBackup(allDiscs, { sortMode: meta.sortMode, arcView: meta.arcView, skill: meta.skill, msRefEnabled: meta.msRefEnabled, fieldShowAll: meta.fieldShowAll }, rounds, custom);
+      const json = buildBackup(allDiscs, { sortMode: meta.sortMode, arcView: meta.arcView, skill: meta.skill, throwStyle: meta.throwStyle, msRefEnabled: meta.msRefEnabled, fieldShowAll: meta.fieldShowAll }, rounds, custom);
       const dir = new Directory(Paths.cache, 'exports');
       if (!dir.exists) dir.create({ intermediates: true });
       const date = new Date().toISOString().slice(0, 10);
@@ -144,6 +155,7 @@ export default function SettingsScreen() {
                   sortMode: backup.meta.sortMode,
                   arcView: backup.meta.arcView,
                   skill: backup.meta.skill as SkillPreset,
+                  throwStyle: backup.meta.throwStyle as ThrowStyle,
                   msRefEnabled: backup.meta.msRefEnabled,
                   fieldShowAll: backup.meta.fieldShowAll,
                 });
@@ -238,6 +250,29 @@ export default function SettingsScreen() {
               accessibilityLabel={`Skill level ${s.label}`}
             >
               <Text style={[styles.pillText, skill === s.id && styles.pillTextActive]}>{s.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      {/* Throw style — a modifier on top of whichever Disc Suggest scenario is active, not a
+          scenario of its own. Forehand nudges targets toward overstable across every scenario
+          (turnovers, hyzer flips, flex shots, power hyzers), instead of relying on one generic
+          "Forehand" scenario card to stand in for all of them. */}
+      <View style={styles.card}>
+        <Text style={styles.sectionLabel}>THROW STYLE</Text>
+        <Text style={styles.sectionHint}>Also tunes Disc Suggest — forehand nudges every scenario toward overstable, since forehand power overpowers turn.</Text>
+        <View style={styles.pillRow}>
+          {THROW_STYLES.map((t) => (
+            <Pressable
+              key={t.id}
+              onPress={() => changeThrowStyle(t.id)}
+              style={[styles.pill, throwStyle === t.id && styles.pillActive]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: throwStyle === t.id }}
+              accessibilityLabel={`Throw style ${t.label}`}
+            >
+              <Text style={[styles.pillText, throwStyle === t.id && styles.pillTextActive]}>{t.label}</Text>
             </Pressable>
           ))}
         </View>

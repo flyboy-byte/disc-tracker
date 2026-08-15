@@ -14,7 +14,7 @@ import { colors } from '../../src/theme';
 import { bagToDisc, type Disc, type ScenarioDisc } from '../../src/utils/disc';
 import { masterDiscs } from '../../src/utils/masterLibrary';
 import { SCENARIOS, type Scenario } from '../../src/utils/scenarios';
-import { rankDiscs, type Scored, type SkillPreset } from '../../src/utils/suggestScore';
+import { rankDiscs, type Scored, type SkillPreset, type ThrowStyle } from '../../src/utils/suggestScore';
 
 // Same shape check the website applies to the raw master JSON before treating a row as a
 // valid ScenarioDisc — bundled discs_master.json already satisfies this, but stay defensive
@@ -27,6 +27,7 @@ export default function DiscSuggestScreen() {
   const [loading, setLoading] = useState(true);
   const [bagDiscs, setBagDiscs] = useState<Disc[]>([]);
   const [skill, setSkill] = useState<SkillPreset>('intermediate');
+  const [throwStyle, setThrowStyle] = useState<ThrowStyle>('backhand');
   const [activeId, setActiveId] = useState<string | null>(null);
   // Resolve the user once and hold it in a ref so the focus effect below has stable ([])
   // deps — depending on a `userId` state instead caused a double-fetch on cold open (the
@@ -43,6 +44,7 @@ export default function DiscSuggestScreen() {
         const [discs, meta] = await Promise.all([getDiscs(userIdRef.current), getMeta(userIdRef.current)]);
         setBagDiscs(discs);
         setSkill(meta.skill);
+        setThrowStyle(meta.throwStyle);
         setLoading(false);
       })();
     }, [])
@@ -55,12 +57,12 @@ export default function DiscSuggestScreen() {
     // ONE scorer for both. Bag discs converted to the library shape first so they're scored
     // identically (fixes the old bag/library criteria mismatch). No cap on bag matches; library
     // capped inside rankDiscs.
-    const bag = rankDiscs(bagDiscs.map(bagToDisc), activeScenario.id, skill, bagDiscs.length || undefined);
-    const lib = rankDiscs(LIBRARY_DISCS, activeScenario.id, skill);
+    const bag = rankDiscs(bagDiscs.map(bagToDisc), activeScenario.id, skill, bagDiscs.length || undefined, throwStyle);
+    const lib = rankDiscs(LIBRARY_DISCS, activeScenario.id, skill, 15, throwStyle);
     const bagNames = new Set(bag.map((s) => `${s.disc.name}|${s.disc.mfr}`.toLowerCase()));
     const libOnly = lib.filter((s) => !bagNames.has(`${s.disc.name}|${s.disc.mfr}`.toLowerCase()));
     return { bagMatches: bag, libOnly };
-  }, [activeScenario, bagDiscs, skill]);
+  }, [activeScenario, bagDiscs, skill, throwStyle]);
 
   const onSelect = (sc: Scenario) => setActiveId(sc.id);
 

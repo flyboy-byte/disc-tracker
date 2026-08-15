@@ -1,6 +1,6 @@
 {
   "_note": "B1 baseline — CURRENT filterLibrary picks. Frozen yardstick for the rewrite. Regenerate via plan/tools/gen_suggest_baseline.mjs.",
-  "generated": "2026-07-29",
+  "generated": "2026-08-15",
   "libraryCount": 1660,
   "scenarios": {
     "straight": {
@@ -1974,6 +1974,172 @@
           "turn": -4.5,
           "fade": 1,
           "stability": -3.5
+        }
+      ]
+    },
+    "flex": {
+      "title": "Flex Shot",
+      "filter": {
+        "stabMin": -2,
+        "stabMax": 1,
+        "speedMin": 10,
+        "types": [
+          "Control Driver",
+          "Distance Driver"
+        ]
+      },
+      "bagTest": "d.speed >= 10 && d.turn <= -1.5 && d.turn >= -3 && d.fade >= 1 && d.fade <= 3",
+      "libraryMatchCount": 198,
+      "top15": [
+        {
+          "name": "H4 V2",
+          "mfr": "Prodigy",
+          "type": "Control Driver",
+          "speed": 10,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1.5,
+          "stability": -0.5
+        },
+        {
+          "name": "Sapphire",
+          "mfr": "Latitude 64",
+          "type": "Distance Driver",
+          "speed": 10,
+          "glide": 6,
+          "turn": -2,
+          "fade": 1.5,
+          "stability": -0.5
+        },
+        {
+          "name": "Wei",
+          "mfr": "Yikun",
+          "type": "Distance Driver",
+          "speed": 10,
+          "glide": 5,
+          "turn": -2.5,
+          "fade": 2,
+          "stability": -0.5
+        },
+        {
+          "name": "Marine",
+          "mfr": "Rogue Iron",
+          "type": "Distance Driver",
+          "speed": 11,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1.5,
+          "stability": -0.5
+        },
+        {
+          "name": "Kahu XG",
+          "mfr": "RPM Discs",
+          "type": "Distance Driver",
+          "speed": 13,
+          "glide": 5,
+          "turn": -2.5,
+          "fade": 2,
+          "stability": -0.5
+        },
+        {
+          "name": "Tenacity",
+          "mfr": "Axiom",
+          "type": "Distance Driver",
+          "speed": 13,
+          "glide": 5,
+          "turn": -2.5,
+          "fade": 2,
+          "stability": -0.5
+        },
+        {
+          "name": "50 Cal",
+          "mfr": "Arsenal Discs",
+          "type": "Control Driver",
+          "speed": 10,
+          "glide": 4,
+          "turn": -2,
+          "fade": 2,
+          "stability": 0
+        },
+        {
+          "name": "Beast",
+          "mfr": "Innova",
+          "type": "Distance Driver",
+          "speed": 10,
+          "glide": 5,
+          "turn": -2,
+          "fade": 2,
+          "stability": 0
+        },
+        {
+          "name": "Berserker",
+          "mfr": "Viking Discs",
+          "type": "Distance Driver",
+          "speed": 10,
+          "glide": 5,
+          "turn": -3,
+          "fade": 2,
+          "stability": -1
+        },
+        {
+          "name": "Cactus",
+          "mfr": "Lone Star Disc",
+          "type": "Distance Driver",
+          "speed": 10,
+          "glide": 5,
+          "turn": -2,
+          "fade": 2,
+          "stability": 0
+        },
+        {
+          "name": "Dystopia",
+          "mfr": "Doomsday Discs",
+          "type": "Distance Driver",
+          "speed": 10,
+          "glide": 5,
+          "turn": -2,
+          "fade": 2,
+          "stability": 0
+        },
+        {
+          "name": "F Model US",
+          "mfr": "Prodigy",
+          "type": "Control Driver",
+          "speed": 10,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "Gorgon",
+          "mfr": "Innova",
+          "type": "Distance Driver",
+          "speed": 10,
+          "glide": 6,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
+        },
+        {
+          "name": "H3",
+          "mfr": "Prodigy",
+          "type": "Control Driver",
+          "speed": 10,
+          "glide": 5,
+          "turn": -1,
+          "fade": 1,
+          "stability": 0
+        },
+        {
+          "name": "H4",
+          "mfr": "Prodigy",
+          "type": "Control Driver",
+          "speed": 10,
+          "glide": 5,
+          "turn": -2,
+          "fade": 1,
+          "stability": -1
         }
       ]
     }

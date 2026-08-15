@@ -1,7 +1,7 @@
 // B1 step 3 — unit tests for the unified scorer, and step 6 — validation vs. the step-1 baseline.
 // Pure/offline, no device. Run with `npm test`.
 
-import { bandFor, PROFILES, PRESETS, rankDiscs, score, type SkillPreset } from './suggestScore';
+import { bandFor, PROFILES, PRESETS, rankDiscs, score, type SkillPreset, type ThrowStyle } from './suggestScore';
 import { masterDiscs } from './masterLibrary';
 import type { ScenarioDisc } from './disc';
 import baseline from './__fixtures__/suggest-baseline.json';
@@ -60,6 +60,47 @@ describe('skill presets', () => {
   });
 });
 
+describe('flex shot scenario', () => {
+  it('scores a flex-shaped disc highly for flex, and poorly for straight/hyzer', () => {
+    // Flex ideal ≈ speed 12, glide 5, turn -2, fade 2 — turns on release, fades back straight.
+    const flexDisc = disc({ speed: 12, glide: 5, turn: -2, fade: 2 });
+    expect(score(flexDisc, 'flex', 'intermediate')).toBeGreaterThanOrEqual(0.75);
+    expect(score(flexDisc, 'straight', 'intermediate')).toBeLessThan(0.55);
+    expect(score(flexDisc, 'hyzer', 'intermediate')).toBeLessThan(0.55);
+  });
+});
+
+describe('throw style modifier', () => {
+  const styles: ThrowStyle[] = ['backhand', 'forehand'];
+
+  it('backhand is a no-op vs. the pre-existing (unbiased) behavior', () => {
+    const d = disc({ speed: 9, glide: 4, turn: 0, fade: 3.5 });
+    expect(score(d, 'hyzer', 'intermediate')).toBe(score(d, 'hyzer', 'intermediate', 'backhand'));
+  });
+
+  it('forehand nudges targets toward overstable, changing ranking vs. backhand for turnover', () => {
+    for (const skill of ['beginner', 'intermediate', 'advanced'] as SkillPreset[]) {
+      const bh = rankDiscs(LIBRARY, 'turnover', skill, 15, 'backhand').map((s) => `${s.disc.name}|${s.disc.mfr}`);
+      const fh = rankDiscs(LIBRARY, 'turnover', skill, 15, 'forehand').map((s) => `${s.disc.name}|${s.disc.mfr}`);
+      expect(bh).not.toEqual(fh);
+    }
+  });
+
+  it('rankDiscs defaults to backhand when throwStyle is omitted', () => {
+    const a = rankDiscs(LIBRARY, 'hyzer', 'intermediate');
+    const b = rankDiscs(LIBRARY, 'hyzer', 'intermediate', 15, 'backhand');
+    expect(a.map((s) => s.disc.name)).toEqual(b.map((s) => s.disc.name));
+  });
+
+  for (const ts of styles) {
+    it(`every scenario still yields recommendations for ${ts}`, () => {
+      for (const id of Object.keys(PROFILES)) {
+        expect(rankDiscs(LIBRARY, id, 'intermediate', 15, ts).length).toBeGreaterThan(0);
+      }
+    });
+  }
+});
+
 describe('the headline defect is fixed: hyzer !== forehand', () => {
   it('produces different library rankings for hyzer and forehand', () => {
     const hyzer = rankDiscs(LIBRARY, 'hyzer', 'intermediate').map((s) => `${s.disc.name}|${s.disc.mfr}`);
@@ -103,7 +144,7 @@ describe('validation vs. step-1 baseline', () => {
     // is *meant* to change picks. We only assert the model is sane (below).
     // eslint-disable-next-line no-console
     console.log('[B1 validation] baseline overlap by scenario:\n' + rows.join('\n'));
-    expect(rows.length).toBe(12);
+    expect(rows.length).toBe(13); // 12 original + the post-B1 Flex Shot addition
   });
 
   it('sanity: overstable scenarios recommend overstable discs (positive net), US scenarios negative', () => {

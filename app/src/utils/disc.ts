@@ -17,6 +17,12 @@ export interface Disc {
   notes?: string;
   color?: string;
   inBag?: boolean;
+  // User-declared flight layer (never written back over factory speed/glide/turn/fade — see
+  // plan/docs/direction-2026-08-08.md Decision 1). -2..+2: "flies more understable than stock"
+  // to "flies more overstable than stock," for a specific owned disc (plastic, wear, a run that
+  // just behaves differently). 0/undefined is a no-op. Only ever applied when scoring THIS
+  // disc for Disc Suggest (bagToDisc below) — never touches the canonical library entry.
+  stabilityAdj?: number;
 }
 
 export type Stability = 'overstable' | 'stable' | 'understable';
@@ -92,16 +98,22 @@ export interface ScenarioDisc {
   fade: number;
 }
 
-// Convert a bag disc to the shape the scenario/library screens compare against.
+// Convert a bag disc to the shape the scenario/library screens compare against. A non-zero
+// stabilityAdj (the user-declared layer) shifts turn AND fade together — never just the
+// derived `stability` badge — so the badge and the actual scoring always agree, and Disc
+// Suggest can genuinely rank an owned specimen differently from its own library entry.
 export function bagToDisc(d: Disc): ScenarioDisc {
+  const adj = (d.stabilityAdj ?? 0) / 2;
+  const turn = (d.turn ?? 0) + adj;
+  const fade = (d.fade ?? 0) + adj;
   return {
     name: d.mold,
     mfr: d.mfr,
     type: MASTER_TYPE_LABEL[discType(d)],
-    stability: Math.round(((d.fade ?? 0) + (d.turn ?? 0)) * 10) / 10,
+    stability: Math.round((fade + turn) * 10) / 10,
     speed: d.speed,
     glide: d.glide,
-    turn: d.turn,
-    fade: d.fade,
+    turn,
+    fade,
   };
 }

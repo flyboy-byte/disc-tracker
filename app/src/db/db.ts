@@ -9,7 +9,7 @@
 import * as SQLite from 'expo-sqlite';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import type { Disc } from '../utils/disc';
-import type { SkillPreset } from '../utils/suggestScore';
+import type { SkillPreset, ThrowStyle } from '../utils/suggestScore';
 import type { Round } from '../utils/roundMath';
 import type { CustomMasterDisc } from '../utils/masterLibrary';
 import { runMigrations } from './migrations';
@@ -23,6 +23,8 @@ export interface UserMeta {
   msRefEnabled: boolean;
   // Disc-suggestion skill preset — drives suggestScore.ts. Default 'intermediate'.
   skill: SkillPreset;
+  // Disc-suggestion throw style modifier — drives suggestScore.ts. Default 'backhand'.
+  throwStyle: ThrowStyle;
   // Field view scope (B2). false = today's-bag discs only (default); true = whole filtered set
   // when it's small enough to stay readable. See plan/docs/b2-spike.md.
   fieldShowAll: boolean;
@@ -105,6 +107,7 @@ interface DiscRow {
   notes: string;
   color: string;
   in_bag: number;
+  stability_adj: number;
 }
 
 export function getDiscs(userId: number): Promise<Disc[]> {
@@ -112,7 +115,7 @@ export function getDiscs(userId: number): Promise<Disc[]> {
     const db = await openDatabase();
     const rows = await db.getAllAsync<DiscRow>(
       `SELECT disc_id, mfr, mold, plastic, weight, speed, glide, turn, fade,
-              use_desc, thr, notes, color, in_bag
+              use_desc, thr, notes, color, in_bag, stability_adj
        FROM discs WHERE user_id = ? ORDER BY sort_order`,
       [userId]
     );
@@ -131,6 +134,7 @@ export function getDiscs(userId: number): Promise<Disc[]> {
       notes: r.notes,
       color: r.color || '',
       inBag: !!r.in_bag,
+      stabilityAdj: r.stability_adj ?? 0,
     }));
   });
 }
@@ -151,8 +155,8 @@ export function saveDiscs(userId: number, discs: Disc[]): Promise<void> {
         if (!d.mold?.trim()) continue; // skip discs with no mold name, matches app.py
         await txn.runAsync(
           `INSERT INTO discs (user_id, disc_id, mfr, mold, plastic, weight,
-             speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag, stability_adj)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             userId,
             d.id ?? 0,
@@ -170,6 +174,7 @@ export function saveDiscs(userId: number, discs: Disc[]): Promise<void> {
             d.color ?? '',
             sortOrder,
             d.inBag ? 1 : 0,
+            d.stabilityAdj ?? 0,
           ]
         );
         sortOrder++;
@@ -295,9 +300,9 @@ export function insertDisc(userId: number, d: Disc): Promise<void> {
     const sortOrder = (row?.maxSort ?? -1) + 1;
     await db.runAsync(
       `INSERT INTO discs (user_id, disc_id, mfr, mold, plastic, weight,
-         speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, d.id ?? 0, d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', sortOrder, d.inBag ? 1 : 0]
+         speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag, stability_adj)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, d.id ?? 0, d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', sortOrder, d.inBag ? 1 : 0, d.stabilityAdj ?? 0]
     );
   });
 }
@@ -309,9 +314,9 @@ export function updateDisc(userId: number, d: Disc): Promise<void> {
     const db = await openDatabase();
     await db.runAsync(
       `UPDATE discs SET mfr = ?, mold = ?, plastic = ?, weight = ?, speed = ?, glide = ?,
-         turn = ?, fade = ?, use_desc = ?, thr = ?, notes = ?, color = ?
+         turn = ?, fade = ?, use_desc = ?, thr = ?, notes = ?, color = ?, stability_adj = ?
        WHERE user_id = ? AND disc_id = ?`,
-      [d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', userId, d.id ?? 0]
+      [d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', d.stabilityAdj ?? 0, userId, d.id ?? 0]
     );
   });
 }
@@ -332,11 +337,14 @@ export function reorderDiscs(userId: number, orderedIds: number[]): Promise<void
 // Raw read shared by getMeta (serialized) and setMeta (serialized) — must NOT itself be
 // serialized, or setMeta would deadlock waiting on a slot queued behind its own.
 async function readMeta(db: SQLiteDatabase, userId: number): Promise<UserMeta> {
-  const row = await db.getFirstAsync<{ next_id: number; sort_mode: string; arc_view: string; ms_ref: number; skill: string; field_show_all: number }>(
-    'SELECT next_id, sort_mode, arc_view, ms_ref, skill, field_show_all FROM user_meta WHERE user_id = ?',
+  const row = await db.getFirstAsync<{
+    next_id: number; sort_mode: string; arc_view: string; ms_ref: number; skill: string; field_show_all: number; throw_style: string;
+  }>(
+    'SELECT next_id, sort_mode, arc_view, ms_ref, skill, field_show_all, throw_style FROM user_meta WHERE user_id = ?',
     [userId]
   );
   const skill = row?.skill;
+  const throwStyle = row?.throw_style;
   return {
     nextId: row?.next_id ?? 100,
     sortMode: row?.sort_mode ?? 'speed-desc',
@@ -344,6 +352,7 @@ async function readMeta(db: SQLiteDatabase, userId: number): Promise<UserMeta> {
     msRefEnabled: !!row?.ms_ref,
     skill: skill === 'beginner' || skill === 'advanced' ? skill : 'intermediate',
     fieldShowAll: !!row?.field_show_all,
+    throwStyle: throwStyle === 'forehand' ? 'forehand' : 'backhand',
   };
 }
 
@@ -357,12 +366,12 @@ export function setMeta(userId: number, updates: Partial<UserMeta>): Promise<voi
     const current = await readMeta(db, userId);
     const next = { ...current, ...updates };
     await db.runAsync(
-      `INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view, ms_ref, skill, field_show_all) VALUES (?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view, ms_ref, skill, field_show_all, throw_style) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id) DO UPDATE SET
          next_id = excluded.next_id, sort_mode = excluded.sort_mode,
          arc_view = excluded.arc_view, ms_ref = excluded.ms_ref, skill = excluded.skill,
-         field_show_all = excluded.field_show_all`,
-      [userId, next.nextId, next.sortMode, next.arcView, next.msRefEnabled ? 1 : 0, next.skill, next.fieldShowAll ? 1 : 0]
+         field_show_all = excluded.field_show_all, throw_style = excluded.throw_style`,
+      [userId, next.nextId, next.sortMode, next.arcView, next.msRefEnabled ? 1 : 0, next.skill, next.fieldShowAll ? 1 : 0, next.throwStyle]
     );
   });
 }

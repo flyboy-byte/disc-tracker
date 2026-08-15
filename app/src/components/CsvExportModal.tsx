@@ -4,12 +4,13 @@
 // to another app", and covers copy-to-clipboard too on platforms whose share sheet
 // includes it.
 import { useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Directory, File, Paths } from 'expo-file-system';
+import { StorageAccessFramework } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { colors } from '../theme';
 import type { Disc } from '../utils/disc';
-import { buildCSV } from '../utils/csv';
+import { buildCSV, buildSplitCSV } from '../utils/csv';
 
 interface Props {
   visible: boolean;
@@ -17,13 +18,19 @@ interface Props {
   onCancel: () => void;
 }
 
-type Scope = 'all' | 'bag';
+type Scope = 'all' | 'bag' | 'both';
 
 export default function CsvExportModal({ visible, discs, onCancel }: Props) {
   const [scope, setScope] = useState<Scope>('all');
   const [sharing, setSharing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState(false);
   const bagCount = useMemo(() => discs.filter((d) => d.inBag).length, [discs]);
-  const csvText = useMemo(() => buildCSV(scope === 'bag' ? discs.filter((d) => d.inBag) : discs), [discs, scope]);
+  const csvText = useMemo(() => {
+    if (scope === 'bag') return buildCSV(discs.filter((d) => d.inBag));
+    if (scope === 'both') return buildSplitCSV(discs.filter((d) => d.inBag), discs);
+    return buildCSV(discs);
+  }, [discs, scope]);
 
   const handleShare = async () => {
     setSharing(true);
@@ -43,6 +50,24 @@ export default function CsvExportModal({ visible, discs, onCancel }: Props) {
     }
   };
 
+  // "Save to device" — Android only (SAF picker). Lets the user pick a real folder (e.g.
+  // Downloads) and writes the CSV straight there, no share sheet round-trip through another app.
+  const handleDownload = async () => {
+    setDownloading(true);
+    setDownloadError(false);
+    try {
+      const perm = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+      if (!perm.granted) return;
+      const filename = `disc_collection_${scope === 'bag' ? 'todays_bag' : scope === 'both' ? 'both' : 'all'}.csv`;
+      const fileUri = await StorageAccessFramework.createFileAsync(perm.directoryUri, filename, 'text/csv');
+      await StorageAccessFramework.writeAsStringAsync(fileUri, csvText);
+    } catch {
+      setDownloadError(true);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onCancel}>
       <View style={styles.backdrop}>
@@ -54,10 +79,19 @@ export default function CsvExportModal({ visible, discs, onCancel }: Props) {
             <View style={styles.scopeRow}>
               <ScopeOption label={`All discs (${discs.length})`} active={scope === 'all'} onPress={() => setScope('all')} />
               <ScopeOption label={`Today's bag (${bagCount})`} active={scope === 'bag'} onPress={() => setScope('bag')} />
+              <ScopeOption label="Both" active={scope === 'both'} onPress={() => setScope('both')} />
             </View>
           )}
+          {scope === 'both' && (
+            <Text style={styles.hint}>Two tables in one file — Today's Bag first, then the full collection.</Text>
+          )}
 
-          <Text style={styles.hint}>Share the CSV to save it, email it, or send it to another app.</Text>
+          <Text style={styles.hint}>
+            {Platform.OS === 'android'
+              ? 'Save it straight to a folder on your device, or share it to email/another app.'
+              : 'Share the CSV to save it, email it, or send it to another app.'}
+          </Text>
+          {downloadError && <Text style={styles.errorText}>Couldn't save the file — try again.</Text>}
           <TextInput style={styles.preview} value={csvText} editable={false} multiline scrollEnabled />
 
           <View style={styles.btnRow}>
@@ -65,6 +99,11 @@ export default function CsvExportModal({ visible, discs, onCancel }: Props) {
               <Text style={styles.btnGhostText}>Close</Text>
             </Pressable>
             <View style={{ flex: 1 }} />
+            {Platform.OS === 'android' && (
+              <Pressable style={styles.btnGhost} onPress={handleDownload} disabled={downloading}>
+                <Text style={styles.btnGhostText}>{downloading ? 'Saving…' : 'Save to device'}</Text>
+              </Pressable>
+            )}
             <Pressable style={styles.btn} onPress={handleShare} disabled={sharing}>
               <Text style={styles.btnText}>{sharing ? 'Sharing…' : 'Share CSV'}</Text>
             </Pressable>
@@ -87,12 +126,13 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.card, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, maxHeight: '85%' },
   title: { color: colors.text, fontSize: 20, fontWeight: '700', marginBottom: 12 },
-  scopeRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  scopeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   scopePill: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.border },
   scopePillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.12)' },
   scopePillText: { color: colors.muted, fontSize: 13 },
   scopePillTextActive: { color: colors.accent, fontWeight: '600' },
   hint: { color: colors.muted, fontSize: 12, marginBottom: 8 },
+  errorText: { color: colors.danger, fontSize: 12, marginBottom: 8 },
   preview: {
     backgroundColor: colors.bg,
     borderWidth: 1,

@@ -4,6 +4,15 @@
 > `src/utils/suggestScore.ts` (steps 3 + 6 done, 98/98 tests green). This doc is the source of
 > truth for the numbers; keep it and `suggestScore.ts` in lockstep.
 >
+> **2026-08-15 addition (Phase 1 of `suggest-engine-plan.md`):** added a 13th scenario, **Flex
+> Shot**, and a **throw-style modifier** (Backhand/Forehand, `user_meta.throw_style`) applied on
+> top of whichever scenario is active — see the two new sections below. Also added a per-owned-
+> disc **personal stability adjustment** (`discs.stability_adj`, -2..+2) that shifts `turn`/`fade`
+> together before scoring, so a specific owned specimen (lightweight run, beat-in, etc.) can score
+> differently from its own library entry — implemented in `disc.ts` `bagToDisc()`, not in this
+> file (it doesn't touch `PROFILES`, just the disc passed in). Full context/roadmap:
+> `plan/docs/suggest-engine-plan.md`.
+>
 > **Refinement found during step-6 validation:** symmetric tolerances wrongly penalized *overshoot*
 > — a fade-4/5 disc scored ~0 for "Reliable Hyzer," excluding Firebird-class discs. Fixed by adding
 > **one-sided tolerances** (`tolLo`/`tolHi`): overstable scenarios let fade overshoot freely, max
@@ -77,6 +86,24 @@ vibes; validated against the step-1 baseline picks in step 6.
 | **Accurate Mid** | 5 / 1.5 / **1.5** | 5 / 2 / 0.5 | −0.5 / 1 / 1 | 1.5 / 1 / **1.5** | predictable mid, slight fade, hits gaps |
 | **Hyzer Flip** | 9 / 3 / 1 | 6 / 1 / 1 | −2.5 / 1 / **2** | 1 / 1 / 1 | US enough to flip up, glide to hold flat |
 | **Roller** | 10 / 3 / 0.5 | 6 / 1 / 1 | −4 / 1.5 / **2.5** | 0.5 / 1 / 1 | very US, low fade → runs on the ground |
+| **Flex Shot** | 12 / 3 / 1 | 5 / 1.5 / 0.5 | −2 / 1 / **2** | 2 / 1 / 1.5 | turns on release, fades back straight — distinct from Turnover (holds anhyzer, barely fades) and Hyzer Flip (starts hyzer, flips flat at fairway speed) |
+
+## Throw style — a modifier, not a 13th competing scenario (added 2026-08-15)
+
+A forehand-dominant thrower doesn't just want "the Forehand scenario" — they forehand turnovers,
+hyzer flips, flex shots, power hyzers, everything. So instead of adding more forehand-flavored
+scenarios, throw style is a second, independent bias axis layered on **whichever** scenario is
+active, the same mechanism as the skill-preset biases above (additive shift on the authored
+target). Persisted in `user_meta.throw_style`, editable in Settings next to Skill Level.
+
+| Style | `turnBias` | `fadeBias` | Rationale |
+|-------|-----------|-----------|-----------|
+| **Backhand** | 0 | 0 | The authored baseline — deliberate no-op, existing behavior unchanged |
+| **Forehand** | **+0.5** | **+0.5** | Forehand power naturally overpowers turn and benefits from a touch more fade for control — nudges every scenario's ideal a bit more overstable |
+
+The pre-existing `forehand` scenario card (row above) is unchanged and stays — it's still a useful
+"forehand power/hyzer" shortcut on its own. Whether it should later be renamed or folded away now
+that the toggle exists is an open call, not decided yet (see `suggest-engine-plan.md`).
 
 ### Distinctions the model deliberately encodes (that the baseline lost)
 - **Hyzer vs. Forehand** — baseline returned *identical* library lists. Here: Hyzer weights **fade**

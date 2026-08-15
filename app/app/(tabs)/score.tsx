@@ -521,7 +521,10 @@ function ActiveView({
               <View style={styles.strokeRow}>
                 <Pressable
                   style={styles.strokeBtn}
-                  onPress={() => onSetScore(p.id, hole, Math.max(1, shown - 1))}
+                  // First tap on an unscored hole just commits the previewed par (matches the
+                  // dimmed default shown below) instead of jumping straight to par-1 — the ghost
+                  // number IS the starting point, tapping +/- moves away from it, not past it.
+                  onPress={() => onSetScore(p.id, hole, stored == null ? par : Math.max(1, shown - 1))}
                   accessibilityRole="button"
                   accessibilityLabel={`Decrease ${p.name}'s strokes`}
                 >
@@ -530,7 +533,7 @@ function ActiveView({
                 <Text style={[styles.strokeValue, stored == null && styles.strokeValueGhost]}>{shown}</Text>
                 <Pressable
                   style={styles.strokeBtn}
-                  onPress={() => onSetScore(p.id, hole, shown + 1)}
+                  onPress={() => onSetScore(p.id, hole, stored == null ? par : shown + 1)}
                   accessibilityRole="button"
                   accessibilityLabel={`Increase ${p.name}'s strokes`}
                 >

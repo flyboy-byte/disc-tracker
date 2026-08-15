@@ -135,6 +135,17 @@ export const SCENARIOS: Scenario[] = [
     types: ['Control Driver', 'Distance Driver'],
     bagTest: (d) => d.turn <= -3 && d.fade <= 1,
   },
+  {
+    id: 'flex',
+    icon: '〰',
+    title: 'Flex Shot',
+    desc: 'Turns on release, fades back straight — extra distance without a full turnover',
+    stabMin: -2,
+    stabMax: 1,
+    speedMin: 10,
+    types: ['Control Driver', 'Distance Driver'],
+    bagTest: (d) => d.speed >= 10 && d.turn <= -1.5 && d.turn >= -3 && d.fade >= 1 && d.fade <= 3,
+  },
 ];
 
 export function filterBag(sc: Scenario, bagDiscs: Disc[]): Disc[] {

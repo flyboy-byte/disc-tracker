@@ -36,6 +36,7 @@ const SCENARIOS = [
   { id: 'accurate_mid', title: 'Accurate Mid', stabMin: 0, stabMax: 2, types: ['Mid Range'], bagTest: 'd.speed >= 4 && d.speed <= 6 && d.fade + d.turn >= 0 && d.fade + d.turn <= 2' },
   { id: 'hyzerflip', title: 'Hyzer Flip', stabMin: -2, stabMax: 0, types: ['Control Driver', 'Distance Driver'], bagTest: 'd.speed >= 7 && d.speed <= 12 && d.turn <= -1 && d.turn >= -2 && d.fade >= 1 && d.fade <= 2 && d.fade + d.turn <= 0' },
   { id: 'roller', title: 'Roller', stabMax: -2.5, types: ['Control Driver', 'Distance Driver'], bagTest: 'd.turn <= -3 && d.fade <= 1' },
+  { id: 'flex', title: 'Flex Shot', stabMin: -2, stabMax: 1, speedMin: 10, types: ['Control Driver', 'Distance Driver'], bagTest: 'd.speed >= 10 && d.turn <= -1.5 && d.turn >= -3 && d.fade >= 1 && d.fade <= 3' },
 ];
 
 // Exact mirror of filterLibrary() in src/utils/scenarios.ts

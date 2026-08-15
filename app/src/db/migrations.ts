@@ -113,6 +113,14 @@ const COLUMN_MIGRATIONS: { ddl: string }[] = [
   // library is unreadable + slow to render as one SVG — see plan/docs/b2-spike.md). When 1, Field
   // view instead draws the whole filtered set, but only while it's small enough to stay legible.
   { ddl: 'ALTER TABLE user_meta ADD COLUMN field_show_all INTEGER DEFAULT 0' },
+  // Disc-suggestion throw style (backhand | forehand), default backhand. A modifier applied on
+  // top of whichever scenario is active — see suggestScore.ts THROW_STYLE_BIAS.
+  { ddl: "ALTER TABLE user_meta ADD COLUMN throw_style TEXT DEFAULT 'backhand'" },
+  // User-declared flight layer (Decision 1, direction-2026-08-08.md): an optional per-owned-disc
+  // adjustment, -2..+2, "flies more understable" to "flies more overstable than stock." Default 0
+  // is a no-op. Never written to the immutable master library — this column lives only on the
+  // user's own discs row. See disc.ts bagToDisc / suggestScore.ts.
+  { ddl: 'ALTER TABLE discs ADD COLUMN stability_adj REAL DEFAULT 0' },
 ];
 
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {
