@@ -1,9 +1,9 @@
 # Disc-suggestion engine — iterative plan
 
-> **Status: Phase 1 verified on-device 2026-08-15, ready to commit.** Code written, `tsc`/Jest
-> green (121/121), confirmed on Logan's real phone (Throw Style persistence, 13-card grid,
-> stability-adjustment → ranking). One real bug found + fixed along the way (inline-autofill
-> search ranking). See "Next action" below.
+> **Status: Phase 1 DONE 2026-08-15 (`f9925fb`).** Verified on-device on Logan's real phone
+> (Throw Style persistence, 13-card grid, stability-adjustment → ranking), `tsc`/Jest green
+> (121/121). One real bug found + fixed along the way (inline-autofill search ranking). Next up
+> is whichever of Phase 2/3/4 or the website-parity track Logan picks — see their sections below.
 >
 > **Read this first, don't re-derive:** `plan/docs/direction-2026-08-08.md` Decision 1 (the
 > three-layer flight-data rule — factory / user-declared / observed) is the one architectural
@@ -47,7 +47,7 @@ found and how it reshaped scope.
   exactly the "these look redundant by the numbers but aren't" false-positive Decision 1 already
   warns about.
 
-## Phase 1 — Canonical vs. owned-specimen flight data — CODE DONE 2026-08-15, needs on-device verify + commit
+## Phase 1 — Canonical vs. owned-specimen flight data — DONE 2026-08-15 (`f9925fb`)
 
 What shipped (all additive, no breaking changes):
 1. **Flex Shot scenario** — 13th entry in `src/utils/scenarios.ts` (`id: 'flex'`) +
