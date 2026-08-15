@@ -1,9 +1,12 @@
 # Disc-suggestion engine — iterative plan
 
-> **Status: Phase 1 DONE 2026-08-15 (`f9925fb`).** Verified on-device on Logan's real phone
-> (Throw Style persistence, 13-card grid, stability-adjustment → ranking), `tsc`/Jest green
-> (121/121). One real bug found + fixed along the way (inline-autofill search ranking). Next up
-> is whichever of Phase 2/3/4 or the website-parity track Logan picks — see their sections below.
+> **Status: Phase 1 DONE 2026-08-15 (`f9925fb`); Phase 3 DONE 2026-08-15.** Phase 1 verified
+> on-device on Logan's real phone (Throw Style persistence, 13-card grid, stability-adjustment
+> → ranking), `tsc`/Jest green (121/121). One real bug found + fixed along the way (inline-
+> autofill search ranking). Phase 3 (personal role tags — `discs.role_tag`, free-text field on
+> the disc form) landed code-complete, `tsc`/Jest green (121/121), not yet verified on-device.
+> Next up is Phase 2 (needs its own scope pass first) or the website-parity track — see the
+> sections below.
 >
 > **Read this first, don't re-derive:** `plan/docs/direction-2026-08-08.md` Decision 1 (the
 > three-layer flight-data rule — factory / user-declared / observed) is the one architectural
@@ -131,14 +134,23 @@ screen reachable from Settings or the Bag tab; exact wear-level scale/labels; wh
 is its own DB column (`discs.wear_level`) or folds into the existing free-text `notes` convention
 some other way.
 
-## Phase 3 — Personal role tags — NOT STARTED, small follow-on to Phase 1
+## Phase 3 — Personal role tags — DONE 2026-08-15 (code-complete, not yet on-device-verified)
 
-"Flare → hyzer bomb," "D3 AIR → flex," "Beast → water disc" — an optional free-text or small-enum
-tag per owned disc, surfaced wherever overlap/analysis eventually gets built (Phase 4), so a future
-Bag Analysis pass can say "these look numerically redundant, but you've tagged them for different
-roles" instead of just flagging false-positive overlap. Cheap (another optional column, same
-migration pattern as Phase 1's `stability_adj`) — deliberately not bundled into Phase 1 to keep
-that slice reviewable on its own.
+"Flare → hyzer bomb," "D3 AIR → flex," "Beast → water disc" — an optional free-text tag per owned
+disc, so a future Bag Analysis pass (Phase 4) can say "these look numerically redundant, but
+you've tagged them for different roles" instead of just flagging false-positive overlap. Shipped
+as `discs.role_tag` (same additive-migration pattern as Phase 1's `stability_adj`), a plain
+`Disc.roleTag` field, and a free-text input on `DiscFormModal` right below the stability-adjustment
+control. Purely descriptive — doesn't feed `suggestScore.ts` at all, doesn't need CSV round-trip
+(app-only field, same reasoning as `stabilityAdj`), and round-trips through backup/restore for
+free since that path serializes the whole `Disc` object. Not surfaced anywhere else in the UI yet
+(no bag-card badge) — deliberately deferred until Phase 4 actually reads it, matching how
+`stabilityAdj` itself has no dedicated display outside the form.
+
+**Verification gap, honestly noted:** `tsc --noEmit` and the full Jest suite (121/121) are clean,
+but this hasn't been round-tripped on a real device/emulator yet (add → save → reopen → edit →
+confirm it persists across an app restart) — do that before calling this fully done, same bar
+Phase 1 was held to.
 
 ## Phase 4 — Bag Analysis / overlap (C6) — NOT STARTED, intentionally parked
 

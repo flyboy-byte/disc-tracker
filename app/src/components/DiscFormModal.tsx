@@ -207,6 +207,18 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
               </Pressable>
             </View>
 
+            {/* Personal role tag — purely descriptive, doesn't feed Disc Suggest scoring. Lets
+                you note why you keep a disc that looks numerically redundant with another one
+                ("hyzer bomb" vs. "flex/utility"), for a future Bag Analysis pass to read. */}
+            <Text style={styles.label}>Role tag (optional)</Text>
+            <TextInput
+              style={styles.input}
+              value={form.roleTag ?? ''}
+              onChangeText={(v) => set('roleTag', v)}
+              placeholder="e.g. hyzer bomb, flex/utility, water disc"
+              placeholderTextColor={colors.muted}
+            />
+
             {/* Notes */}
             <Text style={styles.sectionLabel}>NOTES</Text>
             <TextInput

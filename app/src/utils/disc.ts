@@ -23,6 +23,11 @@ export interface Disc {
   // just behaves differently). 0/undefined is a no-op. Only ever applied when scoring THIS
   // disc for Disc Suggest (bagToDisc below) — never touches the canonical library entry.
   stabilityAdj?: number;
+  // Phase 3 (suggest-engine-plan.md) — optional personal role tag for an owned disc, e.g.
+  // "hyzer bomb" or "flex/utility." Free text, purely descriptive: doesn't feed Disc Suggest
+  // scoring, just carried along for a future Bag Analysis pass (Phase 4) to distinguish
+  // numerically-redundant discs from ones tagged for genuinely different roles.
+  roleTag?: string;
 }
 
 export type Stability = 'overstable' | 'stable' | 'understable';

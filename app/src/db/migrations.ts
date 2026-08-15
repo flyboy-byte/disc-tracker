@@ -121,6 +121,11 @@ const COLUMN_MIGRATIONS: { ddl: string }[] = [
   // is a no-op. Never written to the immutable master library — this column lives only on the
   // user's own discs row. See disc.ts bagToDisc / suggestScore.ts.
   { ddl: 'ALTER TABLE discs ADD COLUMN stability_adj REAL DEFAULT 0' },
+  // Phase 3 (suggest-engine-plan.md) — personal role tag, e.g. "hyzer bomb" or "flex/utility."
+  // Free text, optional, no website counterpart. Surfaced today on the disc form; the intended
+  // future use is Phase 4 Bag Analysis reading this to distinguish "numerically redundant" from
+  // "tagged for different roles" — not built yet, this column just captures the data going forward.
+  { ddl: "ALTER TABLE discs ADD COLUMN role_tag TEXT DEFAULT ''" },
 ];
 
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {
