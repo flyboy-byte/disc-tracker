@@ -5,6 +5,7 @@
 // "move me to a new phone" path. See app/plan/docs/... roadmap B4.
 import type { Disc } from './disc';
 import type { Round } from './roundMath';
+import type { CustomMasterDisc } from './masterLibrary';
 
 export interface BackupMeta {
   sortMode: string;
@@ -20,6 +21,9 @@ export interface BackupData {
   discs: Disc[];
   meta: BackupMeta;
   rounds: Round[];
+  // Optional + additive: the personal custom-disc library. Absent in pre-2026-08 backups, which
+  // parse to [] — so old files restore cleanly and never wipe an existing library by surprise.
+  customDiscs: CustomMasterDisc[];
 }
 
 const DEFAULT_META: BackupMeta = {
@@ -30,8 +34,8 @@ const DEFAULT_META: BackupMeta = {
   fieldShowAll: false,
 };
 
-export function buildBackup(discs: Disc[], meta: BackupMeta, rounds: Round[]): string {
-  const data: BackupData = { version: 1, exportedAt: new Date().toISOString(), discs, meta, rounds };
+export function buildBackup(discs: Disc[], meta: BackupMeta, rounds: Round[], customDiscs: CustomMasterDisc[] = []): string {
+  const data: BackupData = { version: 1, exportedAt: new Date().toISOString(), discs, meta, rounds, customDiscs };
   return JSON.stringify(data, null, 2);
 }
 
@@ -61,6 +65,7 @@ export function parseBackup(text: string): BackupData {
       fieldShowAll: !!meta.fieldShowAll,
     },
     rounds: Array.isArray(o.rounds) ? (o.rounds as Round[]) : [],
+    customDiscs: Array.isArray(o.customDiscs) ? (o.customDiscs as CustomMasterDisc[]) : [],
   };
 }
 

@@ -4,7 +4,7 @@
 // modes. All data is local SQLite (db.ts round CRUD); scoring math is roundMath.ts. See
 // app/plan/docs/scorekeeper-scope.md for scope + the hard non-goals (no GPS/maps/course-DB/online).
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import {
   createRound,
@@ -33,12 +33,19 @@ type Mode = 'list' | 'setup' | 'active' | 'summary';
 // Casual-group cap. Bigger groups than this are rare on one card; the hole-by-hole view scrolls
 // fine, and the summary grid scrolls horizontally, so this is a UX guardrail, not a DB limit.
 const MAX_PLAYERS = 8;
+// Header links are short text ("‹ Rounds", "Finish", "Edit") — pad the touch area so they clear
+// the ~44px minimum tap target even though the glyphs are small.
+const HEADER_HITSLOP = { top: 12, bottom: 12, left: 12, right: 12 };
 
 export default function ScoreScreen() {
   const [loading, setLoading] = useState(true);
   const [rounds, setRounds] = useState<Round[]>([]);
   const [mode, setMode] = useState<Mode>('list');
   const [active, setActive] = useState<Round | null>(null);
+  // Multiselect on the rounds list: null = off; an array (possibly empty) = selection mode on.
+  // Entered via long-press, used for bulk delete + single rename.
+  const [selected, setSelected] = useState<number[] | null>(null);
+  const [renaming, setRenaming] = useState<Round | null>(null);
   const userIdRef = useRef<number | null>(null);
 
   const refetch = useCallback(async () => {
@@ -151,12 +158,97 @@ export default function ScoreScreen() {
   // ── List view ──
   const inProgress = rounds.filter((r) => !r.finished);
   const done = rounds.filter((r) => r.finished);
+  const selecting = selected !== null;
+  const selCount = selected?.length ?? 0;
+
+  const startSelection = (id: number) => setSelected([id]);
+  const exitSelection = () => setSelected(null);
+  const toggleSelect = (id: number) =>
+    setSelected((cur) => {
+      if (cur == null) return [id];
+      return cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+    });
+
+  const onRowPress = (r: Round) => (selecting ? toggleSelect(r.id) : openRound(r));
+
+  const deleteSelected = () => {
+    if (selCount === 0) return;
+    const ids = selected!;
+    Alert.alert(
+      `Delete ${ids.length} ${ids.length === 1 ? 'round' : 'rounds'}?`,
+      'This permanently removes them and their scores.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            for (const id of ids) await deleteRound(id);
+            await refetch();
+            exitSelection();
+          },
+        },
+      ]
+    );
+  };
+
+  const commitRename = async (label: string) => {
+    if (renaming == null) return;
+    await updateRoundMeta(renaming.id, { label: label.trim() });
+    setRenaming(null);
+    await refetch();
+    exitSelection();
+  };
+
+  const renderRow = (r: Round) => (
+    <RoundRow
+      key={r.id}
+      round={r}
+      selecting={selecting}
+      checked={selected?.includes(r.id) ?? false}
+      onPress={() => onRowPress(r)}
+      onLongPress={() => startSelection(r.id)}
+    />
+  );
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Score</Text>
-      <Text style={styles.substat}>Keep score offline — no signal, account, or course lookup needed</Text>
-
-      <GradientButton style={styles.primaryBtn} textStyle={styles.primaryBtnText} onPress={() => setMode('setup')} label="+ New round" accessibilityLabel="Start a new round" />
+      {selecting ? (
+        <View style={styles.selBar}>
+          <Pressable style={styles.headerBtn} hitSlop={HEADER_HITSLOP} onPress={exitSelection} accessibilityRole="button" accessibilityLabel="Cancel selection">
+            <Text style={styles.backLink}>Cancel</Text>
+          </Pressable>
+          <Text style={styles.selCount}>{selCount} selected</Text>
+          <View style={styles.selActions}>
+            <Pressable
+              style={styles.headerBtn}
+              hitSlop={HEADER_HITSLOP}
+              disabled={selCount !== 1}
+              onPress={() => setRenaming(rounds.find((r) => r.id === selected![0]) ?? null)}
+              accessibilityRole="button"
+              accessibilityLabel="Rename selected round"
+            >
+              <Text style={[styles.backLink, styles.finishLink, selCount !== 1 && styles.selDisabled]}>Rename</Text>
+            </Pressable>
+            <Pressable
+              style={styles.headerBtn}
+              hitSlop={HEADER_HITSLOP}
+              disabled={selCount === 0}
+              onPress={deleteSelected}
+              accessibilityRole="button"
+              accessibilityLabel="Delete selected rounds"
+            >
+              <Text style={[styles.backLink, styles.selDelete, selCount === 0 && styles.selDisabled]}>Delete</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : (
+        <>
+          <Text style={styles.title}>Score</Text>
+          <Text style={styles.substat}>Keep score offline — no signal, account, or course lookup needed</Text>
+          <GradientButton style={styles.primaryBtn} textStyle={styles.primaryBtnText} onPress={() => setMode('setup')} label="+ New round" accessibilityLabel="Start a new round" />
+        </>
+      )}
 
       {rounds.length === 0 ? (
         <View style={styles.empty}>
@@ -169,27 +261,74 @@ export default function ScoreScreen() {
           {inProgress.length > 0 && (
             <>
               <Text style={styles.sectionLabel}>In progress</Text>
-              {inProgress.map((r) => (
-                <RoundRow key={r.id} round={r} onPress={() => openRound(r)} />
-              ))}
+              {inProgress.map(renderRow)}
             </>
           )}
           {done.length > 0 && (
             <>
               <Text style={styles.sectionLabel}>Finished</Text>
-              {done.map((r) => (
-                <RoundRow key={r.id} round={r} onPress={() => openRound(r)} />
-              ))}
+              {done.map(renderRow)}
             </>
           )}
+          {!selecting && <Text style={styles.selHint}>Tip: long-press a round to select, rename, or delete.</Text>}
         </>
       )}
+
+      <RenameRoundModal
+        round={renaming}
+        onCancel={() => setRenaming(null)}
+        onSave={commitRename}
+      />
     </ScrollView>
   );
 }
 
+// Rename dialog — Android's Alert has no text-input variant, so this is a small controlled modal.
+function RenameRoundModal({ round, onCancel, onSave }: { round: Round | null; onCancel: () => void; onSave: (label: string) => void }) {
+  const [text, setText] = useState('');
+  return (
+    <Modal visible={round !== null} transparent animationType="fade" onRequestClose={onCancel} onShow={() => setText(round?.label?.trim() || '')}>
+      <Pressable style={styles.renameBackdrop} onPress={onCancel} accessibilityRole="button" accessibilityLabel="Cancel">
+        <Pressable style={styles.renameCard} onPress={() => {}}>
+          <Text style={styles.renameTitle}>Rename round</Text>
+          <TextInput
+            style={styles.renameInput}
+            value={text}
+            onChangeText={setText}
+            placeholder="Round name"
+            placeholderTextColor={colors.muted}
+            autoFocus
+            returnKeyType="done"
+            onSubmitEditing={() => onSave(text)}
+          />
+          <View style={styles.renameBtnRow}>
+            <Pressable style={styles.ghostBtn} onPress={onCancel} accessibilityRole="button" accessibilityLabel="Cancel">
+              <Text style={styles.ghostBtnText}>Cancel</Text>
+            </Pressable>
+            <Pressable style={styles.saveBtn} onPress={() => onSave(text)} accessibilityRole="button" accessibilityLabel="Save name">
+              <Text style={styles.saveBtnText}>Save</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 // A summary row in the rounds list.
-function RoundRow({ round, onPress }: { round: Round; onPress: () => void }) {
+function RoundRow({
+  round,
+  onPress,
+  onLongPress,
+  selecting,
+  checked,
+}: {
+  round: Round;
+  onPress: () => void;
+  onLongPress: () => void;
+  selecting: boolean;
+  checked: boolean;
+}) {
   const title = round.label?.trim() || round.course?.trim() || 'Round';
   const board = standings(round);
   const leader = board[0];
@@ -198,7 +337,19 @@ function RoundRow({ round, onPress }: { round: Round; onPress: () => void }) {
     .filter(Boolean)
     .join(' · ');
   return (
-    <Pressable style={styles.row} onPress={onPress} accessibilityRole="button" accessibilityLabel={`Open ${title}`}>
+    <Pressable
+      style={[styles.row, checked && styles.rowChecked]}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={300}
+      accessibilityRole="button"
+      accessibilityLabel={selecting ? `${checked ? 'Deselect' : 'Select'} ${title}` : `Open ${title}`}
+    >
+      {selecting && (
+        <View style={[styles.checkbox, checked && styles.checkboxOn]}>
+          {checked && <Text style={styles.checkboxMark}>✓</Text>}
+        </View>
+      )}
       <View style={styles.rowMain}>
         <Text style={styles.rowTitle}>{title}</Text>
         <Text style={styles.rowSub}>{sub}</Text>
@@ -211,7 +362,7 @@ function RoundRow({ round, onPress }: { round: Round; onPress: () => void }) {
           </Text>
         </View>
       )}
-      <Text style={styles.chevron}>›</Text>
+      {!selecting && <Text style={styles.chevron}>›</Text>}
     </Pressable>
   );
 }
@@ -315,11 +466,11 @@ function ActiveView({
   return (
     <View style={styles.container}>
       <View style={styles.activeHeader}>
-        <Pressable onPress={onExit} accessibilityRole="button" accessibilityLabel="Back to rounds">
+        <Pressable style={styles.headerBtn} hitSlop={HEADER_HITSLOP} onPress={onExit} accessibilityRole="button" accessibilityLabel="Back to rounds">
           <Text style={styles.backLink}>‹ Rounds</Text>
         </Pressable>
         <Text style={styles.activeTitle}>{round.label?.trim() || round.course?.trim() || 'Round'}</Text>
-        <Pressable onPress={onFinish} accessibilityRole="button" accessibilityLabel="Finish round">
+        <Pressable style={styles.headerBtn} hitSlop={HEADER_HITSLOP} onPress={onFinish} accessibilityRole="button" accessibilityLabel="Finish round">
           <Text style={[styles.backLink, styles.finishLink]}>Finish</Text>
         </Pressable>
       </View>
@@ -407,11 +558,11 @@ function SummaryView({ round, onResume, onBack, onDelete }: { round: Round; onRe
   return (
     <View style={styles.container}>
       <View style={styles.activeHeader}>
-        <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back to rounds">
+        <Pressable style={styles.headerBtn} hitSlop={HEADER_HITSLOP} onPress={onBack} accessibilityRole="button" accessibilityLabel="Back to rounds">
           <Text style={styles.backLink}>‹ Rounds</Text>
         </Pressable>
         <Text style={styles.activeTitle}>{round.label?.trim() || round.course?.trim() || 'Round'}</Text>
-        <Pressable onPress={onResume} accessibilityRole="button" accessibilityLabel="Keep scoring">
+        <Pressable style={styles.headerBtn} hitSlop={HEADER_HITSLOP} onPress={onResume} accessibilityRole="button" accessibilityLabel="Keep scoring">
           <Text style={styles.backLink}>Edit</Text>
         </Pressable>
       </View>
@@ -531,7 +682,26 @@ const styles = StyleSheet.create({
   sectionLabel: { color: colors.muted, fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', marginTop: 14, marginBottom: 2 },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14 },
+  rowChecked: { borderColor: colors.accent, backgroundColor: colors.cardHover },
   rowMain: { flex: 1, minWidth: 0 },
+  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  checkboxOn: { borderColor: colors.accent, backgroundColor: colors.accent },
+  checkboxMark: { color: '#fff', fontSize: 14, fontWeight: '800', lineHeight: 16 },
+  // Selection toolbar (replaces the title row while multiselect is active)
+  selBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, marginBottom: 4, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 8 },
+  selCount: { color: colors.text, fontSize: 15, fontWeight: '700', flex: 1, textAlign: 'center' },
+  selActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  selDelete: { color: colors.danger },
+  selDisabled: { opacity: 0.35 },
+  selHint: { color: colors.muted, fontSize: 12, textAlign: 'center', marginTop: 16 },
+  // Rename modal
+  renameBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  renameCard: { width: '100%', maxWidth: 400, backgroundColor: colors.card, borderRadius: 14, padding: 18, borderWidth: 1, borderColor: colors.border },
+  renameTitle: { color: colors.text, fontSize: 18, fontWeight: '700', marginBottom: 12 },
+  renameInput: { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, color: colors.text, fontSize: 15, marginBottom: 14 },
+  renameBtnRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
+  saveBtn: { backgroundColor: colors.accent, borderRadius: 10, paddingVertical: 11, paddingHorizontal: 20, alignItems: 'center' },
+  saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
   rowTitle: { color: colors.text, fontSize: 15, fontWeight: '700' },
   rowSub: { color: colors.muted, fontSize: 11, marginTop: 2 },
   rowScore: { alignItems: 'flex-end' },
@@ -560,6 +730,7 @@ const styles = StyleSheet.create({
 
   activeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 52, paddingHorizontal: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 8 },
   activeTitle: { color: colors.text, fontSize: 15, fontWeight: '700', flex: 1, textAlign: 'center' },
+  headerBtn: { paddingVertical: 8, paddingHorizontal: 6, justifyContent: 'center', minHeight: 40 },
   backLink: { color: colors.muted, fontSize: 14, fontWeight: '600' },
   finishLink: { color: colors.accent },
 

@@ -11,6 +11,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import type { Disc } from '../utils/disc';
 import type { SkillPreset } from '../utils/suggestScore';
 import type { Round } from '../utils/roundMath';
+import type { CustomMasterDisc } from '../utils/masterLibrary';
 import { runMigrations } from './migrations';
 
 export interface UserMeta {
@@ -206,6 +207,78 @@ export function deleteDisc(userId: number, discId: number): Promise<void> {
   return serialize(async () => {
     const db = await openDatabase();
     await db.runAsync('DELETE FROM discs WHERE user_id = ? AND disc_id = ?', [userId, discId]);
+  });
+}
+
+// ── Custom disc library (custom_discs) ────────────────────────────────────────────────────────
+// The user's own library entries, surfaced in the "Autofill from disc library" search alongside
+// the bundled master list. See migrations.ts and masterLibrary.ts (CustomMasterDisc).
+export function getCustomDiscs(userId: number): Promise<CustomMasterDisc[]> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    const rows = await db.getAllAsync<{
+      id: number; mfr: string; name: string; speed: number; glide: number; turn: number; fade: number; type: string;
+    }>('SELECT id, mfr, name, speed, glide, turn, fade, type FROM custom_discs WHERE user_id = ? ORDER BY name COLLATE NOCASE', [userId]);
+    return rows.map((r) => ({
+      id: r.id,
+      mfr: r.mfr,
+      name: r.name,
+      speed: r.speed,
+      glide: r.glide,
+      turn: r.turn,
+      fade: r.fade,
+      stability: r.turn + r.fade, // net; the badge scale (masterLibrary/disc.ts) — never drives overlap logic
+      type: r.type ?? '',
+      custom: true as const,
+    }));
+  });
+}
+
+export function addCustomDisc(
+  userId: number,
+  d: { mfr: string; name: string; speed: number; glide: number; turn: number; fade: number; type?: string }
+): Promise<CustomMasterDisc> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    const res = await db.runAsync(
+      'INSERT INTO custom_discs (user_id, mfr, name, speed, glide, turn, fade, type, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [userId, d.mfr ?? '', d.name, d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.type ?? '', new Date().toISOString()]
+    );
+    return {
+      id: res.lastInsertRowId,
+      mfr: d.mfr ?? '',
+      name: d.name,
+      speed: d.speed ?? 0,
+      glide: d.glide ?? 0,
+      turn: d.turn ?? 0,
+      fade: d.fade ?? 0,
+      stability: (d.turn ?? 0) + (d.fade ?? 0),
+      type: d.type ?? '',
+      custom: true as const,
+    };
+  });
+}
+
+export function deleteCustomDisc(userId: number, id: number): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.runAsync('DELETE FROM custom_discs WHERE user_id = ? AND id = ?', [userId, id]);
+  });
+}
+
+// Full replace of the custom library (restore path). No-op-safe: an empty list clears it.
+export function replaceCustomDiscs(userId: number, discs: CustomMasterDisc[]): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.withExclusiveTransactionAsync(async (txn) => {
+      await txn.runAsync('DELETE FROM custom_discs WHERE user_id = ?', [userId]);
+      for (const d of discs) {
+        await txn.runAsync(
+          'INSERT INTO custom_discs (user_id, mfr, name, speed, glide, turn, fade, type, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [userId, d.mfr ?? '', d.name, d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.type ?? '', new Date().toISOString()]
+        );
+      }
+    });
   });
 }
 

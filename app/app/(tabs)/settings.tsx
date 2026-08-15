@@ -12,7 +12,7 @@ import CsvExportModal from '../../src/components/CsvExportModal';
 import CsvImportModal from '../../src/components/CsvImportModal';
 import GradientButton from '../../src/components/GradientButton';
 import { useToast } from '../../src/components/Toast';
-import { getDiscs, getMeta, getOrCreateDefaultUser, listRounds, replaceRounds, saveDiscs, setMeta } from '../../src/db/db';
+import { getDiscs, getMeta, getOrCreateDefaultUser, listRounds, replaceRounds, saveDiscs, setMeta, getCustomDiscs, replaceCustomDiscs } from '../../src/db/db';
 import { colors } from '../../src/theme';
 import type { Disc } from '../../src/utils/disc';
 import type { SkillPreset } from '../../src/utils/suggestScore';
@@ -95,8 +95,8 @@ export default function SettingsScreen() {
     if (uid == null || busy) return;
     setBusy(true);
     try {
-      const [allDiscs, meta, rounds] = await Promise.all([getDiscs(uid), getMeta(uid), listRounds(uid)]);
-      const json = buildBackup(allDiscs, { sortMode: meta.sortMode, arcView: meta.arcView, skill: meta.skill, msRefEnabled: meta.msRefEnabled, fieldShowAll: meta.fieldShowAll }, rounds);
+      const [allDiscs, meta, rounds, custom] = await Promise.all([getDiscs(uid), getMeta(uid), listRounds(uid), getCustomDiscs(uid)]);
+      const json = buildBackup(allDiscs, { sortMode: meta.sortMode, arcView: meta.arcView, skill: meta.skill, msRefEnabled: meta.msRefEnabled, fieldShowAll: meta.fieldShowAll }, rounds, custom);
       const dir = new Directory(Paths.cache, 'exports');
       if (!dir.exists) dir.create({ intermediates: true });
       const date = new Date().toISOString().slice(0, 10);
@@ -148,6 +148,7 @@ export default function SettingsScreen() {
                   fieldShowAll: backup.meta.fieldShowAll,
                 });
                 await replaceRounds(uid, backup.rounds);
+                await replaceCustomDiscs(uid, backup.customDiscs);
                 setDiscs(await getDiscs(uid));
                 toast(`Restored ${backupSummary(backup)}`);
               } catch (e) {

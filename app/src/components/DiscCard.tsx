@@ -32,9 +32,14 @@ interface Props {
   onMoveDown?: (id: number) => void;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
+  // Multiselect (long-press to enter). While `selecting`, the card tap toggles selection instead
+  // of opening the editor, the inner bag/arc controls go inert, and a checkbox shows on the left.
+  onLongPress?: (d: Disc) => void;
+  selecting?: boolean;
+  checked?: boolean;
 }
 
-function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onToggleBag, onMoveToTop, onMoveUp, onMoveDown, canMoveUp, canMoveDown }: Props) {
+function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onToggleBag, onMoveToTop, onMoveUp, onMoveDown, canMoveUp, canMoveDown, onLongPress, selecting, checked }: Props) {
   const s = STAB_META[stab(d)];
   const t = TYPE_META[discType(d)];
   const safeColor = d.color && HEX6.test(d.color) ? d.color : null;
@@ -44,20 +49,28 @@ function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onToggleBag, onMo
   return (
     <Pressable
       onPress={() => onPress(d)}
+      onLongPress={onLongPress ? () => onLongPress(d) : undefined}
+      delayLongPress={300}
       style={[
         styles.card,
         safeColor ? { borderLeftColor: safeColor, borderLeftWidth: 3 } : null,
         d.inBag ? styles.bagged : null,
+        checked ? styles.selected : null,
       ]}
     >
       <View style={styles.body}>
+        {selecting && (
+          <View style={[styles.checkbox, checked && styles.checkboxOn]}>
+            {checked && <Text style={styles.checkboxMark}>✓</Text>}
+          </View>
+        )}
         <View style={styles.main}>
           <View style={styles.head}>
             <View style={styles.headText}>
               <Text style={styles.mfr}>{d.mfr}</Text>
               <Text style={styles.mold}>{d.mold}</Text>
             </View>
-            {onToggleBag && d.id != null && (
+            {onToggleBag && d.id != null && !selecting && (
               // Nested Pressable: RN routes the touch to the inner control, so tapping this
               // toggles the bag flag without also firing the card's onPress (edit) — no
               // stopPropagation needed the way the website's onclick handler required.
@@ -95,7 +108,7 @@ function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onToggleBag, onMo
             <View style={[styles.badge, { backgroundColor: s.color }]}>
               <Text style={styles.badgeText}>{s.short}</Text>
             </View>
-            {onMoveToTop && d.id != null && (
+            {onMoveToTop && d.id != null && !selecting && (
               <View style={styles.reorder}>
                 <ReorderBtn label="⤒" a11y={`Move ${d.mold} to top`} disabled={!canMoveUp} onPress={() => onMoveToTop(d.id!)} />
                 <ReorderBtn label="↑" a11y={`Move ${d.mold} up`} disabled={!canMoveUp} onPress={() => onMoveUp?.(d.id!)} />
@@ -106,7 +119,7 @@ function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onToggleBag, onMo
         </View>
         <Pressable
           style={styles.arcThumb}
-          onPress={onPressArc ? () => onPressArc(d) : undefined}
+          onPress={onPressArc && !selecting ? () => onPressArc(d) : undefined}
           // Nested Pressable captures the tap so the thumbnail opens arc-detail instead of
           // firing the card's edit onPress. With no handler it's inert (still no card tap).
           accessibilityRole={onPressArc ? 'button' : undefined}
@@ -158,6 +171,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   bagged: { borderColor: colors.accent },
+  selected: { borderColor: colors.accent, backgroundColor: colors.cardHover },
+  checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginTop: 18 },
+  checkboxOn: { borderColor: colors.accent, backgroundColor: colors.accent },
+  checkboxMark: { color: '#fff', fontSize: 14, fontWeight: '800', lineHeight: 16 },
   body: { flexDirection: 'row', gap: 10 },
   main: { flex: 1, minWidth: 0 },
   arcThumb: {

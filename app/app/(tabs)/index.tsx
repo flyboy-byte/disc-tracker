@@ -28,9 +28,12 @@ import {
   insertDisc,
   updateDisc,
   reorderDiscs,
+  getCustomDiscs,
+  addCustomDisc,
+  deleteCustomDisc,
 } from '../../src/db/db';
 import { discType, stab, STAB_META, type Disc, type DiscType, type Stability } from '../../src/utils/disc';
-import type { MasterDisc } from '../../src/utils/masterLibrary';
+import type { LibraryDisc, CustomMasterDisc } from '../../src/utils/masterLibrary';
 
 type StabFilter = 'all' | Stability;
 type TypeFilterKey = 'all' | DiscType;
@@ -109,6 +112,9 @@ export default function BagScreen() {
   // since a blank add and a library-prefilled add are both formIsNew=true.
   const [formSession, setFormSession] = useState(0);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  // The user's personal custom disc library (custom_discs) — surfaced in the Autofill-from-library
+  // search alongside the bundled 1,660. Loaded with the bag; refreshed on focus (Settings restore).
+  const [customDiscs, setCustomDiscs] = useState<CustomMasterDisc[]>([]);
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [detailDisc, setDetailDisc] = useState<Disc | null>(null);
@@ -119,9 +125,10 @@ export default function BagScreen() {
   useEffect(() => {
     (async () => {
       const uid = await getOrCreateDefaultUser();
-      const [loadedDiscs, meta] = await Promise.all([getDiscs(uid), getMeta(uid)]);
+      const [loadedDiscs, meta, custom] = await Promise.all([getDiscs(uid), getMeta(uid), getCustomDiscs(uid)]);
       setUserId(uid);
       setDiscs(loadedDiscs);
+      setCustomDiscs(custom);
       setSortMode((meta.sortMode as SortMode) || 'speed-desc');
       setArcView((meta.arcView as ArcView) || 'RHBH');
       setMsRefEnabled(meta.msRefEnabled);
@@ -137,8 +144,9 @@ export default function BagScreen() {
     useCallback(() => {
       if (!didInitialLoad.current || userId == null) return;
       (async () => {
-        const [d, meta] = await Promise.all([getDiscs(userId), getMeta(userId)]);
+        const [d, meta, custom] = await Promise.all([getDiscs(userId), getMeta(userId), getCustomDiscs(userId)]);
         setDiscs(d);
+        setCustomDiscs(custom);
         setArcView((meta.arcView as ArcView) || 'RHBH');
         setMsRefEnabled(meta.msRefEnabled);
         setFieldShowAll(meta.fieldShowAll);
@@ -267,6 +275,7 @@ export default function BagScreen() {
   const changeScope = (scope: 'today' | 'collection') => {
     setBagScope(scope);
     if (scope === 'collection') setViewMode('list');
+    setSelectedDiscs(null); // don't carry a selection across scopes (different visible set)
   };
 
   const openAdd = () => {
@@ -312,7 +321,20 @@ export default function BagScreen() {
     await deleteDisc(userId, id); // single DELETE
   };
 
-  const handlePickFromLibrary = (m: MasterDisc) => {
+  const handleAddCustom = async (d: { mfr: string; name: string; speed: number; glide: number; turn: number; fade: number }) => {
+    if (userId == null) throw new Error('no user');
+    const created = await addCustomDisc(userId, d);
+    setCustomDiscs((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+    return created;
+  };
+
+  const handleDeleteCustom = async (id: number) => {
+    if (userId == null) return;
+    setCustomDiscs((prev) => prev.filter((d) => d.id !== id));
+    await deleteCustomDisc(userId, id);
+  };
+
+  const handlePickFromLibrary = (m: LibraryDisc) => {
     setLibraryOpen(false);
     setFormIsNew(true);
     setFormInitial({
@@ -345,8 +367,58 @@ export default function BagScreen() {
     [userId]
   );
 
+  // Multiselect (long-press a card to enter). Bulk-delete lives here — the discoverable answer to
+  // "I deleted them all by hand". null = off; array (possibly empty) = selection mode on.
+  const [selectedDiscs, setSelectedDiscs] = useState<number[] | null>(null);
+  const selectingDiscs = selectedDiscs !== null;
+  // Ref mirror so the (stable) card-press handler can branch toggle-vs-edit without landing in
+  // renderCard's deps — keeps React.memo holding during normal scroll (selectedDiscs stays null).
+  const selectingRef = useRef(false);
+  selectingRef.current = selectingDiscs;
+
+  const startDiscSelection = useCallback((d: Disc) => {
+    if (d.id != null) setSelectedDiscs([d.id]);
+  }, []);
+  const toggleDiscSelect = useCallback((d: Disc) => {
+    if (d.id == null) return;
+    setSelectedDiscs((cur) => {
+      if (cur == null) return [d.id!];
+      return cur.includes(d.id!) ? cur.filter((x) => x !== d.id) : [...cur, d.id!];
+    });
+  }, []);
+  const exitDiscSelection = useCallback(() => setSelectedDiscs(null), []);
+  const onCardPress = useCallback(
+    (d: Disc) => {
+      if (selectingRef.current) toggleDiscSelect(d);
+      else openEdit(d);
+    },
+    [toggleDiscSelect, openEdit]
+  );
+
+  const deleteSelectedDiscs = () => {
+    if (userId == null || !selectedDiscs || selectedDiscs.length === 0) return;
+    const ids = selectedDiscs;
+    Alert.alert(
+      `Delete ${ids.length} disc${ids.length === 1 ? '' : 's'}?`,
+      'This permanently removes them from your collection.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDiscs(discs.filter((d) => d.id == null || !ids.includes(d.id)));
+            exitDiscSelection();
+            for (const id of ids) await deleteDisc(userId, id); // serialized single DELETEs
+            toast(`${ids.length} disc${ids.length === 1 ? '' : 's'} deleted`);
+          },
+        },
+      ]
+    );
+  };
+
   // Stable renderItem — all handlers stable, so memoized DiscCards only re-render when their own
-  // disc, the arcView, or a handler identity actually changes.
+  // disc, the arcView, a handler identity, or their selection state actually changes.
   const firstId = reorderable ? discs[0]?.id : undefined;
   const lastId = reorderable ? discs[discs.length - 1]?.id : undefined;
   const renderCard = useCallback(
@@ -354,9 +426,12 @@ export default function BagScreen() {
       <DiscCard
         disc={item}
         arcView={arcView}
-        onPress={openEdit}
+        onPress={onCardPress}
         onPressArc={setDetailDisc}
         onToggleBag={toggleBag}
+        onLongPress={startDiscSelection}
+        selecting={selectingDiscs}
+        checked={item.id != null && (selectedDiscs?.includes(item.id) ?? false)}
         onMoveToTop={reorderable ? moveToTop : undefined}
         onMoveUp={reorderable ? moveUp : undefined}
         onMoveDown={reorderable ? moveDown : undefined}
@@ -364,7 +439,7 @@ export default function BagScreen() {
         canMoveDown={reorderable && item.id !== lastId}
       />
     ),
-    [arcView, openEdit, toggleBag, reorderable, moveToTop, moveUp, moveDown, firstId, lastId]
+    [arcView, onCardPress, toggleBag, startDiscSelection, selectingDiscs, selectedDiscs, reorderable, moveToTop, moveUp, moveDown, firstId, lastId]
   );
 
   const clearBag = () => {
@@ -419,6 +494,36 @@ export default function BagScreen() {
           {bagCount > 0 ? ` · ${bagCount} in bag` : ''}
         </Text>
       </View>
+
+      {selectingDiscs && (
+        <View style={styles.selBar}>
+          <Pressable style={styles.selBarBtn} hitSlop={10} onPress={exitDiscSelection} accessibilityRole="button" accessibilityLabel="Cancel selection">
+            <Text style={styles.selBarCancel}>Cancel</Text>
+          </Pressable>
+          <Text style={styles.selBarCount}>{selectedDiscs?.length ?? 0} selected</Text>
+          <View style={styles.selBarActions}>
+            <Pressable
+              style={styles.selBarBtn}
+              hitSlop={10}
+              onPress={() => setSelectedDiscs(pageItems.map((d) => d.id).filter((id): id is number => id != null))}
+              accessibilityRole="button"
+              accessibilityLabel="Select all on this page"
+            >
+              <Text style={styles.selBarCancel}>All</Text>
+            </Pressable>
+            <Pressable
+              style={styles.selBarBtn}
+              hitSlop={10}
+              disabled={(selectedDiscs?.length ?? 0) === 0}
+              onPress={deleteSelectedDiscs}
+              accessibilityRole="button"
+              accessibilityLabel="Delete selected discs"
+            >
+              <Text style={[styles.selBarDelete, (selectedDiscs?.length ?? 0) === 0 && styles.selBarDisabled]}>Delete</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
 
       {/* B2 IA split: Today's Bag (in-bag subset — the primary view) vs. Collection (full archive). */}
       <View style={styles.segment}>
@@ -669,7 +774,14 @@ export default function BagScreen() {
           if (d) openEdit(d);
         }}
       />
-      <DiscLibraryModal visible={libraryOpen} onCancel={() => setLibraryOpen(false)} onPick={handlePickFromLibrary} />
+      <DiscLibraryModal
+        visible={libraryOpen}
+        customDiscs={customDiscs}
+        onCancel={() => setLibraryOpen(false)}
+        onPick={handlePickFromLibrary}
+        onAddCustom={handleAddCustom}
+        onDeleteCustom={handleDeleteCustom}
+      />
       <CsvExportModal visible={exportOpen} discs={discs} onCancel={() => setExportOpen(false)} />
       <CsvImportModal visible={importOpen} existingDiscs={discs} onCancel={() => setImportOpen(false)} onImport={handleImportDiscs} />
     </View>
@@ -712,6 +824,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, paddingTop: 56, paddingHorizontal: 14 },
   center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   header: { marginBottom: 10 },
+  selBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.accent, backgroundColor: colors.cardHover },
+  selBarBtn: { paddingVertical: 4, paddingHorizontal: 4 },
+  selBarCount: { color: colors.text, fontSize: 14, fontWeight: '700', flex: 1, textAlign: 'center' },
+  selBarActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  selBarCancel: { color: colors.muted, fontSize: 14, fontWeight: '600' },
+  selBarDelete: { color: colors.danger, fontSize: 14, fontWeight: '700' },
+  selBarDisabled: { opacity: 0.35 },
   title: { color: colors.text, fontSize: 26, fontWeight: '800' },
   substat: { color: colors.muted, fontSize: 12, marginTop: 2 },
   // Bag/Collection segmented control (B2)
