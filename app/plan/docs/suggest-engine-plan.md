@@ -111,7 +111,13 @@ Phase 1 is verified. Remaining: `git add`/commit as one coherent commit (or a sm
 schema+scorer, then UI, per this repo's usual "one commit per feature/step" convention), then mark
 this phase's status line DONE with the commit hash, same convention as PORT_PLAN.md rows.
 
-## Phase 2 — Data Audit (scoped small, per Logan's 2026-08-15 correction) — NOT STARTED
+## Phase 2 — Data Audit (scoped small, per Logan's 2026-08-15 correction) — SCOPED 2026-08-15, NOT STARTED
+
+Full scope doc: [`data-audit-scope.md`](./data-audit-scope.md) (Decisions/Non-goals/Data
+model/Screens, mirrors `scorekeeper-scope.md`). Three decisions proposed there need Logan's
+confirmation before Step 1 starts: wear-level scale (New/Seasoned/Beat), entry point (Settings
+DATA section, not a new tab, not folded into CSV import), and mechanics (reuse `DiscFormModal`
+for editing rather than new inline-edit UI).
 
 **Scope, as corrected mid-session** (this is *not* the fuzzy confidence-matching engine the
 original ChatGPT handoff described — that idea is explicitly rejected as over-engineered for this
