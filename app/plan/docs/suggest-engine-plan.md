@@ -1,12 +1,14 @@
 # Disc-suggestion engine — iterative plan
 
-> **Status: Phase 1 DONE 2026-08-15 (`f9925fb`); Phase 3 DONE 2026-08-15.** Phase 1 verified
-> on-device on Logan's real phone (Throw Style persistence, 13-card grid, stability-adjustment
-> → ranking), `tsc`/Jest green (121/121). One real bug found + fixed along the way (inline-
-> autofill search ranking). Phase 3 (personal role tags — `discs.role_tag`, free-text field on
-> the disc form) landed code-complete, `tsc`/Jest green (121/121), not yet verified on-device.
-> Next up is Phase 2 (needs its own scope pass first) or the website-parity track — see the
-> sections below.
+> **Status: Phase 1 DONE 2026-08-15 (`f9925fb`); Phase 3 code-complete 2026-08-15, UNTESTED
+> on-device.** Phase 1 verified on-device on Logan's real phone (Throw Style persistence,
+> 13-card grid, stability-adjustment → ranking), `tsc`/Jest green (121/121). One real bug found
+> + fixed along the way (inline-autofill search ranking). Phase 3 (personal role tags —
+> `discs.role_tag`, free-text field on the disc form) landed code-complete, `tsc`/Jest green
+> (121/121), but has **not** had the on-device round-trip pass Phase 1 got — phone/emulator
+> both unavailable this session, logged not skipped-silently. Do that before treating Phase 3
+> as fully closed. Next up is Phase 2 (needs its own scope pass first) or the website-parity
+> track — see the sections below.
 >
 > **Read this first, don't re-derive:** `plan/docs/direction-2026-08-08.md` Decision 1 (the
 > three-layer flight-data rule — factory / user-declared / observed) is the one architectural
@@ -134,7 +136,7 @@ screen reachable from Settings or the Bag tab; exact wear-level scale/labels; wh
 is its own DB column (`discs.wear_level`) or folds into the existing free-text `notes` convention
 some other way.
 
-## Phase 3 — Personal role tags — DONE 2026-08-15 (code-complete, not yet on-device-verified)
+## Phase 3 — Personal role tags — CODE-COMPLETE 2026-08-15, UNTESTED on-device
 
 "Flare → hyzer bomb," "D3 AIR → flex," "Beast → water disc" — an optional free-text tag per owned
 disc, so a future Bag Analysis pass (Phase 4) can say "these look numerically redundant, but
@@ -147,10 +149,12 @@ free since that path serializes the whole `Disc` object. Not surfaced anywhere e
 (no bag-card badge) — deliberately deferred until Phase 4 actually reads it, matching how
 `stabilityAdj` itself has no dedicated display outside the form.
 
-**Verification gap, honestly noted:** `tsc --noEmit` and the full Jest suite (121/121) are clean,
-but this hasn't been round-tripped on a real device/emulator yet (add → save → reopen → edit →
-confirm it persists across an app restart) — do that before calling this fully done, same bar
-Phase 1 was held to.
+**Verification gap, honestly noted — UNTESTED on-device (2026-08-15):** `tsc --noEmit` and the
+full Jest suite (121/121) are clean, but this hasn't been round-tripped on a real device/emulator
+(add → save → reopen → edit → confirm it persists across an app restart). Skipped this session —
+phone was in use for other things, emulator was unreliable (see prior session's diagnosis: host
+resource contention, not a real tooling bug). Do the on-device pass before calling this fully
+done, same bar Phase 1 was held to.
 
 ## Phase 4 — Bag Analysis / overlap (C6) — NOT STARTED, intentionally parked
 
