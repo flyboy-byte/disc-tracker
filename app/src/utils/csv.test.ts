@@ -92,4 +92,19 @@ describe('previewImport (dedupe + cap)', () => {
     expect(result.discs).toHaveLength(MAX_IMPORT);
     expect(result.truncated).toBe(true);
   });
+
+  it('allowDuplicates: imports every row, even identical to the bag and to each other', () => {
+    const csv = buildCSV([ALPHA, ALPHA, ALPHA]);
+    const result = previewImport(csv, [ALPHA], true);
+    expect(result.discs).toHaveLength(3);
+    expect(result.duplicatesSkipped).toBe(0);
+  });
+
+  it('allowDuplicates still respects MAX_IMPORT', () => {
+    const many: Disc[] = Array.from({ length: MAX_IMPORT + 20 }, () => ALPHA);
+    const csv = buildCSV(many);
+    const result = previewImport(csv, [], true);
+    expect(result.discs).toHaveLength(MAX_IMPORT);
+    expect(result.truncated).toBe(true);
+  });
 });

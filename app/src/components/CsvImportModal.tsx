@@ -22,8 +22,12 @@ export default function CsvImportModal({ visible, existingDiscs, onCancel, onImp
   const [text, setText] = useState('');
   const [picking, setPicking] = useState(false);
   const [pickError, setPickError] = useState<string | null>(null);
+  // Off by default (matches the website's always-dedupe behavior). On: every row imports, even
+  // if it's identical to an existing disc or another row in the same file — for genuinely owning
+  // multiple copies of the same mold/plastic/weight (2026-08-15 bug report: "i have 3 leopards").
+  const [allowDuplicates, setAllowDuplicates] = useState(false);
 
-  const preview = useMemo(() => previewImport(text, existingDiscs), [text, existingDiscs]);
+  const preview = useMemo(() => previewImport(text, existingDiscs, allowDuplicates), [text, existingDiscs, allowDuplicates]);
 
   const message = useMemo(() => {
     if (!text.trim()) return null;
@@ -69,6 +73,7 @@ export default function CsvImportModal({ visible, existingDiscs, onCancel, onImp
   const handleCancel = () => {
     setText('');
     setPickError(null);
+    setAllowDuplicates(false);
     onCancel();
   };
 
@@ -100,6 +105,19 @@ export default function CsvImportModal({ visible, existingDiscs, onCancel, onImp
             placeholderTextColor={colors.muted}
             multiline
           />
+
+          <Pressable
+            style={styles.dupRow}
+            onPress={() => setAllowDuplicates((v) => !v)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: allowDuplicates }}
+            accessibilityLabel="Allow duplicate discs"
+          >
+            <View style={[styles.checkbox, allowDuplicates && styles.checkboxOn]}>
+              {allowDuplicates && <Text style={styles.checkboxMark}>✓</Text>}
+            </View>
+            <Text style={styles.dupText}>Allow duplicates (e.g. multiple copies of the same disc)</Text>
+          </Pressable>
 
           {message && <Text style={[styles.message, preview.discs.length ? styles.messageOk : styles.messageMuted]}>{message}</Text>}
 
@@ -150,6 +168,11 @@ const styles = StyleSheet.create({
     height: 130,
     textAlignVertical: 'top',
   },
+  dupRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  checkbox: { width: 20, height: 20, borderRadius: 5, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  checkboxOn: { borderColor: colors.accent, backgroundColor: colors.accent },
+  checkboxMark: { color: '#fff', fontSize: 12, fontWeight: '800', lineHeight: 14 },
+  dupText: { color: colors.muted, fontSize: 12, flex: 1 },
   message: { fontSize: 12, marginTop: 8, minHeight: 16 },
   messageOk: { color: colors.st },
   messageMuted: { color: colors.muted },

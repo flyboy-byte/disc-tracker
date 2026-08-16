@@ -108,22 +108,33 @@ export interface ImportPreview {
   truncated: boolean;
 }
 
-// Dedupes against both the existing bag and duplicates within the pasted file itself, and
-// caps at MAX_IMPORT — matches the website's previewImport() behavior exactly.
-export function previewImport(rawText: string, existingDiscs: Disc[]): ImportPreview {
+// Dedupes against both the existing bag and duplicates within the pasted file itself (by
+// mfr+mold+plastic+weight — see discKey), and caps at MAX_IMPORT. Matches the website's
+// previewImport() behavior by default.
+//
+// `allowDuplicates` (app-only addition, 2026-08-15 bug report: "i have 3 leopards and multiple
+// logics" — owning several physically-identical discs, same mold/plastic/weight, is completely
+// normal, and the default dedupe was silently collapsing them to one). When true, every row that
+// parses to a valid disc imports, with no dedupe against the bag or within the file at all.
+export function previewImport(rawText: string, existingDiscs: Disc[], allowDuplicates = false): ImportPreview {
   const parsed = parseCSV(rawText);
-  const existingKeys = new Set(existingDiscs.map(discKey));
-  const seen = new Set<string>();
+  let discs: Disc[];
   let duplicatesSkipped = 0;
-  let discs = parsed.filter((d) => {
-    const key = discKey(d);
-    if (existingKeys.has(key) || seen.has(key)) {
-      duplicatesSkipped++;
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
+  if (allowDuplicates) {
+    discs = parsed;
+  } else {
+    const existingKeys = new Set(existingDiscs.map(discKey));
+    const seen = new Set<string>();
+    discs = parsed.filter((d) => {
+      const key = discKey(d);
+      if (existingKeys.has(key) || seen.has(key)) {
+        duplicatesSkipped++;
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }
   const truncated = discs.length > MAX_IMPORT;
   if (truncated) discs = discs.slice(0, MAX_IMPORT);
   return { discs, duplicatesSkipped, truncated };
