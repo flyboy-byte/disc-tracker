@@ -259,6 +259,8 @@
     <button class="btn btn-ghost" id="fieldBtn">Field view</button>
     <button class="btn btn-ghost" id="importBtn">Import CSV</button>
     <button class="btn btn-ghost" id="exportBtn">Export CSV</button>
+    <button class="btn btn-ghost" id="importBackupBtn">Import backup</button>
+    <input type="file" id="backupFileInput" accept="application/json,.json" style="display:none">
     <button id="bagFilterBtn" class="filter-btn" onclick="toggleBagFilter()">In bag</button>
     <button id="clearBagBtn" class="filter-btn" onclick="confirmClearBag(this)" style="display:none">Clear bag</button>
   </div>
@@ -978,10 +980,27 @@ function buildCSV(source) {
   return hdr + rows;
 }
 
+// "Both" export scope — port of the app's buildSplitCSV (src/utils/csv.ts): two independent
+// tables (Today's Bag, then the full collection) in one file, each with its own header row and
+// a "# label (count)" comment line so a human opening the file can tell the sections apart. Not
+// a round-trip format — CSV import only ever reads a single table (Backup & Restore/API export
+// covers full round-trips).
+function buildSplitCSV(bagSource, allSource) {
+  return [
+    `# Today's Bag (${bagSource.length})`,
+    buildCSV(bagSource),
+    '',
+    `# All Discs (${allSource.length})`,
+    buildCSV(allSource),
+  ].join('\n');
+}
+
 function updateExportPreview() {
   const scope = document.querySelector('input[name="exportScope"]:checked')?.value || 'all';
-  const source = scope === 'bag' ? discs.filter(d => d.inBag) : discs;
-  window._csvData = buildCSV(source);
+  const bagSource = discs.filter(d => d.inBag);
+  window._csvData = scope === 'bag' ? buildCSV(bagSource)
+    : scope === 'both' ? buildSplitCSV(bagSource, discs)
+    : buildCSV(discs);
   const ta = document.getElementById('csvOut');
   if (ta) ta.value = window._csvData;
 }
@@ -1002,6 +1021,10 @@ function exportCSV() {
         <label>
           <input type="radio" name="exportScope" value="bag" onchange="updateExportPreview()">
           <span style="font-size:13px">Today's bag <span class="text-muted">(${bagCount})</span></span>
+        </label>
+        <label>
+          <input type="radio" name="exportScope" value="both" onchange="updateExportPreview()">
+          <span style="font-size:13px">Both <span class="text-muted">(two tables in one file)</span></span>
         </label>
       </div>` : ''}
       <p class="text-muted modal-hint">Tap Copy, or select the text and copy manually. Download works in some browsers.</p>
@@ -1034,10 +1057,12 @@ function copyCSV() {
 
 function downloadCSV() {
   try {
+    const scope = document.querySelector('input[name="exportScope"]:checked')?.value || 'all';
+    const suffix = scope === 'bag' ? 'todays_bag' : scope === 'both' ? 'both' : 'all';
     const blob = new Blob([window._csvData], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'disc_collection.csv';
+    a.download = `disc_collection_${suffix}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1183,12 +1208,69 @@ async function doImport() {
   toast(`${incoming.length} disc${incoming.length !== 1 ? 's' : ''} imported`);
 }
 
+// ── Backup-file import (website-parity-scope.md, Decision 3) ──────────────────
+// Accepts either the website's own /api/data export shape ({discs, nextId, sortMode, arcView})
+// or a full mobile BackupData file ({version, meta:{sortMode,arcView,...}, discs, rounds,
+// customDiscs}) — detected by the presence of a top-level `meta` object, which the bare
+// website shape never has. rounds/customDiscs aren't supported on the website (no scorekeeper,
+// no personal library here) — reported to the user, not silently dropped, then skipped. This
+// is a full REPLACE of this account's discs, same semantics as Restore on mobile.
+async function handleBackupFile(e) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  let obj;
+  try {
+    obj = JSON.parse(await file.text());
+  } catch (err) {
+    toast('Could not read that file — not valid JSON');
+    return;
+  }
+  const importDiscs = Array.isArray(obj?.discs) ? obj.discs : null;
+  if (!importDiscs) {
+    toast('That file doesn\'t look like a Disc Tracker backup or export');
+    return;
+  }
+  const isBackup = obj && typeof obj === 'object' && obj.meta && typeof obj.meta === 'object';
+  const meta = isBackup ? obj.meta : obj;
+  const skippedRounds = isBackup && Array.isArray(obj.rounds) ? obj.rounds.length : 0;
+  const skippedCustom = isBackup && Array.isArray(obj.customDiscs) ? obj.customDiscs.length : 0;
+  const skippedParts = [];
+  if (skippedRounds) skippedParts.push(`${skippedRounds} scorecard${skippedRounds !== 1 ? 's' : ''}`);
+  if (skippedCustom) skippedParts.push(`${skippedCustom} custom library disc${skippedCustom !== 1 ? 's' : ''}`);
+  const skippedNote = skippedParts.length
+    ? `\n\nThe website doesn't support ${skippedParts.join(' or ')} yet — ${skippedParts.length > 1 ? 'those' : 'that'} won't be imported.`
+    : '';
+  const ok = confirm(
+    `Replace all discs on this account with ${importDiscs.length} disc${importDiscs.length !== 1 ? 's' : ''} from this file?` +
+    skippedNote
+  );
+  if (!ok) return;
+  discs = importDiscs;
+  nextId = isBackup
+    ? Math.max(100, ...importDiscs.map(d => (d.id || 0) + 1))
+    : (meta.nextId || nextId);
+  if (meta.sortMode) sortMode = meta.sortMode;
+  if (meta.arcView) {
+    arcView = meta.arcView;
+    localStorage.setItem('arcView', arcView);
+    document.getElementById('arcViewSelect').value = arcView;
+  }
+  document.getElementById('sortSel').value = sortMode;
+  render();
+  await persist();
+  const summary = `${importDiscs.length} disc${importDiscs.length !== 1 ? 's' : ''} imported`;
+  toast(skippedParts.length ? `${summary} — ${skippedParts.join(', ')} not supported here` : summary);
+}
+
 document.getElementById('search').addEventListener('input', render);
 document.getElementById('addBtn').addEventListener('click', openAdd);
 document.getElementById('libraryBtn').addEventListener('click', openLibrary);
 document.getElementById('fieldBtn').addEventListener('click', () => { viewMode = viewMode === 'cards' ? 'field' : 'cards'; render(); });
 document.getElementById('importBtn').addEventListener('click', importCSV);
 document.getElementById('exportBtn').addEventListener('click', exportCSV);
+document.getElementById('importBackupBtn').addEventListener('click', () => document.getElementById('backupFileInput').click());
+document.getElementById('backupFileInput').addEventListener('change', handleBackupFile);
 document.getElementById('sortSel').addEventListener('change', e => setSort(e.target.value));
 
 // Welcome modal — show once per browser

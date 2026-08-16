@@ -84,9 +84,14 @@ def init_db():
         ''')
         # Migrations for columns added after initial deploy
         for col, ddl in [
-            ('color',    "ALTER TABLE discs ADD COLUMN color TEXT DEFAULT ''"),
-            ('arc_view', "ALTER TABLE user_meta ADD COLUMN arc_view TEXT DEFAULT 'RHBH'"),
-            ('in_bag',   "ALTER TABLE discs ADD COLUMN in_bag INTEGER DEFAULT 0"),
+            ('color',         "ALTER TABLE discs ADD COLUMN color TEXT DEFAULT ''"),
+            ('arc_view',      "ALTER TABLE user_meta ADD COLUMN arc_view TEXT DEFAULT 'RHBH'"),
+            ('in_bag',        "ALTER TABLE discs ADD COLUMN in_bag INTEGER DEFAULT 0"),
+            # Website-parity track (website-parity-scope.md, Decision 2): same two columns the
+            # mobile app added in Disc Suggest Phase 1/3 (app/src/db/migrations.ts), same names,
+            # so /api/data's discs[] is structurally interchangeable with the app's BackupData.discs[].
+            ('stability_adj', "ALTER TABLE discs ADD COLUMN stability_adj REAL DEFAULT 0"),
+            ('role_tag',      "ALTER TABLE discs ADD COLUMN role_tag TEXT DEFAULT ''"),
         ]:
             try:
                 db.execute(ddl)
@@ -225,7 +230,8 @@ def get_data():
             return jsonify(None), 404
         rows = db.execute(
             'SELECT disc_id, mfr, mold, plastic, weight, speed, glide, turn, fade, '
-            'use_desc, thr, notes, color, in_bag FROM discs WHERE user_id = ? ORDER BY sort_order',
+            'use_desc, thr, notes, color, in_bag, stability_adj, role_tag FROM discs '
+            'WHERE user_id = ? ORDER BY sort_order',
             (user_id,)
         ).fetchall()
     discs = [
@@ -237,6 +243,8 @@ def get_data():
             'use': r['use_desc'], 'thr': r['thr'], 'notes': r['notes'],
             'color': r['color'] or '',
             'inBag': bool(r['in_bag']),
+            'stabilityAdj': r['stability_adj'] or 0,
+            'roleTag': r['role_tag'] or '',
         }
         for r in rows
     ]
@@ -273,8 +281,9 @@ def set_data():
         db.execute('DELETE FROM discs WHERE user_id = ?', (user_id,))
         db.executemany(
             'INSERT INTO discs (user_id, disc_id, mfr, mold, plastic, weight, '
-            'speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag) '
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag, '
+            'stability_adj, role_tag) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [
                 (user_id, _to_num(d.get('id'), int, 0), str(d.get('mfr') or '')[:80], str(d.get('mold') or '')[:80],
                  str(d.get('plastic') or '')[:80], str(d.get('weight') or '')[:20],
@@ -282,7 +291,9 @@ def set_data():
                  _to_num(d.get('turn'), float, 0), _to_num(d.get('fade'), float, 0),
                  str(d.get('use') or '')[:200], str(d.get('thr') or '')[:10], str(d.get('notes') or '')[:1000],
                  (c if re.match(r'^#[0-9A-Fa-f]{6}$', c := str(d.get('color') or '')) else ''), i,
-                 1 if d.get('inBag') else 0)
+                 1 if d.get('inBag') else 0,
+                 max(-2, min(2, _to_num(d.get('stabilityAdj'), float, 0))),
+                 str(d.get('roleTag') or '')[:200])
                 for i, d in enumerate(discs)
                 if isinstance(d, dict) and str(d.get('mold') or '').strip()  # skip discs with no mold name
             ]
