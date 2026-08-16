@@ -5,7 +5,7 @@
 import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors } from '../theme';
-import { WEAR_LEVELS, type Disc } from '../utils/disc';
+import { wearEstimateLabel, type Disc } from '../utils/disc';
 import { DISC_COLORS } from '../utils/discColors';
 import { isCustom, searchLibrary, type CustomMasterDisc, type LibraryDisc } from '../utils/masterLibrary';
 import ColorPicker from './ColorPicker';
@@ -13,6 +13,7 @@ import GradientButton from './GradientButton';
 import NumberInput from './NumberInput';
 
 const THROW_STYLES = ['RHBH', 'RHFH', 'LHBH', 'LHFH'] as const;
+const WEAR_ESTIMATES = [1, 2, 3, 4, 5] as const;
 const HEX6 = /^#[0-9A-Fa-f]{6}$/;
 const PRESET_HEXES = new Set(DISC_COLORS.map((c) => c.hex));
 
@@ -226,24 +227,31 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
               placeholderTextColor={colors.muted}
             />
 
-            {/* Wear level — a snapshot you update yourself, not something the app ages
-                automatically. Plain/inert this phase: doesn't feed suggestScore.ts yet (see
-                data-audit-scope.md's non-goals). */}
-            <Text style={styles.label}>Wear level (optional)</Text>
+            {/* Wear estimate (wear-estimate-scope.md, "supersede" decision) — the single field
+                for this now; the old 3-tier wear_level is derived from it on save (disc.ts
+                deriveWearLevel), never set here directly. A snapshot you update yourself, not
+                something the app ages automatically. Plain/inert: doesn't feed suggestScore.ts. */}
+            <Text style={styles.label}>Wear estimate (optional)</Text>
             <View style={styles.thrRow}>
-              {WEAR_LEVELS.map((w) => (
+              {WEAR_ESTIMATES.map((n) => (
                 <Pressable
-                  key={w.id}
-                  testID={`disc-form-wear-${w.id}`}
-                  onPress={() => set('wearLevel', form.wearLevel === w.id ? '' : w.id)}
-                  style={[styles.thrPill, form.wearLevel === w.id && styles.thrPillActive]}
+                  key={n}
+                  testID={`disc-form-wear-est-${n}`}
+                  onPress={() => set('wearEstimate', form.wearEstimate === n ? undefined : n)}
+                  style={[styles.thrPill, form.wearEstimate === n && styles.thrPillActive]}
                   accessibilityRole="button"
-                  accessibilityState={{ selected: form.wearLevel === w.id }}
+                  accessibilityState={{ selected: form.wearEstimate === n }}
+                  accessibilityLabel={`Wear estimate ${n} of 5`}
                 >
-                  <Text style={[styles.thrPillText, form.wearLevel === w.id && styles.thrPillTextActive]}>{w.label}</Text>
+                  <Text style={[styles.thrPillText, form.wearEstimate === n && styles.thrPillTextActive]}>{n}</Text>
                 </Pressable>
               ))}
             </View>
+            {!!form.wearEstimate && (
+              <Text testID="disc-form-wear-est-label" style={styles.adjValueLabel}>
+                {form.wearEstimate} · {wearEstimateLabel(form.wearEstimate)}
+              </Text>
+            )}
 
             {/* Notes */}
             <Text style={styles.sectionLabel}>NOTES</Text>

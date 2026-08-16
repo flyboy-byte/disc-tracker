@@ -8,7 +8,7 @@
 // a sync pull/push would need — this isn't a shortcut, it's the shape sync will reuse directly.
 import * as SQLite from 'expo-sqlite';
 import type { SQLiteDatabase } from 'expo-sqlite';
-import type { Disc } from '../utils/disc';
+import { deriveWearLevel, type Disc } from '../utils/disc';
 import type { SkillPreset, ThrowStyle } from '../utils/suggestScore';
 import type { Round } from '../utils/roundMath';
 import type { CustomMasterDisc } from '../utils/masterLibrary';
@@ -28,7 +28,11 @@ export interface UserMeta {
   // Field view scope (B2). false = today's-bag discs only (default); true = whole filtered set
   // when it's small enough to stay readable. See plan/docs/b2-spike.md.
   fieldShowAll: boolean;
+  // buying-mode-scope.md — Disc Suggest's mode toggle. Default 'throwing' (today's behavior).
+  suggestMode: SuggestMode;
 }
+
+export type SuggestMode = 'throwing' | 'buying';
 
 const DB_NAME = 'disc_tracker.db';
 const DEFAULT_USERNAME = 'My Bag';
@@ -110,6 +114,7 @@ interface DiscRow {
   stability_adj: number;
   role_tag: string;
   wear_level: string;
+  wear_estimate: number | null;
 }
 
 export function getDiscs(userId: number): Promise<Disc[]> {
@@ -117,7 +122,7 @@ export function getDiscs(userId: number): Promise<Disc[]> {
     const db = await openDatabase();
     const rows = await db.getAllAsync<DiscRow>(
       `SELECT disc_id, mfr, mold, plastic, weight, speed, glide, turn, fade,
-              use_desc, thr, notes, color, in_bag, stability_adj, role_tag, wear_level
+              use_desc, thr, notes, color, in_bag, stability_adj, role_tag, wear_level, wear_estimate
        FROM discs WHERE user_id = ? ORDER BY sort_order`,
       [userId]
     );
@@ -139,6 +144,7 @@ export function getDiscs(userId: number): Promise<Disc[]> {
       stabilityAdj: r.stability_adj ?? 0,
       roleTag: r.role_tag ?? '',
       wearLevel: (r.wear_level ?? '') as Disc['wearLevel'],
+      wearEstimate: r.wear_estimate ?? undefined,
     }));
   });
 }
@@ -159,8 +165,8 @@ export function saveDiscs(userId: number, discs: Disc[]): Promise<void> {
         if (!d.mold?.trim()) continue; // skip discs with no mold name, matches app.py
         await txn.runAsync(
           `INSERT INTO discs (user_id, disc_id, mfr, mold, plastic, weight,
-             speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag, stability_adj, role_tag, wear_level)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag, stability_adj, role_tag, wear_level, wear_estimate)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             userId,
             d.id ?? 0,
@@ -180,7 +186,8 @@ export function saveDiscs(userId: number, discs: Disc[]): Promise<void> {
             d.inBag ? 1 : 0,
             d.stabilityAdj ?? 0,
             d.roleTag ?? '',
-            d.wearLevel ?? '',
+            deriveWearLevel(d.wearEstimate),
+            d.wearEstimate ?? null,
           ]
         );
         sortOrder++;
@@ -211,17 +218,21 @@ export function setDiscInBag(userId: number, discId: number, inBag: boolean): Pr
 export function updateDiscAuditFields(
   userId: number,
   discId: number,
-  patch: { weight?: string; plastic?: string; wearLevel?: string }
+  patch: { weight?: string; plastic?: string; wearEstimate?: number }
 ): Promise<void> {
   return serialize(async () => {
     const db = await openDatabase();
+    // wear_level rides along, derived from wear_estimate, same as insertDisc/updateDisc/saveDiscs
+    // — COALESCE only fires the derive when a new estimate was actually passed.
+    const derivedWearLevel = patch.wearEstimate != null ? deriveWearLevel(patch.wearEstimate) : null;
     await db.runAsync(
       `UPDATE discs SET
          weight = COALESCE(?, weight),
          plastic = COALESCE(?, plastic),
+         wear_estimate = COALESCE(?, wear_estimate),
          wear_level = COALESCE(?, wear_level)
        WHERE user_id = ? AND disc_id = ?`,
-      [patch.weight ?? null, patch.plastic ?? null, patch.wearLevel ?? null, userId, discId]
+      [patch.weight ?? null, patch.plastic ?? null, patch.wearEstimate ?? null, derivedWearLevel, userId, discId]
     );
   });
 }
@@ -327,9 +338,9 @@ export function insertDisc(userId: number, d: Disc): Promise<void> {
     const sortOrder = (row?.maxSort ?? -1) + 1;
     await db.runAsync(
       `INSERT INTO discs (user_id, disc_id, mfr, mold, plastic, weight,
-         speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag, stability_adj, role_tag, wear_level)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, d.id ?? 0, d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', sortOrder, d.inBag ? 1 : 0, d.stabilityAdj ?? 0, d.roleTag ?? '', d.wearLevel ?? '']
+         speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag, stability_adj, role_tag, wear_level, wear_estimate)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, d.id ?? 0, d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', sortOrder, d.inBag ? 1 : 0, d.stabilityAdj ?? 0, d.roleTag ?? '', deriveWearLevel(d.wearEstimate), d.wearEstimate ?? null]
     );
   });
 }
@@ -341,9 +352,9 @@ export function updateDisc(userId: number, d: Disc): Promise<void> {
     const db = await openDatabase();
     await db.runAsync(
       `UPDATE discs SET mfr = ?, mold = ?, plastic = ?, weight = ?, speed = ?, glide = ?,
-         turn = ?, fade = ?, use_desc = ?, thr = ?, notes = ?, color = ?, stability_adj = ?, role_tag = ?, wear_level = ?
+         turn = ?, fade = ?, use_desc = ?, thr = ?, notes = ?, color = ?, stability_adj = ?, role_tag = ?, wear_level = ?, wear_estimate = ?
        WHERE user_id = ? AND disc_id = ?`,
-      [d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', d.stabilityAdj ?? 0, d.roleTag ?? '', d.wearLevel ?? '', userId, d.id ?? 0]
+      [d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', d.stabilityAdj ?? 0, d.roleTag ?? '', deriveWearLevel(d.wearEstimate), d.wearEstimate ?? null, userId, d.id ?? 0]
     );
   });
 }
@@ -365,13 +376,14 @@ export function reorderDiscs(userId: number, orderedIds: number[]): Promise<void
 // serialized, or setMeta would deadlock waiting on a slot queued behind its own.
 async function readMeta(db: SQLiteDatabase, userId: number): Promise<UserMeta> {
   const row = await db.getFirstAsync<{
-    next_id: number; sort_mode: string; arc_view: string; ms_ref: number; skill: string; field_show_all: number; throw_style: string;
+    next_id: number; sort_mode: string; arc_view: string; ms_ref: number; skill: string; field_show_all: number; throw_style: string; suggest_mode: string;
   }>(
-    'SELECT next_id, sort_mode, arc_view, ms_ref, skill, field_show_all, throw_style FROM user_meta WHERE user_id = ?',
+    'SELECT next_id, sort_mode, arc_view, ms_ref, skill, field_show_all, throw_style, suggest_mode FROM user_meta WHERE user_id = ?',
     [userId]
   );
   const skill = row?.skill;
   const throwStyle = row?.throw_style;
+  const suggestMode = row?.suggest_mode;
   return {
     nextId: row?.next_id ?? 100,
     sortMode: row?.sort_mode ?? 'speed-desc',
@@ -380,6 +392,7 @@ async function readMeta(db: SQLiteDatabase, userId: number): Promise<UserMeta> {
     skill: skill === 'beginner' || skill === 'advanced' ? skill : 'intermediate',
     fieldShowAll: !!row?.field_show_all,
     throwStyle: throwStyle === 'forehand' ? 'forehand' : 'backhand',
+    suggestMode: suggestMode === 'buying' ? 'buying' : 'throwing',
   };
 }
 
@@ -393,12 +406,13 @@ export function setMeta(userId: number, updates: Partial<UserMeta>): Promise<voi
     const current = await readMeta(db, userId);
     const next = { ...current, ...updates };
     await db.runAsync(
-      `INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view, ms_ref, skill, field_show_all, throw_style) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view, ms_ref, skill, field_show_all, throw_style, suggest_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id) DO UPDATE SET
          next_id = excluded.next_id, sort_mode = excluded.sort_mode,
          arc_view = excluded.arc_view, ms_ref = excluded.ms_ref, skill = excluded.skill,
-         field_show_all = excluded.field_show_all, throw_style = excluded.throw_style`,
-      [userId, next.nextId, next.sortMode, next.arcView, next.msRefEnabled ? 1 : 0, next.skill, next.fieldShowAll ? 1 : 0, next.throwStyle]
+         field_show_all = excluded.field_show_all, throw_style = excluded.throw_style,
+         suggest_mode = excluded.suggest_mode`,
+      [userId, next.nextId, next.sortMode, next.arcView, next.msRefEnabled ? 1 : 0, next.skill, next.fieldShowAll ? 1 : 0, next.throwStyle, next.suggestMode]
     );
   });
 }

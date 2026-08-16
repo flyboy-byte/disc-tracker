@@ -1,14 +1,15 @@
 // Data audit (Phase 2, data-audit-scope.md) — a filtered, directly-editable list of bag discs
-// missing weight, plastic, and/or wear-level. Deliberately NOT a tap-through to DiscFormModal:
-// each row edits inline (weight/plastic text fields, a wear-level pill row) and commits per-field
-// as you go via updateDiscAuditFields() — no second screen, no save step, no fields irrelevant to
-// this pass (color, notes, throw style). See the scope doc for why this landed here instead of
-// reusing the full edit form.
+// missing weight, plastic, and/or a wear estimate. Deliberately NOT a tap-through to
+// DiscFormModal: each row edits inline (weight/plastic text fields, a 1-5 wear-estimate pill
+// row — wear-estimate-scope.md) and commits per-field as you go via updateDiscAuditFields() — no
+// second screen, no save step, no fields irrelevant to this pass (color, notes, throw style).
 import { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors } from '../theme';
-import { WEAR_LEVELS, type Disc } from '../utils/disc';
+import type { Disc } from '../utils/disc';
 import { updateDiscAuditFields } from '../db/db';
+
+const WEAR_ESTIMATES = [1, 2, 3, 4, 5] as const;
 
 interface Props {
   visible: boolean;
@@ -19,7 +20,7 @@ interface Props {
 }
 
 function isIncomplete(d: Disc): boolean {
-  return !d.weight?.trim() || !d.plastic?.trim() || !d.wearLevel;
+  return !d.weight?.trim() || !d.plastic?.trim() || !d.wearEstimate;
 }
 
 export default function DataAuditModal({ visible, discs, userId, onClose, onFieldSaved }: Props) {
@@ -81,17 +82,16 @@ function AuditRow({
     onFieldSaved(disc.id, { plastic });
   };
 
-  const pickWearLevel = (id: (typeof WEAR_LEVELS)[number]['id']) => {
+  const pickWearEstimate = (n: (typeof WEAR_ESTIMATES)[number]) => {
     if (disc.id == null) return;
-    const next = disc.wearLevel === id ? '' : id;
-    updateDiscAuditFields(userId, disc.id, { wearLevel: next });
-    onFieldSaved(disc.id, { wearLevel: next });
+    updateDiscAuditFields(userId, disc.id, { wearEstimate: n });
+    onFieldSaved(disc.id, { wearEstimate: n });
   };
 
   const missing: string[] = [];
   if (!disc.weight?.trim()) missing.push('weight');
   if (!disc.plastic?.trim()) missing.push('plastic');
-  if (!disc.wearLevel) missing.push('wear level');
+  if (!disc.wearEstimate) missing.push('wear estimate');
 
   return (
     <View testID={`audit-row-${disc.id}`} style={styles.row}>
@@ -124,11 +124,11 @@ function AuditRow({
           />
         )}
       </View>
-      {!disc.wearLevel && (
+      {!disc.wearEstimate && (
         <View style={styles.pillRow}>
-          {WEAR_LEVELS.map((w) => (
-            <Pressable key={w.id} testID={`audit-row-${disc.id}-wear-${w.id}`} onPress={() => pickWearLevel(w.id)} style={styles.pill} accessibilityRole="button">
-              <Text style={styles.pillText}>{w.label}</Text>
+          {WEAR_ESTIMATES.map((n) => (
+            <Pressable key={n} testID={`audit-row-${disc.id}-wear-est-${n}`} onPress={() => pickWearEstimate(n)} style={styles.pill} accessibilityRole="button" accessibilityLabel={`Wear estimate ${n} of 5`}>
+              <Text style={styles.pillText}>{n}</Text>
             </Pressable>
           ))}
         </View>

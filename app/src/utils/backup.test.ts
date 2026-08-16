@@ -2,7 +2,7 @@ import { buildBackup, parseBackup, backupSummary, type BackupMeta } from './back
 import type { Disc } from './disc';
 import type { Round } from './roundMath';
 
-const meta: BackupMeta = { sortMode: 'name', arcView: 'RHFH', skill: 'advanced', throwStyle: 'forehand', msRefEnabled: true, fieldShowAll: true };
+const meta: BackupMeta = { sortMode: 'name', arcView: 'RHFH', skill: 'advanced', throwStyle: 'forehand', suggestMode: 'buying', msRefEnabled: true, fieldShowAll: true };
 const discs: Disc[] = [
   { id: 1, mfr: 'Innova', mold: 'Firebird', plastic: 'Star', weight: '175', speed: 9, glide: 3, turn: 0, fade: 4, use: '', thr: 'RHBH', notes: '', color: '#ff0000', inBag: true },
 ];
@@ -48,6 +48,7 @@ describe('parseBackup validation', () => {
     expect(back.meta.arcView).toBe('RHBH'); // defaulted
     expect(back.meta.skill).toBe('intermediate');
     expect(back.meta.throwStyle).toBe('backhand'); // defaulted — old backups predate this field
+    expect(back.meta.suggestMode).toBe('throwing'); // defaulted — old backups predate this field
   });
 
   it('coerces truthy/missing meta booleans', () => {

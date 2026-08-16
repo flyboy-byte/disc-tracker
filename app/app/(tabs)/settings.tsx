@@ -13,7 +13,7 @@ import CsvImportModal from '../../src/components/CsvImportModal';
 import DataAuditModal from '../../src/components/DataAuditModal';
 import GradientButton from '../../src/components/GradientButton';
 import { useToast } from '../../src/components/Toast';
-import { getDiscs, getMeta, getOrCreateDefaultUser, listRounds, replaceRounds, saveDiscs, setMeta, getCustomDiscs, replaceCustomDiscs } from '../../src/db/db';
+import { getDiscs, getMeta, getOrCreateDefaultUser, listRounds, replaceRounds, saveDiscs, setMeta, getCustomDiscs, replaceCustomDiscs, type SuggestMode } from '../../src/db/db';
 import { colors } from '../../src/theme';
 import type { Disc } from '../../src/utils/disc';
 import type { SkillPreset, ThrowStyle } from '../../src/utils/suggestScore';
@@ -49,7 +49,7 @@ export default function SettingsScreen() {
 
   // Phase 2 (data-audit-scope.md): live count of discs missing weight, plastic, or wear-level.
   const incompleteCount = useMemo(
-    () => discs.filter((d) => !d.weight?.trim() || !d.plastic?.trim() || !d.wearLevel).length,
+    () => discs.filter((d) => !d.weight?.trim() || !d.plastic?.trim() || !d.wearEstimate).length,
     [discs]
   );
 
@@ -119,7 +119,7 @@ export default function SettingsScreen() {
     setBusy(true);
     try {
       const [allDiscs, meta, rounds, custom] = await Promise.all([getDiscs(uid), getMeta(uid), listRounds(uid), getCustomDiscs(uid)]);
-      const json = buildBackup(allDiscs, { sortMode: meta.sortMode, arcView: meta.arcView, skill: meta.skill, throwStyle: meta.throwStyle, msRefEnabled: meta.msRefEnabled, fieldShowAll: meta.fieldShowAll }, rounds, custom);
+      const json = buildBackup(allDiscs, { sortMode: meta.sortMode, arcView: meta.arcView, skill: meta.skill, throwStyle: meta.throwStyle, suggestMode: meta.suggestMode, msRefEnabled: meta.msRefEnabled, fieldShowAll: meta.fieldShowAll }, rounds, custom);
       const dir = new Directory(Paths.cache, 'exports');
       if (!dir.exists) dir.create({ intermediates: true });
       const date = new Date().toISOString().slice(0, 10);
@@ -168,6 +168,7 @@ export default function SettingsScreen() {
                   arcView: backup.meta.arcView,
                   skill: backup.meta.skill as SkillPreset,
                   throwStyle: backup.meta.throwStyle as ThrowStyle,
+                  suggestMode: backup.meta.suggestMode as SuggestMode,
                   msRefEnabled: backup.meta.msRefEnabled,
                   fieldShowAll: backup.meta.fieldShowAll,
                 });

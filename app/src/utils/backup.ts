@@ -14,6 +14,9 @@ export interface BackupMeta {
   // Optional + additive, same tolerant pattern as everything else here: absent in pre-2026-08
   // backups, which default to 'backhand' (the pre-existing, unbiased behavior) on restore.
   throwStyle?: string;
+  // Optional + additive, same pattern — absent in pre-2026-08-16 backups, defaults to
+  // 'throwing' (today's behavior) on restore.
+  suggestMode?: string;
   msRefEnabled: boolean;
   fieldShowAll: boolean;
 }
@@ -34,6 +37,7 @@ const DEFAULT_META: BackupMeta = {
   arcView: 'RHBH',
   skill: 'intermediate',
   throwStyle: 'backhand',
+  suggestMode: 'throwing',
   msRefEnabled: false,
   fieldShowAll: false,
 };
@@ -66,6 +70,7 @@ export function parseBackup(text: string): BackupData {
       arcView: meta.arcView ?? DEFAULT_META.arcView,
       skill: meta.skill ?? DEFAULT_META.skill,
       throwStyle: meta.throwStyle ?? DEFAULT_META.throwStyle,
+      suggestMode: meta.suggestMode ?? DEFAULT_META.suggestMode,
       msRefEnabled: !!meta.msRefEnabled,
       fieldShowAll: !!meta.fieldShowAll,
     },

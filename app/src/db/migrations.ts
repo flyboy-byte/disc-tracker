@@ -127,9 +127,26 @@ const COLUMN_MIGRATIONS: { ddl: string }[] = [
   // "tagged for different roles" — not built yet, this column just captures the data going forward.
   { ddl: "ALTER TABLE discs ADD COLUMN role_tag TEXT DEFAULT ''" },
   // Phase 2 (data-audit-scope.md) — optional wear-level snapshot per owned disc:
-  // '' (unset) | 'new' | 'seasoned' | 'beat'. Plain inert field this phase — no coupling to
-  // stability_adj yet (flagged for a future refinement, not built).
+  // '' (unset) | 'new' | 'seasoned' | 'beat'. Superseded 2026-08-16 by wear_estimate below — kept
+  // in the schema (not dropped) since it's still derived and written on every save, so anything
+  // that reads it stays correct without a destructive migration.
   { ddl: "ALTER TABLE discs ADD COLUMN wear_level TEXT DEFAULT ''" },
+  // wear-estimate-scope.md, decision: supersede. The field the UI now actually shows: 1 (fresh)
+  // .. 5 (trashed), NULL = unset. wear_level keeps getting derived from this on every save
+  // (disc.ts deriveWearLevel), so it never silently goes stale.
+  { ddl: 'ALTER TABLE discs ADD COLUMN wear_estimate INTEGER DEFAULT NULL' },
+  // One-time backfill, not a schema change: a disc that already had a manually-chosen wear_level
+  // before wear_estimate existed gets a matching estimate seeded in, so it doesn't suddenly look
+  // "incomplete" in the Data Audit the moment this ships. Idempotent (WHERE wear_estimate IS
+  // NULL) — harmless to re-run on every launch, only ever touches never-yet-estimated discs.
+  {
+    ddl: `UPDATE discs SET wear_estimate = CASE wear_level
+            WHEN 'new' THEN 1 WHEN 'seasoned' THEN 3 WHEN 'beat' THEN 5 END
+          WHERE wear_estimate IS NULL AND wear_level IS NOT NULL AND wear_level != ''`,
+  },
+  // buying-mode-scope.md — Disc Suggest's Throwing/Buying mode toggle. Default 'throwing' is a
+  // no-op: existing behavior is completely unchanged until a user taps into Buying mode.
+  { ddl: "ALTER TABLE user_meta ADD COLUMN suggest_mode TEXT DEFAULT 'throwing'" },
 ];
 
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {

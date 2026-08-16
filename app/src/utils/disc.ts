@@ -28,9 +28,14 @@ export interface Disc {
   // scoring, just carried along for a future Bag Analysis pass (Phase 4) to distinguish
   // numerically-redundant discs from ones tagged for genuinely different roles.
   roleTag?: string;
-  // Phase 2 (data-audit-scope.md) — optional personal wear-level snapshot. Plain/inert: doesn't
-  // feed suggestScore.ts. Update it yourself when it's stale; the app doesn't age it automatically.
+  // Phase 2 (data-audit-scope.md), superseded by wear-estimate-scope.md's "supersede" decision
+  // (2026-08-16): no longer set directly by the UI. `deriveWearLevel()` below computes it from
+  // `wearEstimate` on every save, so it stays populated for anything still reading it (kept, not
+  // dropped, so old data and the column itself don't need a destructive migration).
   wearLevel?: 'new' | 'seasoned' | 'beat' | '';
+  // wear-estimate-scope.md — the field the UI actually shows now: 1 (fresh) .. 5 (trashed).
+  // Plain/inert like wearLevel was: doesn't feed suggestScore.ts, not aged automatically.
+  wearEstimate?: number;
 }
 
 export const WEAR_LEVELS: { id: 'new' | 'seasoned' | 'beat'; label: string }[] = [
@@ -38,6 +43,19 @@ export const WEAR_LEVELS: { id: 'new' | 'seasoned' | 'beat'; label: string }[] =
   { id: 'seasoned', label: 'Seasoned' },
   { id: 'beat', label: 'Beat' },
 ];
+
+// 1-2 -> new, 3-4 -> seasoned, 5 -> beat. Matches the backfill in migrations.ts (which runs the
+// reverse mapping once, for discs that already had a wear_level before this field existed).
+export function deriveWearLevel(estimate: number | undefined): 'new' | 'seasoned' | 'beat' | '' {
+  if (!estimate) return '';
+  if (estimate <= 2) return 'new';
+  if (estimate <= 4) return 'seasoned';
+  return 'beat';
+}
+
+export function wearEstimateLabel(estimate: number): string {
+  return WEAR_LEVELS.find((w) => w.id === deriveWearLevel(estimate))?.label ?? '';
+}
 
 export type Stability = 'overstable' | 'stable' | 'understable';
 export type DiscType = 'putter' | 'mid' | 'fairway' | 'driver';
