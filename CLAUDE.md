@@ -6,7 +6,7 @@ Two things in one repo:
 
 1. **A live Flask web app** — personal disc golf bag tracker running on a VPS at `51.81.80.126`. Multi-user, local SQLite, no cloud, no accounts. The website is the canonical version and the spec for everything else.
 
-2. **An Android app port — v1 feature-complete, actively growing** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest numbered release is **`mobile-preview-0.15`** (2026-08-01, first production-signed preview). Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **DONE:** R1–R4.5, B1 disc-suggest rewrite (`0.10`), B2 big-collection support (`0.11`), B3 offline scorekeeper + B4 full backup/restore (`0.12`), mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker (`0.13`), UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`), production signing (`0.15`), and the Disc Suggest **Phase 1** accuracy pass — Flex Shot scenario (13th), Throw Style modifier, personal stability adjustment (`plan/docs/suggest-engine-plan.md`, not yet cut as a numbered release). **R5 VPS sync DROPPED** (superseded by B4 — Logan's call). **Next = Phase 2/3/4 of the suggest-engine plan, or stores (R6 Play → R7 F-Droid) when Logan's ready** ("not emotionally ready for store release" — building features first). See "Mobile app — current state" below.
+2. **An Android app port — v1 feature-complete, actively growing** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest numbered release is **`mobile-preview-0.15`** (2026-08-01, first production-signed preview). Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **DONE:** R1–R4.5, B1 disc-suggest rewrite (`0.10`), B2 big-collection support (`0.11`), B3 offline scorekeeper + B4 full backup/restore (`0.12`), mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker (`0.13`), UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`), production signing (`0.15`), and the Disc Suggest suggest-engine plan **Phases 1-3** — Flex Shot scenario (13th), Throw Style modifier, personal stability adjustment, role tags, data audit/wear level (`plan/docs/suggest-engine-plan.md`, none yet cut as a numbered release) — plus the **website-parity track** (CSV Both scope, `stability_adj`/`role_tag` on the website, backup-file import; `plan/docs/website-parity-scope.md`). **R5 VPS sync DROPPED** (superseded by B4 — Logan's call). **Next = Phase 4 (parked behind C4) or the C-series (see `plan/GRAVEYARD.md`), or stores (R6 Play → R7 F-Droid) when Logan's ready** ("not emotionally ready for store release" — building features first). See "Mobile app — current state" below.
 
 ---
 
@@ -271,14 +271,21 @@ Minimum Credible v1 Milestone is fully met. See `app/PORT_PLAN.md` Phase 9.
 
 ### Next immediate step:
 **v1 complete; R1–R4.5, B1–B4, production signing (R6 keystore step), and Disc Suggest
-Phase 1 all done.** Latest numbered release is `mobile-preview-0.15` (2026-08-01, first
+Phases 1-3 all done.** Latest numbered release is `mobile-preview-0.15` (2026-08-01, first
 production-signed preview — upload key = Play app signing key, one keystore signs
-Play+F-Droid+sideload). Phase 1 of the suggest-engine plan (Flex Shot, Throw Style, personal
-stability adjustment) landed 2026-08-15 (`f9925fb`), verified on-device, not yet cut as its
-own preview build. Forward priorities:
-- **Suggest-engine Phase 2/3/4** — see `app/plan/docs/suggest-engine-plan.md` for the
-  full roadmap (data audit, personal role tags, bag analysis/C6) and the open design note
-  on below-marginal-band UX (a disc that's the only one in the bag but still filtered out).
+Play+F-Droid+sideload). The suggest-engine plan's Phase 1 (Flex Shot, Throw Style, personal
+stability adjustment), Phase 3 (role tags), and Phase 2 (data audit — wear level, inline-
+editable Settings screen) all landed 2026-08-15, `tsc`/Jest green, none yet cut as their own
+preview build; Phase 1 verified on-device, Phase 2/3 code-complete but untested on-device
+(logged in `app/plan/docs/suggest-engine-plan.md`). The **website-parity track** also landed
+2026-08-15 (`91883c3`): CSV "Both" export scope, `stability_adj`/`role_tag` columns +
+`/api/data` wiring, and an "Import backup" button on the website — see
+`app/plan/docs/website-parity-scope.md`. Forward priorities:
+- **Suggest-engine Phase 4** — intentionally parked behind C4 (fieldwork data), which doesn't
+  exist yet. Not being pursued. See `app/plan/GRAVEYARD.md`.
+- **C-series (C1 loadouts, C2/C7 confirmed-real-not-scheduled, C3 parked)** — see
+  `app/plan/GRAVEYARD.md` and `app/plan/docs/direction-2026-08-08.md`. A storage-robustness
+  look (gating C1) is deliberately sequenced to the end of this plan.
 - **R5 VPS sync** — DROPPED (2026-07-29), superseded by B4 backup/restore. Not being revisited.
 - **R6 Play closed testing** — signing is done (upload key = Play app signing key); still
   needs the actual Play Console submission (Data Safety form, privacy policy, content
