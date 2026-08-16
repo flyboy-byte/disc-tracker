@@ -1089,6 +1089,10 @@ function importCSV() {
         <label>Or paste CSV</label>
         <textarea id="csvIn" class="textarea-mono" placeholder="Paste CSV here…" style="height:130px"></textarea>
       </div>
+      <label class="text-muted" style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;cursor:pointer">
+        <input type="checkbox" id="csvAllowDupes" onchange="previewImport()">
+        Allow duplicates (e.g. multiple copies of the same disc)
+      </label>
       <div id="importPreview" class="text-muted" style="font-size:12px;margin-top:8px;min-height:18px"></div>
       <div class="modal-btns">
         <span class="spacer"></span>
@@ -1165,10 +1169,11 @@ function discKey(d) {
 
 function previewImport() {
   const rawParsed = parseCSV(document.getElementById('csvIn').value);
+  const allowDupes = document.getElementById('csvAllowDupes')?.checked || false;
   const existingKeys = new Set(discs.map(discKey));
   const seen = new Set();
   let dupes = 0;
-  let parsed = rawParsed.filter(d => {
+  let parsed = allowDupes ? rawParsed : rawParsed.filter(d => {
     const key = discKey(d);
     if (existingKeys.has(key) || seen.has(key)) { dupes++; return false; }
     seen.add(key);
