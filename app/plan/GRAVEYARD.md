@@ -35,15 +35,34 @@ need to re-derive.
 
 ---
 
+### C2 — "What should I throw?" free-form screen — GRAVEYARDED 2026-08-16
+
+**What it was:** describe the shot (distance, throw, shape, wind) → best 3 discs from the active
+loadout, with reasons. Pitched in `direction-2026-08-08.md` as reusing Disc Suggest + Flight
+Shaper's existing scoring/physics, "turns several islands into one on-course tool." Logan
+confirmed it as a real feature on 2026-08-15 (not parked, just not that pass).
+
+**Why graveyarded one day later:** Logan's own read, 2026-08-16 — "c2 feels like the existing
+disc suggestion page." Re-examined against what Disc Suggest actually does today (13 scenario
+cards, `suggestScore.ts`, one unified scorer for bag + library): the honest differentiator is
+narrow — *free-form continuous input* (typing an exact distance/wind number) instead of picking
+the nearest of 13 named presets. Wind in particular isn't a slider anywhere today, only baked
+into discrete cards (Tailwind / Into Headwind). That's a real gap, but it's a UI variant on the
+same model, not new capability — the 13 presets already cover the shot space reasonably well as
+named shortcuts. Worse, C2 was already blocked on C1 (loadouts), itself parked — so this was an
+unbuilt idea riding on another unbuilt idea, mostly re-skinning something that already works.
+
+**Status:** not "never" — if a real driver shows up later (e.g. the wind-as-continuous-input gap
+becomes an actual pain point), the cheapest version isn't a new screen: add a wind slider to the
+existing Disc Suggest scenario detail and let it nudge whichever scenario is active, the same
+mechanism Throw Style already uses. That reuses the shipped UI instead of building a parallel one.
+
+---
+
 ## What's still alive (not graveyarded, for contrast)
 
-- **C2 — "What should I throw?" free-form screen.** NOT parked — confirmed by Logan 2026-08-15
-  as a real feature to build, just not this pass ("c2 and 7 are def not parked... doc them as
-  features to build if that makes sense, not this pass maybe. but sometime"). Re-explained
-  2026-08-15: describe the shot (distance, throw, shape, wind) → best 3 discs from the active
-  loadout, with reasons — reuses Disc Suggest + Flight Shaper's existing scoring/physics, no new
-  model. Depends on C1 (loadouts) existing first. Not yet scoped in detail.
-- **C7 — Shareable Bag Report (image export).** NOT parked, same 2026-08-15 confirmation as C2.
+- **C7 — Shareable Bag Report (image export).** NOT parked — confirmed real by Logan 2026-08-15,
+  unrelated to C2's graveyarding (C7 doesn't overlap with any shipped screen the way C2 did).
   Render a shareable PNG of your bag locally, push it through the Android share sheet — no
   accounts, no server, no feed. Cheap to build (no new data model, reuses existing rendering)
   whenever it's picked up. Not yet scoped in detail.
@@ -60,26 +79,14 @@ need to re-derive.
 - **Website parity catch-up:** being scoped in detail 2026-08-15 — see
   `plan/docs/website-parity-scope.md`.
 - **Wear-level 1–5 "estimated broke-in" scale (optional).** Floated by Logan 2026-08-15 while
-  testing v0.17's data audit: the current 3-tier New/Seasoned/Beat wear level (`WEAR_LEVELS` in
-  `src/utils/disc.ts`) "dont hardly feel enuf" for a disc he's had 3 months and isn't sure how to
-  bucket. Idea: an *optional* 1-5 numeric scale for estimated wear/break-in, living in the same
-  UI slot as the current wear-level pills (Data audit row + presumably disc detail/edit). Explicit
-  instruction: **do not rework the existing 3-tier field to build this** — this is a separate,
-  additive idea, not yet scoped, not requested to build now.
-- **"Suggestions for buying" mode on Disc Suggest (unscored idea, not yet a feature request).**
-  Floated by Logan 2026-08-15, explicitly **"leave it unscored intentionally"** — not ready to
-  scope as a real feature, just a thought to not lose. Sketch: a toggle on the Disc Suggest screen
-  between "suggestions for throwing" (today's behavior) and "suggestions for buying" — reusing the
-  same scoring framework, but instead of ranking discs you own for a scenario, it'd help pick what
-  to *add* to the bag. Rough shape as described:
-  - Filter by category (driver/fairway/mid/putter) and stability (understable/overstable/either).
-  - Basic bag-gap scripting — surface what's missing from the current bag's speed/stability
-    coverage rather than just re-ranking owned discs.
-  - Filter by brand; weight filtering flagged by Logan himself as probably not workable given the
-    library's data (not every disc has reliable per-weight data).
-  - A swipe-away-to-refine interaction (dismiss a suggested disc → engine adjusts).
-  **Logan's own caveat, worth keeping attached to this idea:** "if we do much more of this we
-  really need to find a way to expand our library" — i.e. this mode (and honestly the existing
-  suggest engine generally) is increasingly gated on the 1,660-disc master library's coverage/
-  accuracy, not just on scoring logic. Any real push on a buying-mode feature should probably pair
-  with a library-expansion pass, not precede it blind.
+  testing v0.17's data audit: the current 3-tier New/Seasoned/Beat wear level "dont hardly feel
+  enuf" for a disc he's had 3 months. **Scoped in detail 2026-08-16** — see
+  `plan/docs/wear-estimate-scope.md` for decisions, data model, and open questions. Still not
+  started; still not a rework of the shipped 3-tier field.
+- **"Suggestions for buying" mode on Disc Suggest.** Floated by Logan 2026-08-15, originally
+  **"leave it unscored intentionally."** **Scoped in detail 2026-08-16** at Logan's own request —
+  see `plan/docs/buying-mode-scope.md` for the full decision set (entry point, filters, the
+  bag-gap-summary differentiator, non-goals). Logan's own caveat carries forward as a real risk
+  in that doc, not resolved: *"if we do much more of this we really need to find a way to expand
+  our library"* — the 1,660-disc master library's coverage is this feature's quality ceiling.
+  Still not started; scoping is not a decision to build.
