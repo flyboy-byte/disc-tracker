@@ -170,12 +170,18 @@ building overlap/redundancy detection on canonical + user-declared data only is 
 "these look redundant by the numbers but aren't" trap Decision 1 warns about, and Phase 3's role
 tags (above) are the cheap mitigation for that trap, not a full fix.
 
-## Separate track — Website (Flask app) parity catch-up — RESCOPED 2026-08-15, not yet started
+## Separate track — Website (Flask app) parity catch-up — SCOPED 2026-08-15, not yet started
+
+Full scope doc: [`website-parity-scope.md`](./website-parity-scope.md). Verified while scoping:
+the CSV format is already byte-identical between the app and website (one real gap — the app's
+newer "Both" export scope isn't on the website yet); the meatier piece is deciding how much of a
+mobile backup file the website should accept (landed on: discs + settings import cleanly, rounds/
+customDiscs are visibly reported as unsupported rather than silently dropped).
 
 Originally flagged 2026-08-15 as a full feature-parity audit (mobile has shipped
 backup/restore, the custom-disc library, stability-adjustment, and role tags; the website has
-none of it). **Rescoped the same day, narrower, per Logan's actual priority** rather than a
-full parity sweep:
+none of it). **Rescoped the same day, narrower, per Logan's actual priority**, then **fully
+scoped** in `website-parity-scope.md` — see the pointer above.
 
 The app is quietly becoming the dominant platform going forward; the website's remaining value
 is being the **persistent, always-there, cross-OS** copy — the two things it's actually good for

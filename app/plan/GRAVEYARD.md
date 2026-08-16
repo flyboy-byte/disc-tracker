@@ -35,43 +35,27 @@ need to re-derive.
 
 ---
 
-### C2 — "What should I throw?" free-form screen — UNDER REVIEW 2026-08-15
-
-**What it was:** describe the shot (distance, throw, shape, wind) → best 3 discs from the active
-loadout, with reasons. Reuses Disc Suggest + Flight Shaper's existing scoring/physics — no new
-model. The pitch was collapsing "check Disc Suggest, then check Flight Shaper, then decide" into
-one on-course lookup.
-
-**Why it's here:** Logan flagged genuine confusion about what problem it solves, re-reading the
-roadmap cold. Re-explained 2026-08-15 (see above) but it didn't land as obviously valuable either
-time. Not killed — just doesn't have a clear enough "yes, I'd use that" behind it yet to scope.
-Revisit if a concrete on-course moment makes the gap obvious (e.g. "I stood over a shot and
-wanted one answer, not two screens").
-
----
-
-### C7 — Shareable Bag Report (image export) — UNDER REVIEW 2026-08-15
-
-**What it was:** render a shareable PNG of your bag locally, push it through the Android share
-sheet — no accounts, no server, no feed. Pitched as an organic-acquisition play in
-`direction-2026-08-08.md` ("audience win... without accounts/feed/moderation/servers").
-
-**Why it's here:** it's a marketing/growth feature, not a personal-use one — that's likely why it
-didn't stick. Logan: "i dont remember interesting, hmm just why." Not killed — cheap to build if
-the audience angle ever actually matters (no new data model, reuses existing rendering), but
-there's no personal-use case pulling it forward right now.
-
----
-
 ## What's still alive (not graveyarded, for contrast)
 
+- **C2 — "What should I throw?" free-form screen.** NOT parked — confirmed by Logan 2026-08-15
+  as a real feature to build, just not this pass ("c2 and 7 are def not parked... doc them as
+  features to build if that makes sense, not this pass maybe. but sometime"). Re-explained
+  2026-08-15: describe the shot (distance, throw, shape, wind) → best 3 discs from the active
+  loadout, with reasons — reuses Disc Suggest + Flight Shaper's existing scoring/physics, no new
+  model. Depends on C1 (loadouts) existing first. Not yet scoped in detail.
+- **C7 — Shareable Bag Report (image export).** NOT parked, same 2026-08-15 confirmation as C2.
+  Render a shareable PNG of your bag locally, push it through the Android share sheet — no
+  accounts, no server, no feed. Cheap to build (no new data model, reuses existing rendering)
+  whenever it's picked up. Not yet scoped in detail.
 - **C1 — Named loadouts:** not parked, but explicitly gated behind a storage-robustness look
   first (Logan 2026-08-15: "it only makes sense if we look closer into how we store discs...
-  organizing it all cohesively and maintaining it without a cloud-backup seems clunky"). See
+  organizing it all cohesively and maintaining it without a cloud-backup seems clunky"). **The
+  storage-robustness look itself is sequenced for the end of this plan, after the website-refactor
+  track below is done** (Logan's call, 2026-08-15) — not urgent, deliberately last. See
   `suggest-engine-plan.md`'s Phase-2/Phase-4 notes for the adjacent Phase 3 role-tag work this
   would eventually build on.
 - **C4/C5/C6:** downstream of C3, so effectively paused with it, not separately parked.
-- **Suggest-engine Phase 2 (data audit):** scoped, not started — see `data-audit-scope.md`.
-- **Website parity catch-up:** rescoped 2026-08-15 to a concrete subset (CSV + backup/restore +
-  cross-platform sharing) rather than a full feature audit — see `suggest-engine-plan.md`'s
-  "Separate track" section.
+- **Suggest-engine Phase 2 (data audit):** scoped, not started — see `data-audit-scope.md`. The
+  next thing to actually build.
+- **Website parity catch-up:** being scoped in detail 2026-08-15 — see
+  `plan/docs/website-parity-scope.md`.
