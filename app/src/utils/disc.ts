@@ -102,6 +102,7 @@ export function typeShort(type: string): string {
 }
 
 export interface ScenarioDisc {
+  id?: number; // present for bag discs only — lets result lists key on the owned specimen, not just name+mfr, since a bag can hold duplicate molds
   name: string;
   mfr: string;
   type: string;
@@ -121,6 +122,7 @@ export function bagToDisc(d: Disc): ScenarioDisc {
   const turn = (d.turn ?? 0) + adj;
   const fade = (d.fade ?? 0) + adj;
   return {
+    id: d.id,
     name: d.mold,
     mfr: d.mfr,
     type: MASTER_TYPE_LABEL[discType(d)],

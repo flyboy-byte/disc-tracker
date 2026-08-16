@@ -93,7 +93,7 @@ export default function DiscSuggestScreen() {
             <Text style={styles.emptyBag}>No matches in your bag for this scenario.</Text>
           ) : (
             bagMatches.map((s) => (
-              <SuggestResultCard key={`bag-${s.disc.name}-${s.disc.mfr}`} disc={s.disc} inBag band={s.band} />
+              <SuggestResultCard key={`bag-${s.disc.id ?? `${s.disc.name}-${s.disc.mfr}`}`} disc={s.disc} inBag band={s.band} />
             ))
           )}
 
