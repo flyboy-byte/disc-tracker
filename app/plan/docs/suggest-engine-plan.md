@@ -179,7 +179,7 @@ building overlap/redundancy detection on canonical + user-declared data only is 
 "these look redundant by the numbers but aren't" trap Decision 1 warns about, and Phase 3's role
 tags (above) are the cheap mitigation for that trap, not a full fix.
 
-## Separate track — Website (Flask app) parity catch-up — SCOPED 2026-08-15, not yet started
+## Separate track — Website (Flask app) parity catch-up — DONE 2026-08-15 (`91883c3`)
 
 Full scope doc: [`website-parity-scope.md`](./website-parity-scope.md). Verified while scoping:
 the CSV format is already byte-identical between the app and website (one real gap — the app's

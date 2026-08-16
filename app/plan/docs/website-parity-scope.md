@@ -1,7 +1,15 @@
 # Website (Flask) parity — scope
 
-**Status:** SCOPED 2026-08-15, not started. Sequenced after Phase 2 (data audit) — mirrors
-`scorekeeper-scope.md`/`data-audit-scope.md`'s structure.
+**Status:** DONE 2026-08-15 (`91883c3`). All three decisions built: CSV "Both" scope ported to
+the website byte-for-byte; `stability_adj`/`role_tag` columns added to the website DB and
+`/api/data`, verified via a direct Flask test-client POST/GET round-trip; a new "Import backup"
+button accepts either the website's own export shape or a full mobile `BackupData` file,
+reusing the existing `persist()`/`render()` cycle (no new backend route needed), with
+rounds/custom-discs explicitly reported as unsupported rather than silently dropped. Suggest-
+engine personalization (skill/throw-style/the scoring model) stays out of scope per Decision 0.
+Verified: `/` renders 200 with the new UI markers present, and `/api/data` round-trips
+`stabilityAdj`/`roleTag` correctly (Flask test client). Not click-tested in a real browser —
+logged as a gap, same honesty bar as the mobile phases.
 
 ## Why this track exists (and what it isn't)
 
