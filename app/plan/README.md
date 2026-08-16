@@ -18,6 +18,7 @@ PORT_PLAN.md's phase list doesn't itself carry.
 | --- | --- | --- |
 | [`FRAMEWORK.md`](./FRAMEWORK.md) | Meta | Phase-gated status tracker — where this project actually is and what's next |
 | [`DECISIONS.md`](./DECISIONS.md) | Meta | Numbered index of *why*, pointing into the docs where each decision was actually made |
+| [`GRAVEYARD.md`](./GRAVEYARD.md) | Meta | Ideas floated, scoped a little, then parked or killed — with the reasoning, so they don't get re-litigated from scratch |
 | [`docs/documentation-guide.md`](./docs/documentation-guide.md) | Meta | Explains the tiers below, who each doc is for, and how they fit together |
 | [`docs/overview.md`](./docs/overview.md) | High-level | What it is, who it's for, why it exists, what it's explicitly not |
 | [`docs/approach.md`](./docs/approach.md) | High-level | Is this worth doing this way — alternatives considered, tradeoffs |

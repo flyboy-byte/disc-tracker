@@ -170,18 +170,37 @@ building overlap/redundancy detection on canonical + user-declared data only is 
 "these look redundant by the numbers but aren't" trap Decision 1 warns about, and Phase 3's role
 tags (above) are the cheap mitigation for that trap, not a full fix.
 
-## Separate track — Website (Flask app) parity catch-up — NOT STARTED, not yet scoped
+## Separate track — Website (Flask app) parity catch-up — RESCOPED 2026-08-15, not yet started
 
-Flagged by Logan 2026-08-15: the website (`templates/`, `app.py`) is the documented canonical
-spec for the mobile port, but the mobile app has since shipped several features the website
-doesn't have — full JSON backup/restore (mobile has it via `backup.ts`/Settings; website has no
-equivalent), the personal custom-disc library (`custom_discs`), and now (Phase 1 here) the
-stability-adjustment field and throw-style modifier. Needs its own audit pass (grep both codebases
-for a feature-by-feature parity table) before any website code changes — this is a **separate,
-unscoped initiative**, not part of the Disc Suggest engine work above; note it here only so it
-isn't lost. Pick up by re-reading `CLAUDE.md`'s website section and doing a fresh parity diff
-against the current mobile feature set (which has moved substantially since the "port, don't
-redesign" framing was written).
+Originally flagged 2026-08-15 as a full feature-parity audit (mobile has shipped
+backup/restore, the custom-disc library, stability-adjustment, and role tags; the website has
+none of it). **Rescoped the same day, narrower, per Logan's actual priority** rather than a
+full parity sweep:
+
+The app is quietly becoming the dominant platform going forward; the website's remaining value
+is being the **persistent, always-there, cross-OS** copy — the two things it's actually good for
+right now are (1) moving your disc data phone → website (and back), and (2) letting a desktop or
+iOS person see/use a bag without installing anything. Everything else about "catching the website
+up" is lower priority than that.
+
+**Concrete scope, in order:**
+1. **CSV format/sharing parity** — confirm the website's CSV export/import columns still match
+   the app's `csv.ts` 1:1 (they diverged at least once already — see `PORT_PLAN.md`'s CSV
+   history); fix whichever side drifted.
+2. **Backup/restore compatibility** — the app's `backup.ts` JSON format (`BackupData`: discs,
+   meta, rounds, customDiscs) has no website equivalent at all. Doesn't need to be a full mirror
+   of the Settings screen — just enough that a mobile backup file can populate/restore a website
+   account, and vice versa isn't necessarily required (confirm which direction Logan actually
+   wants before building both).
+3. **Cross-platform sharing** — whatever's needed so a desktop/iOS person can actually receive
+   and view a shared bag (this may fall out of #1/#2 for free, or may need its own small piece —
+   TBD once 1/2 exist).
+4. **Suggest-engine parity (Phase 1/3 fields — stability-adjustment, role tags) on the website**
+   — explicitly **after** 1–3, not blocking them.
+
+Not yet scoped in detail (no data model / screens doc like `data-audit-scope.md` yet) — this
+section is the priority ordering, not a build-ready spec. Do that scoping pass when this track is
+actually picked up.
 
 ## Compaction checkpoints (resume without re-deriving)
 
