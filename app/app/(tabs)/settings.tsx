@@ -255,6 +255,7 @@ export default function SettingsScreen() {
           {SKILLS.map((s) => (
             <Pressable
               key={s.id}
+              testID={`settings-skill-${s.id}`}
               onPress={() => changeSkill(s.id)}
               style={[styles.pill, skill === s.id && styles.pillActive]}
               accessibilityRole="button"
@@ -278,6 +279,7 @@ export default function SettingsScreen() {
           {THROW_STYLES.map((t) => (
             <Pressable
               key={t.id}
+              testID={`settings-throw-style-${t.id}`}
               onPress={() => changeThrowStyle(t.id)}
               style={[styles.pill, throwStyle === t.id && styles.pillActive]}
               accessibilityRole="button"
@@ -386,7 +388,7 @@ export default function SettingsScreen() {
       <View style={styles.card}>
         <Text style={styles.sectionLabel}>DATA</Text>
         <Text style={styles.sectionHint}>{discs.length} disc{discs.length === 1 ? '' : 's'} stored on this device.</Text>
-        <Pressable style={styles.row} onPress={() => setAuditOpen(true)} accessibilityRole="button" accessibilityLabel="Data audit">
+        <Pressable testID="settings-data-audit" style={styles.row} onPress={() => setAuditOpen(true)} accessibilityRole="button" accessibilityLabel="Data audit">
           <Text style={styles.rowText}>Data audit</Text>
           <Text style={styles.rowValue}>
             {incompleteCount === 0 ? 'All complete' : `${incompleteCount} disc${incompleteCount === 1 ? '' : 's'}`}

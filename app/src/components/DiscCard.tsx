@@ -48,6 +48,7 @@ function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onToggleBag, onMo
 
   return (
     <Pressable
+      testID={`disc-card-${d.id ?? d.mold}`}
       onPress={() => onPress(d)}
       onLongPress={onLongPress ? () => onLongPress(d) : undefined}
       delayLongPress={300}
@@ -75,6 +76,7 @@ function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onToggleBag, onMo
               // toggles the bag flag without also firing the card's onPress (edit) — no
               // stopPropagation needed the way the website's onclick handler required.
               <Pressable
+                testID={`disc-card-toggle-bag-${d.id}`}
                 onPress={() => onToggleBag(d.id!, !d.inBag)}
                 hitSlop={8}
                 style={[styles.bagCheck, d.inBag && styles.bagCheckOn]}

@@ -20,6 +20,7 @@ export default function ScenarioGrid({ scenarios, activeId, onSelect }: Props) {
         return (
           <Pressable
             key={sc.id}
+            testID={`scenario-card-${sc.id}`}
             style={[styles.card, active && styles.cardActive]}
             onPress={() => onSelect(sc)}
             accessibilityRole="button"

@@ -101,8 +101,9 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
 
             {/* Details */}
             <Text style={styles.sectionLabel}>DETAILS</Text>
-            <Field label="Manufacturer" value={form.mfr} onChangeText={(v) => set('mfr', v)} placeholder="e.g. Innova" />
+            <Field testID="disc-form-mfr" label="Manufacturer" value={form.mfr} onChangeText={(v) => set('mfr', v)} placeholder="e.g. Innova" />
             <Field
+              testID="disc-form-mold"
               label="Mold"
               value={form.mold}
               onChangeText={setMold}
@@ -114,6 +115,7 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
                 {suggestions.map((s, i) => (
                   <Pressable
                     key={isCustom(s) ? `c${s.id}` : `${s.mfr}-${s.name}-${i}`}
+                    testID={`disc-form-suggestion-${i}`}
                     style={styles.suggestRow}
                     onPress={() => pickSuggestion(s)}
                     accessibilityRole="button"
@@ -135,6 +137,7 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
             )}
             {isNew && onAddCustom && !pickedFromLibrary && form.mold.trim().length > 0 && (
               <Pressable
+                testID="disc-form-save-to-library"
                 style={styles.saveLibRow}
                 onPress={() => setSaveToLibrary((v) => !v)}
                 accessibilityRole="checkbox"
@@ -149,27 +152,28 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
             )}
             <View style={styles.pairRow}>
               <View style={styles.pairCol}>
-                <Field label="Plastic" value={form.plastic ?? ''} onChangeText={(v) => set('plastic', v)} placeholder="e.g. Star" />
+                <Field testID="disc-form-plastic" label="Plastic" value={form.plastic ?? ''} onChangeText={(v) => set('plastic', v)} placeholder="e.g. Star" />
               </View>
               <View style={styles.pairCol}>
-                <Field label="Weight" value={form.weight ?? ''} onChangeText={(v) => set('weight', v)} placeholder="e.g. 173g" />
+                <Field testID="disc-form-weight" label="Weight" value={form.weight ?? ''} onChangeText={(v) => set('weight', v)} placeholder="e.g. 173g" />
               </View>
             </View>
-            <Field label="Primary use" value={form.use ?? ''} onChangeText={(v) => set('use', v)} placeholder="e.g. Overstable utility" />
+            <Field testID="disc-form-use" label="Primary use" value={form.use ?? ''} onChangeText={(v) => set('use', v)} placeholder="e.g. Overstable utility" />
 
             {/* Flight numbers */}
             <Text style={styles.sectionLabel}>FLIGHT NUMBERS</Text>
             <View style={styles.fnGrid}>
-              <NumField label="Speed" value={form.speed} onChange={(v) => setNum('speed', v)} />
-              <NumField label="Glide" value={form.glide} onChange={(v) => setNum('glide', v)} />
-              <NumField label="Turn" value={form.turn} onChange={(v) => setNum('turn', v)} />
-              <NumField label="Fade" value={form.fade} onChange={(v) => setNum('fade', v)} />
+              <NumField testID="disc-form-speed" label="Speed" value={form.speed} onChange={(v) => setNum('speed', v)} />
+              <NumField testID="disc-form-glide" label="Glide" value={form.glide} onChange={(v) => setNum('glide', v)} />
+              <NumField testID="disc-form-turn" label="Turn" value={form.turn} onChange={(v) => setNum('turn', v)} />
+              <NumField testID="disc-form-fade" label="Fade" value={form.fade} onChange={(v) => setNum('fade', v)} />
             </View>
             <Text style={styles.label}>Throw style</Text>
             <View style={styles.thrRow}>
               {THROW_STYLES.map((t) => (
                 <Pressable
                   key={t}
+                  testID={`disc-form-thr-${t}`}
                   onPress={() => set('thr', t)}
                   style={[styles.thrPill, (form.thr || 'RHBH') === t && styles.thrPillActive]}
                 >
@@ -186,6 +190,7 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
             <Text style={styles.adjHint}>Does this specific disc fly more or less stable than stock? Only affects your Disc Suggest results.</Text>
             <View style={styles.adjRow}>
               <Pressable
+                testID="disc-form-stability-adj-minus"
                 style={styles.adjBtn}
                 onPress={() => set('stabilityAdj', Math.max(-2, Math.round(((form.stabilityAdj ?? 0) - 0.5) * 2) / 2))}
                 accessibilityRole="button"
@@ -194,10 +199,11 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
                 <Text style={styles.adjBtnText}>−</Text>
               </Pressable>
               <View style={styles.adjValueWrap}>
-                <Text style={styles.adjValue}>{(form.stabilityAdj ?? 0) > 0 ? `+${form.stabilityAdj}` : form.stabilityAdj ?? 0}</Text>
+                <Text testID="disc-form-stability-adj-value" style={styles.adjValue}>{(form.stabilityAdj ?? 0) > 0 ? `+${form.stabilityAdj}` : form.stabilityAdj ?? 0}</Text>
                 <Text style={styles.adjValueLabel}>{adjLabel(form.stabilityAdj ?? 0)}</Text>
               </View>
               <Pressable
+                testID="disc-form-stability-adj-plus"
                 style={styles.adjBtn}
                 onPress={() => set('stabilityAdj', Math.min(2, Math.round(((form.stabilityAdj ?? 0) + 0.5) * 2) / 2))}
                 accessibilityRole="button"
@@ -212,6 +218,7 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
                 ("hyzer bomb" vs. "flex/utility"), for a future Bag Analysis pass to read. */}
             <Text style={styles.label}>Role tag (optional)</Text>
             <TextInput
+              testID="disc-form-role-tag"
               style={styles.input}
               value={form.roleTag ?? ''}
               onChangeText={(v) => set('roleTag', v)}
@@ -227,6 +234,7 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
               {WEAR_LEVELS.map((w) => (
                 <Pressable
                   key={w.id}
+                  testID={`disc-form-wear-${w.id}`}
                   onPress={() => set('wearLevel', form.wearLevel === w.id ? '' : w.id)}
                   style={[styles.thrPill, form.wearLevel === w.id && styles.thrPillActive]}
                   accessibilityRole="button"
@@ -283,6 +291,7 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
           <View style={styles.btnRow}>
             {!isNew && onDelete && initial.id != null && (
               <Pressable
+                testID="disc-form-remove"
                 style={[styles.btnDanger, confirmingDelete && styles.btnDangerConfirm]}
                 onPress={() => (confirmingDelete ? onDelete(initial.id!) : setConfirmingDelete(true))}
               >
@@ -290,10 +299,11 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
               </Pressable>
             )}
             <View style={{ flex: 1 }} />
-            <Pressable style={styles.btnGhost} onPress={onCancel}>
+            <Pressable testID="disc-form-cancel" style={styles.btnGhost} onPress={onCancel}>
               <Text style={styles.btnGhostText}>Cancel</Text>
             </Pressable>
             <GradientButton
+              testID="disc-form-save"
               style={styles.btn}
               textStyle={styles.btnText}
               onPress={handleSave}
@@ -313,17 +323,20 @@ function Field({
   onChangeText,
   placeholder,
   error,
+  testID,
 }: {
   label: string;
   value: string;
   onChangeText: (v: string) => void;
   placeholder?: string;
   error?: string;
+  testID?: string;
 }) {
   return (
     <View style={{ marginBottom: 10 }}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
+        testID={testID}
         style={[styles.input, error ? styles.inputError : null]}
         value={value}
         onChangeText={onChangeText}
@@ -340,11 +353,21 @@ function adjLabel(v: number): string {
   return v > 0 ? 'more overstable' : 'more understable';
 }
 
-function NumField({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+function NumField({
+  label,
+  value,
+  onChange,
+  testID,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  testID?: string;
+}) {
   return (
     <View style={styles.fnField}>
       <Text style={styles.label}>{label}</Text>
-      <NumberInput style={styles.input} value={value} onChangeValue={onChange} />
+      <NumberInput testID={testID} style={styles.input} value={value} onChangeValue={onChange} />
     </View>
   );
 }

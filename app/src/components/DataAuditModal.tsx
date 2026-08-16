@@ -47,7 +47,7 @@ export default function DataAuditModal({ visible, discs, userId, onClose, onFiel
           )}
           <View style={styles.btnRow}>
             <View style={{ flex: 1 }} />
-            <Pressable style={styles.btnGhost} onPress={onClose}>
+            <Pressable testID="data-audit-done" style={styles.btnGhost} onPress={onClose}>
               <Text style={styles.btnGhostText}>Done</Text>
             </Pressable>
           </View>
@@ -94,7 +94,7 @@ function AuditRow({
   if (!disc.wearLevel) missing.push('wear level');
 
   return (
-    <View style={styles.row}>
+    <View testID={`audit-row-${disc.id}`} style={styles.row}>
       <View style={styles.rowHead}>
         <Text style={styles.rowName}>{disc.mold}</Text>
         <Text style={styles.rowMfr}>{disc.mfr || '—'}</Text>
@@ -103,6 +103,7 @@ function AuditRow({
       <View style={styles.rowFields}>
         {!disc.plastic?.trim() && (
           <TextInput
+            testID={`audit-row-${disc.id}-plastic`}
             style={styles.rowInput}
             value={plastic}
             onChangeText={setPlastic}
@@ -113,6 +114,7 @@ function AuditRow({
         )}
         {!disc.weight?.trim() && (
           <TextInput
+            testID={`audit-row-${disc.id}-weight`}
             style={styles.rowInput}
             value={weight}
             onChangeText={setWeight}
@@ -125,7 +127,7 @@ function AuditRow({
       {!disc.wearLevel && (
         <View style={styles.pillRow}>
           {WEAR_LEVELS.map((w) => (
-            <Pressable key={w.id} onPress={() => pickWearLevel(w.id)} style={styles.pill} accessibilityRole="button">
+            <Pressable key={w.id} testID={`audit-row-${disc.id}-wear-${w.id}`} onPress={() => pickWearLevel(w.id)} style={styles.pill} accessibilityRole="button">
               <Text style={styles.pillText}>{w.label}</Text>
             </Pressable>
           ))}

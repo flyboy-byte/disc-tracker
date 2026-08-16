@@ -18,11 +18,12 @@ interface Props {
   style?: StyleProp<ViewStyle>; // padding / radius / alignment for the button surface
   textStyle?: StyleProp<TextStyle>;
   accessibilityLabel?: string;
+  testID?: string;
 }
 
 const [FROM, TO] = gradients.accent;
 
-export default function GradientButton({ onPress, label, children, disabled, style, textStyle, accessibilityLabel }: Props) {
+export default function GradientButton({ onPress, label, children, disabled, style, textStyle, accessibilityLabel, testID }: Props) {
   return (
     <Pressable
       onPress={onPress}
@@ -30,6 +31,7 @@ export default function GradientButton({ onPress, label, children, disabled, sty
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: !!disabled }}
+      testID={testID}
       style={({ pressed }) => [styles.surface, style, pressed && !disabled && styles.pressed, disabled && styles.disabled]}
     >
       {/* Full-bleed gradient behind the content; overflow:hidden on the surface clips it to the

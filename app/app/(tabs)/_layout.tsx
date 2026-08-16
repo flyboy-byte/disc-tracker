@@ -16,23 +16,23 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name="index"
-        options={{ title: 'Bag', tabBarIcon: ({ color }) => <TabBarIcon name="bag" color={color} /> }}
+        options={{ title: 'Bag', tabBarButtonTestID: 'tab-bag', tabBarIcon: ({ color }) => <TabBarIcon name="bag" color={color} /> }}
       />
       <Tabs.Screen
         name="flight-shaper"
-        options={{ title: 'Flight Shaper', tabBarIcon: ({ color }) => <TabBarIcon name="flight" color={color} /> }}
+        options={{ title: 'Flight Shaper', tabBarButtonTestID: 'tab-flight-shaper', tabBarIcon: ({ color }) => <TabBarIcon name="flight" color={color} /> }}
       />
       <Tabs.Screen
         name="disc-suggest"
-        options={{ title: 'Disc Suggest', tabBarIcon: ({ color }) => <TabBarIcon name="suggest" color={color} /> }}
+        options={{ title: 'Disc Suggest', tabBarButtonTestID: 'tab-disc-suggest', tabBarIcon: ({ color }) => <TabBarIcon name="suggest" color={color} /> }}
       />
       <Tabs.Screen
         name="score"
-        options={{ title: 'Score', tabBarIcon: ({ color }) => <TabBarIcon name="score" color={color} /> }}
+        options={{ title: 'Score', tabBarButtonTestID: 'tab-score', tabBarIcon: ({ color }) => <TabBarIcon name="score" color={color} /> }}
       />
       <Tabs.Screen
         name="settings"
-        options={{ title: 'Settings', tabBarIcon: ({ color }) => <TabBarIcon name="settings" color={color} /> }}
+        options={{ title: 'Settings', tabBarButtonTestID: 'tab-settings', tabBarIcon: ({ color }) => <TabBarIcon name="settings" color={color} /> }}
       />
     </Tabs>
   );

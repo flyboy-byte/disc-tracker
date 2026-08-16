@@ -530,6 +530,7 @@ export default function BagScreen() {
         {(['today', 'collection'] as const).map((scope) => (
           <Pressable
             key={scope}
+            testID={`bag-scope-${scope}`}
             style={[styles.segmentBtn, bagScope === scope && styles.segmentBtnActive]}
             onPress={() => changeScope(scope)}
             accessibilityRole="button"
@@ -543,6 +544,7 @@ export default function BagScreen() {
       </View>
 
       <TextInput
+        testID="bag-search"
         style={styles.search}
         value={search}
         onChangeText={setSearch}
@@ -604,11 +606,11 @@ export default function BagScreen() {
       )}
 
       <View style={styles.actionsRow}>
-        <GradientButton style={styles.addBtn} textStyle={styles.addBtnText} onPress={openAdd} label="+ Add disc" accessibilityLabel="Add a disc" />
-        <Pressable style={styles.ghostBtn} onPress={() => setImportOpen(true)} accessibilityRole="button" accessibilityLabel="Import discs from CSV">
+        <GradientButton testID="bag-add-disc" style={styles.addBtn} textStyle={styles.addBtnText} onPress={openAdd} label="+ Add disc" accessibilityLabel="Add a disc" />
+        <Pressable testID="bag-import" style={styles.ghostBtn} onPress={() => setImportOpen(true)} accessibilityRole="button" accessibilityLabel="Import discs from CSV">
           <Text style={styles.ghostBtnText}>Import</Text>
         </Pressable>
-        <Pressable style={styles.ghostBtn} onPress={() => setExportOpen(true)} accessibilityRole="button" accessibilityLabel="Export discs to CSV">
+        <Pressable testID="bag-export" style={styles.ghostBtn} onPress={() => setExportOpen(true)} accessibilityRole="button" accessibilityLabel="Export discs to CSV">
           <Text style={styles.ghostBtnText}>Export</Text>
         </Pressable>
         {customDiscs.length > 0 && (

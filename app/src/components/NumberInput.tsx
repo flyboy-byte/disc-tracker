@@ -14,9 +14,10 @@ interface Props {
   value: number;
   onChangeValue: (n: number) => void;
   style?: StyleProp<TextStyle>;
+  testID?: string;
 }
 
-export default function NumberInput({ value, onChangeValue, style }: Props) {
+export default function NumberInput({ value, onChangeValue, style, testID }: Props) {
   const [text, setText] = useState(() => String(value));
   // Tracks the numeric value we last reconciled, so we can tell an external change
   // (library autofill, disc swap) apart from our own keystroke echo and only re-seed the
@@ -49,6 +50,7 @@ export default function NumberInput({ value, onChangeValue, style }: Props) {
 
   return (
     <TextInput
+      testID={testID}
       style={style}
       value={text}
       onChangeText={handle}
