@@ -78,15 +78,7 @@ mechanism Throw Style already uses. That reuses the shipped UI instead of buildi
   `data-audit-scope.md` and `suggest-engine-plan.md`.
 - **Website parity catch-up:** being scoped in detail 2026-08-15 — see
   `plan/docs/website-parity-scope.md`.
-- **Wear-level 1–5 "estimated broke-in" scale (optional).** Floated by Logan 2026-08-15 while
-  testing v0.17's data audit: the current 3-tier New/Seasoned/Beat wear level "dont hardly feel
-  enuf" for a disc he's had 3 months. **Scoped in detail 2026-08-16** — see
-  `plan/docs/wear-estimate-scope.md` for decisions, data model, and open questions. Still not
-  started; still not a rework of the shipped 3-tier field.
-- **"Suggestions for buying" mode on Disc Suggest.** Floated by Logan 2026-08-15, originally
-  **"leave it unscored intentionally."** **Scoped in detail 2026-08-16** at Logan's own request —
-  see `plan/docs/buying-mode-scope.md` for the full decision set (entry point, filters, the
-  bag-gap-summary differentiator, non-goals). Logan's own caveat carries forward as a real risk
-  in that doc, not resolved: *"if we do much more of this we really need to find a way to expand
-  our library"* — the 1,660-disc master library's coverage is this feature's quality ceiling.
-  Still not started; scoping is not a decision to build.
+- **Wear-level 1–5 "estimated broke-in" scale** and **Disc Suggest "buying mode"** — both
+  floated 2026-08-15, scoped in detail and **shipped 2026-08-16** (`019f480`). No longer graveyard
+  material; see `plan/docs/wear-estimate-scope.md` / `plan/docs/buying-mode-scope.md` for the
+  confirmed decisions and `suggest-engine-plan.md` for verification notes.

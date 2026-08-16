@@ -9,7 +9,11 @@
 > across an app restart. `tsc`/Jest green (123/123). **One real bug found and fixed this pass:**
 > bag results in Disc Suggest keyed on `name-mfr`, so two owned discs of the same mold (e.g. two
 > Leopard3s) collided under React's duplicate-key warning — fixed by keying on the owned disc's
-> `id` (`6ad0445`). Website-parity is scoped (`website-parity-scope.md`) but not started —
+> `id` (`6ad0445`). **Also DONE 2026-08-16 (`019f480`):** wear estimate (1-5, supersedes the
+> 3-tier wear level) and Disc Suggest buying mode — see `wear-estimate-scope.md` /
+> `buying-mode-scope.md`. Also `e8ef678`: adb `testID` instrumentation across the interactive
+> surfaces, so future on-device passes use `uiautomator dump | grep resource-id` instead of
+> coordinate-hunting. Website-parity is scoped (`website-parity-scope.md`) but not started —
 > that's next up.
 >
 > **Read this first, don't re-derive:** `plan/docs/direction-2026-08-08.md` Decision 1 (the

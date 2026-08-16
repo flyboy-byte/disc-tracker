@@ -1,8 +1,10 @@
 # Wear estimate (1–5 scale) — scope
 
-**Status:** SCOPING — not started. Written 2026-08-16, scoping the idea logged in
-`GRAVEYARD.md` ("Wear-level 1–5 estimated broke-in scale"). Decisions below are proposed, not
-confirmed — needs Logan's sign-off before any code.
+**Status:** DONE 2026-08-16 (`019f480`). Logan confirmed decision 1 as **supersede** (not
+coexist) — the 1-5 estimate is now the only field the UI shows; `wear_level` is derived from it
+on every save. Verified on-device: the stepper renders, clamps 1-5, and a one-time backfill
+migration seeded existing discs' estimates from their old `wear_level` so nothing regressed into
+"incomplete" in the Data Audit.
 
 ## What this is
 
@@ -62,9 +64,11 @@ estimated-wear scale as a companion to that field.
 - `DataAuditModal.tsx`: **no change** if decision 2 holds — this field never appears in the
   audit's missing-field list or row UI.
 
-## Open decisions for Logan (before build)
+## Decisions, confirmed 2026-08-16
 
-1. Coexist with the 3-tier field (1a) or have 1–5 supersede it for display (1b)?
-2. Confirm: should stay out of the Data Audit's missing-count, or should it be included?
-3. Endpoint-only labels ("1 · fresh" / "5 · trashed") or 5 distinct labels — and what should
-   they say?
+1. **Supersede (1b)** — the 3-tier field is derived, not shown/set directly.
+2. **Stays out of the Data Audit's missing-count** as proposed — the audit now checks
+   `wearEstimate`, not `wearLevel`.
+3. Implemented as a bare 1-5 number row with a derived label underneath ("3 · Seasoned") rather
+   than either originally-proposed option — simpler than either, and matches the number pattern
+   already used for the audit's own inline pills.

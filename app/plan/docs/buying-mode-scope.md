@@ -1,10 +1,20 @@
 # Disc Suggest "buying mode" — scope
 
-**Status:** SCOPING — not started. Written 2026-08-16, scoping the idea logged in
-`GRAVEYARD.md` ("Suggestions for buying" mode), which Logan explicitly floated **"leave it
-unscored intentionally"** on 2026-08-15. This doc exists because he asked to scope it further
-2026-08-16 — that supersedes the earlier "leave unscored" note for the purpose of *scoping*, not
-a decision to build it now. Still needs Logan's sign-off on every decision below before any code.
+**Status:** DONE 2026-08-16 (`019f480`). Logan confirmed all three open decisions: build now
+despite the library-coverage risk (not resolved, still worth watching), and the mode toggle is a
+big 50/50 header split (not a small inline pill) — "click buy and it basically loads the screen
+for buy... will use the same engine." Verified on-device: Throw/Buy persists across restart,
+results scale correctly (288-708 discs depending on scenario), category+stability+brand filters
+combine as AND, and the bag-gap summary. **One real wording bug caught live testing:** the gap
+summary's stability label came from net turn+fade, which can mask a real cancellation (Flex
+Shot's turn -2/fade 2 nets to "stable" but doesn't fly like a normal -1/+1 stable disc) — exactly
+the kind of net-derived characterization `direction-2026-08-08.md` Decision 1 warns against.
+Fixed by omitting the stability word when both components are individually large (≥1.5) even
+though they cancel.
+
+This doc exists because Logan asked to scope this idea further 2026-08-16, which superseded his
+earlier "leave it unscored intentionally" note (2026-08-15) for the purpose of *scoping* — and,
+once the open decisions below were confirmed, building it the same session.
 
 ## What this is
 
@@ -89,12 +99,12 @@ here as a risk to weigh, not resolved.
 4. Bag-gap summary strip — verify the gap statement is accurate against a bag with a known,
    deliberate hole (e.g. a bag with no putters should say so for an Approach scenario).
 
-## Open decisions for Logan (before build)
+## Decisions, confirmed 2026-08-16
 
-1. Confirm this is worth building now, given the library-coverage caveat above — or should a
-   library-expansion look happen first?
-2. Confirm the v1 filter set (category, stability, brand) and the explicit exclusions (no
-   weight filter, no swipe gesture, no purchase links).
-3. Bag-gap summary wording/tone — one line above the results, or does it deserve more space?
-4. Toggle placement — inline on Disc Suggest (proposed) vs. a Settings-level default like Skill
-   Level/Throw Style?
+1. **Build now**, despite the library-coverage caveat — not a blocker, a risk to keep watching.
+2. **v1 filter set confirmed as scoped**: category, stability, brand. Exclusions held: no weight
+   filter, no swipe gesture, no purchase links.
+3. **Bag-gap summary**: one line above the results, as scoped.
+4. **Toggle placement: a big 50/50 header split** (not the originally-proposed small inline
+   pill, not a Settings default) — "click buy and it basically loads the screen for buy... will
+   use the same engine." Implemented as `modeBar`/`modeHalf` in `disc-suggest.tsx`.
