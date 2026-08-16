@@ -59,3 +59,27 @@ need to re-derive.
   `data-audit-scope.md` and `suggest-engine-plan.md`.
 - **Website parity catch-up:** being scoped in detail 2026-08-15 — see
   `plan/docs/website-parity-scope.md`.
+- **Wear-level 1–5 "estimated broke-in" scale (optional).** Floated by Logan 2026-08-15 while
+  testing v0.17's data audit: the current 3-tier New/Seasoned/Beat wear level (`WEAR_LEVELS` in
+  `src/utils/disc.ts`) "dont hardly feel enuf" for a disc he's had 3 months and isn't sure how to
+  bucket. Idea: an *optional* 1-5 numeric scale for estimated wear/break-in, living in the same
+  UI slot as the current wear-level pills (Data audit row + presumably disc detail/edit). Explicit
+  instruction: **do not rework the existing 3-tier field to build this** — this is a separate,
+  additive idea, not yet scoped, not requested to build now.
+- **"Suggestions for buying" mode on Disc Suggest (unscored idea, not yet a feature request).**
+  Floated by Logan 2026-08-15, explicitly **"leave it unscored intentionally"** — not ready to
+  scope as a real feature, just a thought to not lose. Sketch: a toggle on the Disc Suggest screen
+  between "suggestions for throwing" (today's behavior) and "suggestions for buying" — reusing the
+  same scoring framework, but instead of ranking discs you own for a scenario, it'd help pick what
+  to *add* to the bag. Rough shape as described:
+  - Filter by category (driver/fairway/mid/putter) and stability (understable/overstable/either).
+  - Basic bag-gap scripting — surface what's missing from the current bag's speed/stability
+    coverage rather than just re-ranking owned discs.
+  - Filter by brand; weight filtering flagged by Logan himself as probably not workable given the
+    library's data (not every disc has reliable per-weight data).
+  - A swipe-away-to-refine interaction (dismiss a suggested disc → engine adjusts).
+  **Logan's own caveat, worth keeping attached to this idea:** "if we do much more of this we
+  really need to find a way to expand our library" — i.e. this mode (and honestly the existing
+  suggest engine generally) is increasingly gated on the 1,660-disc master library's coverage/
+  accuracy, not just on scoring logic. Any real push on a buying-mode feature should probably pair
+  with a library-expansion pass, not precede it blind.

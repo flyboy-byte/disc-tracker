@@ -5,7 +5,7 @@
 // this pass (color, notes, throw style). See the scope doc for why this landed here instead of
 // reusing the full edit form.
 import { useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors } from '../theme';
 import { WEAR_LEVELS, type Disc } from '../utils/disc';
 import { updateDiscAuditFields } from '../db/db';
@@ -39,11 +39,11 @@ export default function DataAuditModal({ visible, discs, userId, onClose, onFiel
               <Text style={styles.emptyText}>All discs are complete.</Text>
             </View>
           ) : (
-            <View style={styles.list}>
+            <ScrollView style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
               {incomplete.map((d) => (
                 <AuditRow key={d.id} disc={d} userId={userId} onFieldSaved={onFieldSaved} />
               ))}
-            </View>
+            </ScrollView>
           )}
           <View style={styles.btnRow}>
             <View style={{ flex: 1 }} />
@@ -142,7 +142,8 @@ const styles = StyleSheet.create({
   hint: { color: colors.muted, fontSize: 12, marginBottom: 12 },
   emptyState: { paddingVertical: 24, alignItems: 'center' },
   emptyText: { color: colors.muted, fontSize: 13 },
-  list: { gap: 10 },
+  list: { flexShrink: 1 },
+  listContent: { gap: 10, paddingBottom: 4 },
   row: {
     backgroundColor: colors.bg,
     borderWidth: 1,
