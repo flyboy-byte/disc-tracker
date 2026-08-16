@@ -1,14 +1,16 @@
 # Disc-suggestion engine — iterative plan
 
-> **Status: Phase 1 DONE 2026-08-15 (`f9925fb`); Phase 3 code-complete, UNTESTED on-device;
-> Phase 2 code-complete, UNTESTED on-device.** Phase 1 verified on-device on Logan's real phone
-> (Throw Style persistence, 13-card grid, stability-adjustment → ranking), `tsc`/Jest green
-> (121/121). One real bug found + fixed along the way (inline-autofill search ranking). Phase 3
-> (personal role tags — `discs.role_tag`) and Phase 2 (data audit — `discs.wear_level`, inline-
-> editable audit list in Settings) both landed code-complete, `tsc`/Jest green (121/121), but
-> neither has had the on-device round-trip pass Phase 1 got — phone/emulator both unavailable
-> this session, logged not skipped-silently. Do that before treating either as fully closed.
-> Website-parity is scoped (`website-parity-scope.md`) but not started — that's next up.
+> **Status: Phase 1, 2, and 3 all DONE and verified on-device (2026-08-16, `6ad0445` +
+> earlier).** Phase 1 (Throw Style, stability adjustment, Flex Shot/13-card grid), Phase 2
+> (Data Audit inline-editable list), and Phase 3 (role tags) were all walked through live on
+> Logan's Pixel 7: Throw Style persists across restart, the stability stepper clamps at ±2 and
+> changes rankings, the 13-card grid renders Flex Shot cleanly, the Data Audit list saves fields
+> inline with no modal and drops a row once complete, and role tag + wear level both persist
+> across an app restart. `tsc`/Jest green (123/123). **One real bug found and fixed this pass:**
+> bag results in Disc Suggest keyed on `name-mfr`, so two owned discs of the same mold (e.g. two
+> Leopard3s) collided under React's duplicate-key warning — fixed by keying on the owned disc's
+> `id` (`6ad0445`). Website-parity is scoped (`website-parity-scope.md`) but not started —
+> that's next up.
 >
 > **Read this first, don't re-derive:** `plan/docs/direction-2026-08-08.md` Decision 1 (the
 > three-layer flight-data rule — factory / user-declared / observed) is the one architectural
@@ -111,7 +113,7 @@ Phase 1 is verified. Remaining: `git add`/commit as one coherent commit (or a sm
 schema+scorer, then UI, per this repo's usual "one commit per feature/step" convention), then mark
 this phase's status line DONE with the commit hash, same convention as PORT_PLAN.md rows.
 
-## Phase 2 — Data Audit — CODE-COMPLETE 2026-08-15, UNTESTED on-device
+## Phase 2 — Data Audit — DONE, verified on-device 2026-08-16
 
 Full scope doc: [`data-audit-scope.md`](./data-audit-scope.md). All three decisions confirmed
 by Logan and built: wear-level scale (New/Seasoned/Beat), Settings-tab entry point, and —
@@ -122,11 +124,9 @@ revised from the original "reuse `DiscFormModal`" proposal — **inline-editable
 `DiscFormModal` (always-visible, independent of the audit list), and `DataAuditModal` wired into
 Settings' DATA section with a live incomplete-count row. `tsc`/Jest green (121/121).
 
-**Verification gap, honestly noted — UNTESTED on-device (2026-08-15):** same as Phase 3 this
-session — phone/emulator both unavailable. Do the round-trip pass (open the audit list, fill a
-field inline, confirm it commits without a modal, confirm a completed row updates/disappears,
-restart the app, confirm wear-level and the filled weight/plastic persisted) before calling this
-fully done.
+**Verified on-device 2026-08-16** on Logan's Pixel 7: opened the audit list, tapped a wear-level
+pill inline (no modal), and the row dropped out of the list immediately once complete — confirms
+the write round-trips through the live DB, not just local UI state.
 
 **Scope, as corrected mid-session** (this is *not* the fuzzy confidence-matching engine the
 original ChatGPT handoff described — that idea is explicitly rejected as over-engineered for this
@@ -151,7 +151,7 @@ screen reachable from Settings or the Bag tab; exact wear-level scale/labels; wh
 is its own DB column (`discs.wear_level`) or folds into the existing free-text `notes` convention
 some other way.
 
-## Phase 3 — Personal role tags — CODE-COMPLETE 2026-08-15, UNTESTED on-device
+## Phase 3 — Personal role tags — DONE, verified on-device 2026-08-16
 
 "Flare → hyzer bomb," "D3 AIR → flex," "Beast → water disc" — an optional free-text tag per owned
 disc, so a future Bag Analysis pass (Phase 4) can say "these look numerically redundant, but
@@ -164,12 +164,9 @@ free since that path serializes the whole `Disc` object. Not surfaced anywhere e
 (no bag-card badge) — deliberately deferred until Phase 4 actually reads it, matching how
 `stabilityAdj` itself has no dedicated display outside the form.
 
-**Verification gap, honestly noted — UNTESTED on-device (2026-08-15):** `tsc --noEmit` and the
-full Jest suite (121/121) are clean, but this hasn't been round-tripped on a real device/emulator
-(add → save → reopen → edit → confirm it persists across an app restart). Skipped this session —
-phone was in use for other things, emulator was unreliable (see prior session's diagnosis: host
-resource contention, not a real tooling bug). Do the on-device pass before calling this fully
-done, same bar Phase 1 was held to.
+**Verified on-device 2026-08-16** on Logan's Pixel 7: entered a role tag on the D3 AIR
+(`flex/utility`, the handoff's own headline example), force-restarted the app, and confirmed the
+tag survived the restart.
 
 ## Phase 4 — Bag Analysis / overlap (C6) — NOT STARTED, intentionally parked
 
