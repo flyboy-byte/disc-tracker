@@ -1,14 +1,14 @@
 # Disc-suggestion engine — iterative plan
 
-> **Status: Phase 1 DONE 2026-08-15 (`f9925fb`); Phase 3 code-complete 2026-08-15, UNTESTED
-> on-device.** Phase 1 verified on-device on Logan's real phone (Throw Style persistence,
-> 13-card grid, stability-adjustment → ranking), `tsc`/Jest green (121/121). One real bug found
-> + fixed along the way (inline-autofill search ranking). Phase 3 (personal role tags —
-> `discs.role_tag`, free-text field on the disc form) landed code-complete, `tsc`/Jest green
-> (121/121), but has **not** had the on-device round-trip pass Phase 1 got — phone/emulator
-> both unavailable this session, logged not skipped-silently. Do that before treating Phase 3
-> as fully closed. Next up is Phase 2 (needs its own scope pass first) or the website-parity
-> track — see the sections below.
+> **Status: Phase 1 DONE 2026-08-15 (`f9925fb`); Phase 3 code-complete, UNTESTED on-device;
+> Phase 2 code-complete, UNTESTED on-device.** Phase 1 verified on-device on Logan's real phone
+> (Throw Style persistence, 13-card grid, stability-adjustment → ranking), `tsc`/Jest green
+> (121/121). One real bug found + fixed along the way (inline-autofill search ranking). Phase 3
+> (personal role tags — `discs.role_tag`) and Phase 2 (data audit — `discs.wear_level`, inline-
+> editable audit list in Settings) both landed code-complete, `tsc`/Jest green (121/121), but
+> neither has had the on-device round-trip pass Phase 1 got — phone/emulator both unavailable
+> this session, logged not skipped-silently. Do that before treating either as fully closed.
+> Website-parity is scoped (`website-parity-scope.md`) but not started — that's next up.
 >
 > **Read this first, don't re-derive:** `plan/docs/direction-2026-08-08.md` Decision 1 (the
 > three-layer flight-data rule — factory / user-declared / observed) is the one architectural
@@ -111,13 +111,22 @@ Phase 1 is verified. Remaining: `git add`/commit as one coherent commit (or a sm
 schema+scorer, then UI, per this repo's usual "one commit per feature/step" convention), then mark
 this phase's status line DONE with the commit hash, same convention as PORT_PLAN.md rows.
 
-## Phase 2 — Data Audit (scoped small, per Logan's 2026-08-15 correction) — SCOPED 2026-08-15, NOT STARTED
+## Phase 2 — Data Audit — CODE-COMPLETE 2026-08-15, UNTESTED on-device
 
-Full scope doc: [`data-audit-scope.md`](./data-audit-scope.md) (Decisions/Non-goals/Data
-model/Screens, mirrors `scorekeeper-scope.md`). Three decisions proposed there need Logan's
-confirmation before Step 1 starts: wear-level scale (New/Seasoned/Beat), entry point (Settings
-DATA section, not a new tab, not folded into CSV import), and mechanics (reuse `DiscFormModal`
-for editing rather than new inline-edit UI).
+Full scope doc: [`data-audit-scope.md`](./data-audit-scope.md). All three decisions confirmed
+by Logan and built: wear-level scale (New/Seasoned/Beat), Settings-tab entry point, and —
+revised from the original "reuse `DiscFormModal`" proposal — **inline-editable audit rows**
+(weight/plastic text fields + wear-level pills, committing per-field via the new
+`updateDiscAuditFields()` single-row write) instead of a tap-through to the full form. Shipped:
+`discs.wear_level` column, `Disc.wearLevel`/`WEAR_LEVELS`, a wear-level pill selector on
+`DiscFormModal` (always-visible, independent of the audit list), and `DataAuditModal` wired into
+Settings' DATA section with a live incomplete-count row. `tsc`/Jest green (121/121).
+
+**Verification gap, honestly noted — UNTESTED on-device (2026-08-15):** same as Phase 3 this
+session — phone/emulator both unavailable. Do the round-trip pass (open the audit list, fill a
+field inline, confirm it commits without a modal, confirm a completed row updates/disappears,
+restart the app, confirm wear-level and the filled weight/plastic persisted) before calling this
+fully done.
 
 **Scope, as corrected mid-session** (this is *not* the fuzzy confidence-matching engine the
 original ChatGPT handoff described — that idea is explicitly rejected as over-engineered for this

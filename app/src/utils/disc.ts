@@ -28,7 +28,16 @@ export interface Disc {
   // scoring, just carried along for a future Bag Analysis pass (Phase 4) to distinguish
   // numerically-redundant discs from ones tagged for genuinely different roles.
   roleTag?: string;
+  // Phase 2 (data-audit-scope.md) — optional personal wear-level snapshot. Plain/inert: doesn't
+  // feed suggestScore.ts. Update it yourself when it's stale; the app doesn't age it automatically.
+  wearLevel?: 'new' | 'seasoned' | 'beat' | '';
 }
+
+export const WEAR_LEVELS: { id: 'new' | 'seasoned' | 'beat'; label: string }[] = [
+  { id: 'new', label: 'New' },
+  { id: 'seasoned', label: 'Seasoned' },
+  { id: 'beat', label: 'Beat' },
+];
 
 export type Stability = 'overstable' | 'stable' | 'understable';
 export type DiscType = 'putter' | 'mid' | 'fairway' | 'driver';

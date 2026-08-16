@@ -109,6 +109,7 @@ interface DiscRow {
   in_bag: number;
   stability_adj: number;
   role_tag: string;
+  wear_level: string;
 }
 
 export function getDiscs(userId: number): Promise<Disc[]> {
@@ -116,7 +117,7 @@ export function getDiscs(userId: number): Promise<Disc[]> {
     const db = await openDatabase();
     const rows = await db.getAllAsync<DiscRow>(
       `SELECT disc_id, mfr, mold, plastic, weight, speed, glide, turn, fade,
-              use_desc, thr, notes, color, in_bag, stability_adj, role_tag
+              use_desc, thr, notes, color, in_bag, stability_adj, role_tag, wear_level
        FROM discs WHERE user_id = ? ORDER BY sort_order`,
       [userId]
     );
@@ -137,6 +138,7 @@ export function getDiscs(userId: number): Promise<Disc[]> {
       inBag: !!r.in_bag,
       stabilityAdj: r.stability_adj ?? 0,
       roleTag: r.role_tag ?? '',
+      wearLevel: (r.wear_level ?? '') as Disc['wearLevel'],
     }));
   });
 }
@@ -157,8 +159,8 @@ export function saveDiscs(userId: number, discs: Disc[]): Promise<void> {
         if (!d.mold?.trim()) continue; // skip discs with no mold name, matches app.py
         await txn.runAsync(
           `INSERT INTO discs (user_id, disc_id, mfr, mold, plastic, weight,
-             speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag, stability_adj, role_tag)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag, stability_adj, role_tag, wear_level)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             userId,
             d.id ?? 0,
@@ -178,6 +180,7 @@ export function saveDiscs(userId: number, discs: Disc[]): Promise<void> {
             d.inBag ? 1 : 0,
             d.stabilityAdj ?? 0,
             d.roleTag ?? '',
+            d.wearLevel ?? '',
           ]
         );
         sortOrder++;
@@ -199,6 +202,27 @@ export function setDiscInBag(userId: number, discId: number, inBag: boolean): Pr
   return serialize(async () => {
     const db = await openDatabase();
     await db.runAsync('UPDATE discs SET in_bag = ? WHERE user_id = ? AND disc_id = ?', [inBag ? 1 : 0, userId, discId]);
+  });
+}
+
+// Phase 2 (data-audit-scope.md) — targeted per-field write for the audit list's inline edits.
+// Only the fields actually passed get updated (COALESCE against the existing value), same B2
+// lesson as setDiscInBag/clearTodaysBag above: never rewrite the whole table for one field.
+export function updateDiscAuditFields(
+  userId: number,
+  discId: number,
+  patch: { weight?: string; plastic?: string; wearLevel?: string }
+): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.runAsync(
+      `UPDATE discs SET
+         weight = COALESCE(?, weight),
+         plastic = COALESCE(?, plastic),
+         wear_level = COALESCE(?, wear_level)
+       WHERE user_id = ? AND disc_id = ?`,
+      [patch.weight ?? null, patch.plastic ?? null, patch.wearLevel ?? null, userId, discId]
+    );
   });
 }
 
@@ -303,9 +327,9 @@ export function insertDisc(userId: number, d: Disc): Promise<void> {
     const sortOrder = (row?.maxSort ?? -1) + 1;
     await db.runAsync(
       `INSERT INTO discs (user_id, disc_id, mfr, mold, plastic, weight,
-         speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag, stability_adj, role_tag)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, d.id ?? 0, d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', sortOrder, d.inBag ? 1 : 0, d.stabilityAdj ?? 0, d.roleTag ?? '']
+         speed, glide, turn, fade, use_desc, thr, notes, color, sort_order, in_bag, stability_adj, role_tag, wear_level)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, d.id ?? 0, d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', sortOrder, d.inBag ? 1 : 0, d.stabilityAdj ?? 0, d.roleTag ?? '', d.wearLevel ?? '']
     );
   });
 }
@@ -317,9 +341,9 @@ export function updateDisc(userId: number, d: Disc): Promise<void> {
     const db = await openDatabase();
     await db.runAsync(
       `UPDATE discs SET mfr = ?, mold = ?, plastic = ?, weight = ?, speed = ?, glide = ?,
-         turn = ?, fade = ?, use_desc = ?, thr = ?, notes = ?, color = ?, stability_adj = ?, role_tag = ?
+         turn = ?, fade = ?, use_desc = ?, thr = ?, notes = ?, color = ?, stability_adj = ?, role_tag = ?, wear_level = ?
        WHERE user_id = ? AND disc_id = ?`,
-      [d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', d.stabilityAdj ?? 0, d.roleTag ?? '', userId, d.id ?? 0]
+      [d.mfr ?? '', d.mold, d.plastic ?? '', d.weight ?? '', d.speed ?? 0, d.glide ?? 0, d.turn ?? 0, d.fade ?? 0, d.use ?? '', d.thr ?? '', d.notes ?? '', d.color ?? '', d.stabilityAdj ?? 0, d.roleTag ?? '', d.wearLevel ?? '', userId, d.id ?? 0]
     );
   });
 }

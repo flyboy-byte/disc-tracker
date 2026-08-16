@@ -5,7 +5,7 @@
 import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors } from '../theme';
-import type { Disc } from '../utils/disc';
+import { WEAR_LEVELS, type Disc } from '../utils/disc';
 import { DISC_COLORS } from '../utils/discColors';
 import { isCustom, searchLibrary, type CustomMasterDisc, type LibraryDisc } from '../utils/masterLibrary';
 import ColorPicker from './ColorPicker';
@@ -218,6 +218,24 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
               placeholder="e.g. hyzer bomb, flex/utility, water disc"
               placeholderTextColor={colors.muted}
             />
+
+            {/* Wear level — a snapshot you update yourself, not something the app ages
+                automatically. Plain/inert this phase: doesn't feed suggestScore.ts yet (see
+                data-audit-scope.md's non-goals). */}
+            <Text style={styles.label}>Wear level (optional)</Text>
+            <View style={styles.thrRow}>
+              {WEAR_LEVELS.map((w) => (
+                <Pressable
+                  key={w.id}
+                  onPress={() => set('wearLevel', form.wearLevel === w.id ? '' : w.id)}
+                  style={[styles.thrPill, form.wearLevel === w.id && styles.thrPillActive]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: form.wearLevel === w.id }}
+                >
+                  <Text style={[styles.thrPillText, form.wearLevel === w.id && styles.thrPillTextActive]}>{w.label}</Text>
+                </Pressable>
+              ))}
+            </View>
 
             {/* Notes */}
             <Text style={styles.sectionLabel}>NOTES</Text>

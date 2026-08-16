@@ -55,7 +55,7 @@ need to re-derive.
   `suggest-engine-plan.md`'s Phase-2/Phase-4 notes for the adjacent Phase 3 role-tag work this
   would eventually build on.
 - **C4/C5/C6:** downstream of C3, so effectively paused with it, not separately parked.
-- **Suggest-engine Phase 2 (data audit):** scoped, not started — see `data-audit-scope.md`. The
-  next thing to actually build.
+- **Suggest-engine Phase 2 (data audit):** code-complete 2026-08-15, untested on-device — see
+  `data-audit-scope.md` and `suggest-engine-plan.md`.
 - **Website parity catch-up:** being scoped in detail 2026-08-15 — see
   `plan/docs/website-parity-scope.md`.

@@ -1,7 +1,7 @@
 // Settings screen — PORT_PLAN.md Phase 9 addition. Home for app-wide preferences, data
 // backup/restore, the Marshall Street reference-image opt-in (R4), and (later) the VPS sync UI —
 // hence the disabled placeholder below.
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
@@ -10,6 +10,7 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import CsvExportModal from '../../src/components/CsvExportModal';
 import CsvImportModal from '../../src/components/CsvImportModal';
+import DataAuditModal from '../../src/components/DataAuditModal';
 import GradientButton from '../../src/components/GradientButton';
 import { useToast } from '../../src/components/Toast';
 import { getDiscs, getMeta, getOrCreateDefaultUser, listRounds, replaceRounds, saveDiscs, setMeta, getCustomDiscs, replaceCustomDiscs } from '../../src/db/db';
@@ -43,7 +44,18 @@ export default function SettingsScreen() {
   const [fieldShowAll, setFieldShowAll] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [auditOpen, setAuditOpen] = useState(false);
   const userIdRef = useRef<number | null>(null);
+
+  // Phase 2 (data-audit-scope.md): live count of discs missing weight, plastic, or wear-level.
+  const incompleteCount = useMemo(
+    () => discs.filter((d) => !d.weight?.trim() || !d.plastic?.trim() || !d.wearLevel).length,
+    [discs]
+  );
+
+  const handleAuditFieldSaved = (discId: number, patch: Partial<Disc>) => {
+    setDiscs((prev) => prev.map((d) => (d.id === discId ? { ...d, ...patch } : d)));
+  };
 
   // Refetch on every focus — the bag/meta can change on other tabs, and this screen both
   // reads them (export/reset counts, default arc view) and writes them.
@@ -374,6 +386,13 @@ export default function SettingsScreen() {
       <View style={styles.card}>
         <Text style={styles.sectionLabel}>DATA</Text>
         <Text style={styles.sectionHint}>{discs.length} disc{discs.length === 1 ? '' : 's'} stored on this device.</Text>
+        <Pressable style={styles.row} onPress={() => setAuditOpen(true)} accessibilityRole="button" accessibilityLabel="Data audit">
+          <Text style={styles.rowText}>Data audit</Text>
+          <Text style={styles.rowValue}>
+            {incompleteCount === 0 ? 'All complete' : `${incompleteCount} disc${incompleteCount === 1 ? '' : 's'}`}
+          </Text>
+        </Pressable>
+        <View style={styles.divider} />
         <Pressable style={styles.row} onPress={() => setExportOpen(true)} accessibilityRole="button" accessibilityLabel="Export discs to CSV">
           <Text style={styles.rowText}>Export discs (CSV)</Text>
           <Text style={styles.rowChevron}>›</Text>
@@ -434,6 +453,15 @@ export default function SettingsScreen() {
 
       <CsvExportModal visible={exportOpen} discs={discs} onCancel={() => setExportOpen(false)} />
       <CsvImportModal visible={importOpen} existingDiscs={discs} onCancel={() => setImportOpen(false)} onImport={handleImport} />
+      {userIdRef.current != null && (
+        <DataAuditModal
+          visible={auditOpen}
+          discs={discs}
+          userId={userIdRef.current}
+          onClose={() => setAuditOpen(false)}
+          onFieldSaved={handleAuditFieldSaved}
+        />
+      )}
     </ScrollView>
   );
 }

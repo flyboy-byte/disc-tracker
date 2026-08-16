@@ -126,6 +126,10 @@ const COLUMN_MIGRATIONS: { ddl: string }[] = [
   // future use is Phase 4 Bag Analysis reading this to distinguish "numerically redundant" from
   // "tagged for different roles" — not built yet, this column just captures the data going forward.
   { ddl: "ALTER TABLE discs ADD COLUMN role_tag TEXT DEFAULT ''" },
+  // Phase 2 (data-audit-scope.md) — optional wear-level snapshot per owned disc:
+  // '' (unset) | 'new' | 'seasoned' | 'beat'. Plain inert field this phase — no coupling to
+  // stability_adj yet (flagged for a future refinement, not built).
+  { ddl: "ALTER TABLE discs ADD COLUMN wear_level TEXT DEFAULT ''" },
 ];
 
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {
