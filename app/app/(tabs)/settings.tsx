@@ -31,6 +31,7 @@ const THROW_STYLES: { id: ThrowStyle; label: string }[] = [
   { id: 'forehand', label: 'Forehand' },
 ];
 const SOURCE_URL = 'https://github.com/flyboy-byte/disc-tracker';
+const PRIVACY_URL = 'https://flyboy-byte.github.io/disc-tracker/privacy.html';
 const SHOTSHAPER_URL = 'https://github.com/kegiljarhus/shotshaper';
 
 export default function SettingsScreen() {
@@ -436,6 +437,11 @@ export default function SettingsScreen() {
         <View style={styles.divider} />
         <Pressable style={styles.row} onPress={() => Linking.openURL(SOURCE_URL)} accessibilityRole="link" accessibilityLabel="Open source code on GitHub">
           <Text style={[styles.rowText, styles.link]}>Source code</Text>
+          <Text style={[styles.rowChevron, styles.link]}>↗</Text>
+        </Pressable>
+        <View style={styles.divider} />
+        <Pressable style={styles.row} onPress={() => Linking.openURL(PRIVACY_URL)} accessibilityRole="link" accessibilityLabel="Open privacy policy">
+          <Text style={[styles.rowText, styles.link]}>Privacy policy</Text>
           <Text style={[styles.rowChevron, styles.link]}>↗</Text>
         </Pressable>
       </View>

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Disc Tracker — Privacy Policy</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      padding: 2rem 1.25rem 4rem;
+      font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #e7e7e7;
+      max-width: 720px;
+      margin-inline: auto;
+    }
+    h1 { font-size: 1.6rem; margin: 0 0 .25rem; letter-spacing: .02em; }
+    h2 { font-size: 1.05rem; margin: 2rem 0 .5rem; color: #fff; letter-spacing: .04em; text-transform: uppercase; }
+    p, li { color: #cfcfcf; }
+    a { color: #7fd1ae; }
+    .meta { color: #888; font-size: .85rem; margin-bottom: 2rem; }
+    code { background: #1a1a1a; padding: .1rem .35rem; border-radius: 3px; font-size: .9em; }
+    hr { border: 0; border-top: 1px solid #222; margin: 2.5rem 0; }
+    .footer { color: #666; font-size: .8rem; }
+  </style>
+</head>
+<body>
+  <h1>Disc Tracker — Privacy Policy</h1>
+  <p class="meta">Effective date: August 17, 2026 &middot; Last updated: August 17, 2026</p>
+
+  <p>
+    Disc Tracker (the &ldquo;app&rdquo;) is a local-first disc golf bag tracker for Android.
+    This policy explains what data the app handles. The short version:
+    <strong>everything stays on your device, and the one optional network feature is off
+    unless you turn it on.</strong>
+  </p>
+
+  <h2>Open source</h2>
+  <p>
+    Disc Tracker is free and open source software, released under the
+    <a href="https://github.com/flyboy-byte/disc-tracker/blob/main/LICENSE">GPLv3 license</a>.
+    The complete source code is published at
+    <a href="https://github.com/flyboy-byte/disc-tracker">github.com/flyboy-byte/disc-tracker</a>.
+    You can audit every line yourself to verify the claims in this policy. Issues and
+    contributions are welcome via the repository.
+  </p>
+
+  <h2>Data we collect</h2>
+  <p>
+    <strong>None.</strong> Disc Tracker does not collect, transmit, sell, share, or otherwise
+    send any personal information, usage data, device identifiers, advertising identifiers,
+    or analytics anywhere. The app has no user accounts and no servers of its own it talks to.
+  </p>
+
+  <h2>Data stored on your device</h2>
+  <ul>
+    <li>
+      <strong>Your bag.</strong> Discs, flight numbers, plastic/weight/color/wear notes,
+      today&rsquo;s-bag selections, custom scorecards, and app preferences are saved locally
+      on your device in a SQLite database. This data never leaves your phone unless you
+      explicitly export or back it up yourself (see below).
+    </li>
+    <li>
+      <strong>Backups &amp; CSV export.</strong> The Backup &amp; Restore and CSV export
+      features write a file and hand it to Android&rsquo;s share sheet &mdash; where that
+      file goes from there (email, cloud drive, local save) is entirely your choice. The app
+      itself never uploads it anywhere.
+    </li>
+  </ul>
+  <p>
+    Uninstalling the app deletes all locally stored data. You can also clear it manually in
+    Android Settings &rarr; Apps &rarr; Disc Tracker &rarr; Storage &rarr; Clear Data, or use
+    the in-app &ldquo;Delete all discs&rdquo; option in Settings.
+  </p>
+
+  <h2>The one optional network feature</h2>
+  <p>
+    Disc Suggest and the Bag view can show a real measured flight-path reference image for a
+    disc, sourced from the third-party
+    <a href="https://github.com/kegiljarhus">Marshall Street</a> database via
+    <code>discit-api.fly.dev</code>. This is <strong>off by default</strong> &mdash; it only
+    runs if you enable &ldquo;Marshall Street reference images&rdquo; in Settings. When
+    enabled, the app sends the manufacturer and mold name of a disc you&rsquo;re viewing to
+    that API to fetch its image; no other personal or bag data is included in that request,
+    and it only happens for a disc you&rsquo;re actively looking at. Turning the setting off
+    stops all requests to this API immediately.
+  </p>
+
+  <h2>Permissions</h2>
+  <ul>
+    <li><code>android.permission.INTERNET</code> &mdash; required only for the optional
+      Marshall Street reference-image lookup above.</li>
+    <li><code>android.permission.READ_EXTERNAL_STORAGE</code> /
+      <code>WRITE_EXTERNAL_STORAGE</code> (Android 12 and below only) &mdash; used for CSV and
+      backup file export/import through the share sheet and document picker.</li>
+    <li><code>android.permission.VIBRATE</code> &mdash; used for tap/haptic feedback on
+      interactive controls.</li>
+  </ul>
+
+  <h2>Third parties</h2>
+  <p>
+    Disc Tracker does not include analytics, advertising, crash reporting, or tracking SDKs
+    of any kind. The only third-party service the app ever talks to is the opt-in Marshall
+    Street image lookup described above.
+  </p>
+
+  <h2>Children&rsquo;s privacy</h2>
+  <p>
+    The app does not knowingly collect any data from anyone, including children under 13.
+  </p>
+
+  <h2>Changes to this policy</h2>
+  <p>
+    If this policy changes in any meaningful way, the &ldquo;Last updated&rdquo; date above
+    will change and the new version will be published at this same URL.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    Questions about this policy? Email
+    <a href="mailto:logan07night@gmail.com">logan07night@gmail.com</a>.
+  </p>
+
+  <hr />
+  <p class="footer">
+    &copy; 2026 Disc Tracker. Released under the
+    <a href="https://github.com/flyboy-byte/disc-tracker/blob/main/LICENSE">GPLv3 license</a>.
+    Source: <a href="https://github.com/flyboy-byte/disc-tracker">github.com/flyboy-byte/disc-tracker</a>.
+  </p>
+</body>
+</html>
