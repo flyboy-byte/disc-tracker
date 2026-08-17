@@ -7,7 +7,8 @@
 > behavior (UDisc, DiscMate, TryDiscs, fieldwork apps) and from what a *real* app needs to earn
 > recurring use — not just another feature list. It opens a new **C-series** of roadmap items.
 > The Post-v1 Roadmap table in `../../PORT_PLAN.md` is updated to match. R1–R4.5 + B1–B4 are done
-> and shipped (latest `mobile-preview-0.15`).
+> and shipped (latest at time of writing: `mobile-preview-0.15`; current latest is `v0.19` —
+> see `../../PORT_PLAN.md` CURRENT STATUS for what's shipped since).
 
 ## The thesis in one line
 

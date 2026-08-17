@@ -17,21 +17,29 @@
 
 ---
 
-## ⚡ CURRENT STATUS (2026-08-08) — read this first
+## ⚡ CURRENT STATUS (2026-08-16) — read this first
 
-**Latest release: `mobile-preview-0.15`** (2026-08-01) — first **production-signed** preview
-(same UI as `0.14`, signed with the real upload keystore aligned to Play App Signing; see the
-signing-key note under R6). The app is well past v1 — **five tabs** (Bag / Flight
-Shaper / Disc Suggest / **Score** / Settings). Post-v1 work all DONE and shipped: R1–R4.5, **B1**
-disc-suggest rewrite (`0.10`), **B2** big-collection support (`0.11`), **B3** offline scorekeeper +
-**B4** full backup/restore (`0.12`), mobile-UX polish (tap-outside-close + RGB picker, `0.13`),
-UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`).
-**R5 VPS sync was DROPPED** (→ B4). **Active forward plan (2026-08-08 re-plan): the C-series
-(C1–C7)** — turning the app from a disc *database* into a **personal disc-intelligence system**
-(loadouts → "what should I throw?" → fieldwork → Learn My Bag → throw advisor → overlap/compare →
-shareable bag report). The **store track (R6 Play → R7 F-Droid) stays deliberately parked** —
-Logan's call is features + future-proofing + audience planning *before* any public release. See
-`plan/docs/direction-2026-08-08.md` (distills `plan/research/strategy-review-2026-08-08.md`).
+**Latest release: `v0.19`** (2026-08-16) — wear estimate (1-5 scale, supersedes the shipped
+3-tier New/Seasoned/Beat field) + Disc Suggest **"buying mode"** (rank library discs you don't
+own against a scenario, with a bag-gap summary and category/stability/brand filters). Release
+naming moved from `mobile-preview-X` to bare `vX` starting at `v0.16` (2026-08-15). The app is
+well past v1 — **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings).
+Post-v1 work all DONE and shipped: R1–R4.5, **B1** disc-suggest rewrite (`0.10`), **B2**
+big-collection support (`0.11`), **B3** offline scorekeeper + **B4** full backup/restore
+(`0.12`), mobile-UX polish (tap-outside-close + RGB picker, `0.13`), UI "modern feel" polish
+pass + F-Droid-reproducible dependency tree (`0.14`), production signing (`0.15`), the
+suggest-engine plan's Phases 1-3 (Flex Shot scenario, Throw Style modifier, personal stability
+adjustment, data audit, personal role tags — all verified on-device, `v0.16`/`v0.17`), the
+website-parity track (`v0.17`), and wear estimate + Disc Suggest buying mode (`v0.19`).
+**R5 VPS sync was DROPPED** (→ B4). **C2** ("what should I throw?" free-form screen) was
+**graveyarded** 2026-08-16 — too close to the existing Disc Suggest page, see `plan/GRAVEYARD.md`.
+**Active forward plan (2026-08-08 re-plan, C-series minus C2): C1/C3/C4/C5/C6/C7** — turning
+the app from a disc *database* into a **personal disc-intelligence system** (loadouts →
+fieldwork → Learn My Bag → throw advisor → overlap/compare → shareable bag report). The
+**store track (R6 Play → R7 F-Droid) stays deliberately parked** — Logan's call is features +
+future-proofing + audience planning *before* any public release. See
+`plan/docs/direction-2026-08-08.md` (distills `plan/research/strategy-review-2026-08-08.md`)
+and `plan/GRAVEYARD.md` for what's been parked or killed since.
 The live roadmap is the **Post-v1 Roadmap table** below; the full release list
 is the **Release History** table near the end. Everything under this line is the *original v1 build
 record (2026-07-24 snapshot)* — kept for history, not current.
@@ -666,10 +674,16 @@ real signing/distribution setup:
 | `mobile-preview-0.12` | B3 offline scorekeeper (Score tab) + B4 full backup/restore; drag-reorder → ⤒/↑/↓ arrows; physics "two models" note |
 | `mobile-preview-0.13` | Mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker |
 | `mobile-preview-0.14` | UI "modern feel" pass — gradient CTAs, unified Disc Suggest icon badges, Bag Filters expander, 2×2 arc-view pills, empty-state icons, cleaner edit-disc sheet; + F-Droid-reproducible dependency tree (declared/pinned deps, `.nvmrc`/`.npmrc`) |
+| `mobile-preview-0.15` | First **production-signed** preview (R6) — same UI as `0.14`, signed with the real upload keystore aligned to Play App Signing |
+| `v0.16` | Release naming moved to bare `vX`. `add-master-disc.js` tooling to grow the shared master library safely |
+| `v0.17` | Disc Suggest Phase 1 (Flex Shot scenario, Throw Style modifier, personal stability adjustment), Phase 2 (data audit — wear level, inline-editable Settings list), Phase 3 (personal role tags); website-parity track (CSV "Both" scope, `stability_adj`/`role_tag`, backup-file import); CSV import dedupe opt-in toggle |
+| `v0.18` | Data audit list scrollability fix; website CSV import allow-duplicates toggle |
+| `v0.19` | Wear estimate (1-5 scale, supersedes the 3-tier field) + Disc Suggest "buying mode" (rank library discs you don't own, bag-gap summary, category/stability/brand filters); adb `testID` instrumentation; two live bug fixes (duplicate-mold key collision, misleading net-stability wording) |
 
-These are **debug-signed** (no production keystore exists yet — see Distribution
-Track D1 below), and the repo is public, so releases are visible to anyone, not just
-the user. Fine for early testing; not appropriate once real users are involved.
+`mobile-preview-0.1` through `-0.14` are **debug-signed** (ahead of the production keystore).
+`mobile-preview-0.15` onward (through `v0.19`) are **production-signed** with the real upload
+keystore (see R6 below) — still GitHub Releases only, not Play Store or F-Droid yet. The repo
+is public, so releases are visible to anyone, not just the user.
 
 ---
 

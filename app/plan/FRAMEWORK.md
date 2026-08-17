@@ -18,15 +18,19 @@ it" framing this packet adds.
 Update the checkboxes below as things actually happen. This file is the honest answer to
 "where are we" at any point in the future.
 
-> **STATUS (2026-08-15):** v1 shipped long ago; the app has grown well past this original
-> phase model. Latest numbered release **`mobile-preview-0.15`** (production signing), now
-> **5 tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings). Post-v1 work all
-> DONE: R1–R4.5, B1 (suggest rewrite), B2 (big collections), B3 (offline scorekeeper), B4
-> (full backup/restore), R6 signing. **R5 VPS sync was DROPPED** (→ B4). The store-submission
-> track (R6 Play Console → R7 F-Droid) is deliberately parked — Logan's building features
-> first (2026-08-08 strategy re-plan). Current forward work is the **suggest-engine plan**
-> (`docs/suggest-engine-plan.md`) — Phase 1 (Flex Shot scenario, Throw Style, personal
-> stability adjustment) done 2026-08-15; Phase 2/3/4 open. The phase checkboxes below are
+> **STATUS (2026-08-16):** v1 shipped long ago; the app has grown well past this original
+> phase model. Latest release **`v0.19`** (release naming moved from `mobile-preview-X` to
+> bare `vX` at `v0.16`), now **5 tabs** (Bag / Flight Shaper / Disc Suggest / **Score** /
+> Settings). Post-v1 work all DONE: R1–R4.5, B1 (suggest rewrite), B2 (big collections), B3
+> (offline scorekeeper), B4 (full backup/restore), R6 signing. **R5 VPS sync was DROPPED**
+> (→ B4). The store-submission track (R6 Play Console → R7 F-Droid) is deliberately parked —
+> Logan's building features first (2026-08-08 strategy re-plan). Current forward work is the
+> **suggest-engine plan** (`docs/suggest-engine-plan.md`) — Phase 1 (Flex Shot scenario,
+> Throw Style, personal stability adjustment), Phase 2 (data audit), and Phase 3 (role tags)
+> all done and verified on-device; Phase 4 parked behind C4. Newest: wear estimate (1-5
+> scale, supersedes the 3-tier field) + Disc Suggest "buying mode", shipped `v0.19`
+> (2026-08-16, `wear-estimate-scope.md` / `buying-mode-scope.md`). C2 graveyarded 2026-08-16
+> (see `../GRAVEYARD.md`). The phase checkboxes below are
 > the *original v1 build* record — the live roadmap is the table in
 > [`../PORT_PLAN.md`](../PORT_PLAN.md) plus [`docs/suggest-engine-plan.md`](./docs/suggest-engine-plan.md).
 
