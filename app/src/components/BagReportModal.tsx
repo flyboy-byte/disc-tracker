@@ -59,7 +59,9 @@ export default function BagReportModal({ visible, discs, onCancel }: Props) {
                   <ReportRow key={d.id ?? i} disc={d} />
                 ))}
                 <View style={styles.cardFooter}>
-                  <Text style={styles.cardFooterText}>{discs.length} discs · Disc Tracker</Text>
+                  <Text style={styles.cardFooterText}>
+                    {discs.length} disc{discs.length === 1 ? '' : 's'} · Disc Tracker
+                  </Text>
                 </View>
               </View>
             </View>

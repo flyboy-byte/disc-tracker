@@ -1,15 +1,13 @@
 # Catalog-v2 — optional downloaded disc catalog — scope
 
-**Status (2026-08-18): LIVE.** `app.py`'s `/catalog/*` routes deployed via `deploy.sh`; real data
-published via `tools/trydiscs-sync.js publish` (`catalogVersion=2`, 1,874 discs,
-`datasetVersion=2026-08-14`). Verified from outside:
-`curl https://disc.flyboybyte.com/catalog/manifest.json` returns real JSON, and the served
-asset's SHA-256 matches the manifest exactly. `discs_master.json` (both bundled copies) is still
-unchanged — that's correct and permanent, it's the FOSS fallback, not something this replaces.
-**Not yet verified: an actual on-device "Check for updates" pass** — the server side is
-confirmed working end to end, but nobody's tapped the button on a real phone yet to confirm
-activation + the "Disc data by Try Discs" credit appearing + persistence across restart. That's
-the one remaining verification step, whenever there's a device in hand.
+**Status (2026-08-18): LIVE AND FULLY VERIFIED, END TO END, ON A REAL DEVICE.** `app.py`'s
+`/catalog/*` routes deployed via `deploy.sh`; real data published via
+`tools/trydiscs-sync.js publish` (`catalogVersion=2`, 1,874 discs, `datasetVersion=2026-08-14`).
+Verified from outside (`curl` + SHA-256 match) **and** on a real Pixel 7: Settings → "Check for
+updates" downloaded and activated the real catalog (source flipped to "Downloaded — 1874 discs"),
+the "Disc data by Try Discs" credit appeared, and it survived a full force-stop + relaunch.
+`discs_master.json` (both bundled copies) is still unchanged — that's correct and permanent, it's
+the FOSS fallback, not something this replaces. **Nothing left to verify on this workstream.**
 
 One deploy-time fix worth knowing about: `tools/trydiscs-sync.js`'s original `publish` pointed
 `scp` at the public HTTPS domain (`disc.flyboybyte.com`) with no SSH user — wrong on both counts
@@ -331,8 +329,10 @@ action needed.
   fully verified from outside (`curl`, SHA-256 match).
 - The optional nginx `limit_req_zone` addition (see "Real hosting" review write-up above) — still
   not applied. Non-blocking, was never required.
-- **On-device "Check for updates" pass** — the one thing left. Server side is confirmed working;
-  nobody's tapped the button on a real phone yet to confirm download → activation → the "Disc
-  data by Try Discs" credit appearing → persistence across app restart.
+- ~~On-device "Check for updates" pass~~ — **DONE 2026-08-18, verified on a real Pixel 7.**
+  Downloaded, activated (source flipped to "Downloaded — 1874 discs"), the "Disc data by Try
+  Discs" credit appeared in Settings → Credits, and it persisted correctly across a full
+  force-stop + relaunch. **The entire catalog-v2 pipeline is now confirmed working end to end,
+  on a real device, with real data.**
 - Website `/catalog` consumer + website credit — noted, not built.
 - The pre-store-submission check-in with Azeem — gated on R6/R7 actually starting.
