@@ -43,7 +43,10 @@ const API_BASE = 'https://api.trydiscs.com/v1';
 const PAGE_LIMIT = 2000;
 const SCHEMA_VERSION = 1;
 
-const PUBLISH_HOST = 'disc.flyboybyte.com';
+// Same VPS/user deploy.sh already uses (ubuntu@51.81.80.126) -- publishing via SSH/SCP goes
+// straight to the IP that's already a trusted known_host, not the public HTTPS domain
+// (disc.flyboybyte.com), which is a separate, unrelated hostname for the app's own requests.
+const PUBLISH_HOST = 'ubuntu@51.81.80.126';
 const PUBLISH_PATH = '~/disc_tracker/data/catalog/';
 
 const CACHE_DIR = path.join(__dirname, '.trydiscs-cache');
