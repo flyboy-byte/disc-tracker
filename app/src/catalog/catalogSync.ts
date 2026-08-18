@@ -90,12 +90,16 @@ export async function syncTryDiscsCatalog(manifestUrl: string): Promise<SyncResu
     recordCount: manifest.recordCount,
     label: manifest.provider || 'Try Discs',
     datasetVersion: manifest.datasetVersion,
+    provider: manifest.provider,
   });
   return { manifest };
 }
 
 // Same pipeline, aimed at the 'custom' slot — for a self-hosted manifest+asset pair the user
-// points the app at directly (same format Try Discs uses).
+// points the app at directly (same format Try Discs uses). Note: this can legitimately end up
+// holding Try Discs' own data too (nothing stops a user pointing "Custom" at the same manifest
+// URL) — attribution is keyed off `manifest.provider`, not which slot the data landed in, so the
+// credit still shows correctly either way.
 export async function syncCustomCatalogFromUrl(manifestUrl: string): Promise<SyncResult> {
   const manifest = await checkManifest(manifestUrl);
   const tmpFile = await downloadAndVerify(manifest, manifestUrl, 'custom');
@@ -109,6 +113,7 @@ export async function syncCustomCatalogFromUrl(manifestUrl: string): Promise<Syn
     recordCount: manifest.recordCount,
     label,
     datasetVersion: manifest.datasetVersion,
+    provider: manifest.provider,
   });
   return { manifest };
 }

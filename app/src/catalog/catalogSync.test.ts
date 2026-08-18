@@ -124,7 +124,12 @@ describe('catalogSync', () => {
       const activeUri = `${catalogDir().uri}/${activeFileName('trydiscs')}`;
       const metaUri = `${catalogDir().uri}/${metaFileName('trydiscs')}`;
       expect(mockFs.__getFile(activeUri)).toBe(GOOD_CATALOG_TEXT);
-      expect(JSON.parse(mockFs.__getFile(metaUri) ?? '{}')).toEqual({ recordCount: 1, label: 'Try Discs', datasetVersion: '2026-08-14' });
+      expect(JSON.parse(mockFs.__getFile(metaUri) ?? '{}')).toEqual({
+        recordCount: 1,
+        label: 'Try Discs',
+        datasetVersion: '2026-08-14',
+        provider: 'Try Discs',
+      });
       // syncTryDiscsCatalog only caches — activation is a separate, explicit step.
       expect(getCatalogSource()).toBe('bundled');
     });
@@ -138,7 +143,22 @@ describe('catalogSync', () => {
       const activeUri = `${catalogDir().uri}/${activeFileName('custom')}`;
       const metaUri = `${catalogDir().uri}/${metaFileName('custom')}`;
       expect(mockFs.__getFile(activeUri)).toBe(GOOD_CATALOG_TEXT);
-      expect(JSON.parse(mockFs.__getFile(metaUri) ?? '{}').label).toBe('mycatalog.example.test');
+      const meta = JSON.parse(mockFs.__getFile(metaUri) ?? '{}');
+      expect(meta.label).toBe('mycatalog.example.test');
+      expect(meta.provider).toBe('Someone Else');
+    });
+
+    // Regression test: pointing "Custom" at Try Discs' own manifest URL must still be
+    // attributable as Try Discs data (label is the host, but provider carries the real source) —
+    // this is what Settings uses to decide whether the required credit shows.
+    test('preserves manifest.provider even though the label is the URL host, not the provider name', async () => {
+      mockFetchSequence([{ ok: true, json: async () => manifest({ provider: 'Try Discs' }) }, { ok: true, text: async () => GOOD_CATALOG_TEXT }]);
+      await syncCustomCatalogFromUrl('https://disc.flyboybyte.com/catalog/manifest.json');
+
+      const metaUri = `${catalogDir().uri}/${metaFileName('custom')}`;
+      const meta = JSON.parse(mockFs.__getFile(metaUri) ?? '{}');
+      expect(meta.label).toBe('disc.flyboybyte.com');
+      expect(meta.provider).toBe('Try Discs');
     });
   });
 

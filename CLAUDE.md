@@ -6,7 +6,7 @@ Two things in one repo:
 
 1. **A live Flask web app** — personal disc golf bag tracker running on a VPS at `51.81.80.126`. Multi-user, local SQLite, no cloud, no accounts. The website is the canonical version and the spec for everything else.
 
-2. **An Android app port — v1 feature-complete, actively growing** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest release is **`v0.19`** (2026-08-16, wear estimate + Disc Suggest buying mode; release naming moved from `mobile-preview-X` to bare `vX` at `v0.16`). Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **DONE:** R1–R4.5, B1 disc-suggest rewrite (`0.10`), B2 big-collection support (`0.11`), B3 offline scorekeeper + B4 full backup/restore (`0.12`), mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker (`0.13`), UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`), production signing (`0.15`), the Disc Suggest suggest-engine plan **Phases 1-3** — Flex Shot scenario (13th), Throw Style modifier, personal stability adjustment, role tags, data audit/wear level, all **verified on-device** (`plan/docs/suggest-engine-plan.md`, shipped across `v0.16`–`v0.17`) — the **website-parity track** (CSV Both scope, `stability_adj`/`role_tag` on the website, backup-file import; `plan/docs/archive/website-parity-scope.md`, `v0.17`) — and, newest, **wear estimate (1–5, supersedes the 3-tier field) + Disc Suggest "buying mode"** (`v0.19`, `plan/docs/archive/wear-estimate-scope.md` / `plan/docs/archive/buying-mode-scope.md`). **R5 VPS sync DROPPED** (superseded by B4 — Logan's call). C2 ("what should I throw?" free-form screen) **graveyarded** 2026-08-16 — too close to existing Disc Suggest (`app/plan/GRAVEYARD.md`). **Next = Phase 4 (parked behind C4) or the C-series (see `plan/GRAVEYARD.md`), or stores (R6 Play → R7 F-Droid) when Logan's ready** ("not emotionally ready for store release" — building features first). See "Mobile app — current state" below.
+2. **An Android app port — v1 feature-complete, actively growing** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest tagged release is **`v0.20`** (2026-08-18, Try Discs catalog integration + C7 Shareable Bag Report + GH Pages fix + nginx rate-limit; release naming moved from `mobile-preview-X` to bare `vX` at `v0.16`). **Not yet tagged, committed on `main`**: a rework of the catalog UI into a three-way **Built-in / Try Discs / Custom** source picker with a first-run download prompt (`app/plan/docs/catalog-v2-scope.md`'s "Three-way source picker" section) — verified end-to-end on a real Pixel 7, plus a same-session compliance fix (Try Discs credit now keys off the manifest's own `provider` field, not which UI slot the data landed in, closing a gap where importing Try Discs' data through the new "Custom" URL path would've silently dropped the required credit) and 2,147-vs-1,874 disclosure copy added to Settings, the website, and `README.md`. Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **DONE:** R1–R4.5, B1 disc-suggest rewrite (`0.10`), B2 big-collection support (`0.11`), B3 offline scorekeeper + B4 full backup/restore (`0.12`), mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker (`0.13`), UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`), production signing (`0.15`), the Disc Suggest suggest-engine plan **Phases 1-3** — Flex Shot scenario (13th), Throw Style modifier, personal stability adjustment, role tags, data audit/wear level, all **verified on-device** (`plan/docs/suggest-engine-plan.md`, shipped across `v0.16`–`v0.17`) — the **website-parity track** (CSV Both scope, `stability_adj`/`role_tag` on the website, backup-file import; `plan/docs/archive/website-parity-scope.md`, `v0.17`) — wear estimate (1–5, supersedes the 3-tier field) + Disc Suggest "buying mode" (`v0.19`, `plan/docs/archive/wear-estimate-scope.md` / `plan/docs/archive/buying-mode-scope.md`) — and, newest, **Try Discs catalog-v2 + C7 Shareable Bag Report** (`v0.20`, `app/plan/docs/catalog-v2-scope.md` / `app/plan/docs/c7-shareable-report-scope.md`). **R5 VPS sync DROPPED** (superseded by B4 — Logan's call). C2 ("what should I throw?" free-form screen) **graveyarded** 2026-08-16 — too close to existing Disc Suggest (`app/plan/GRAVEYARD.md`). **Next = tag/release the catalog-picker rework, Phase 4 (parked behind C4), the C-series (see `plan/GRAVEYARD.md`), or stores (R6 Play → R7 F-Droid) when Logan's ready** ("not emotionally ready for store release" — building features first). See "Mobile app — current state" below.
 
 ---
 
@@ -183,9 +183,11 @@ a real reason to keep checking model agreement over time rather than the one-tim
 ## Mobile app — current state
 
 **Phases 0-9 done; v1 first shipped as `mobile-preview-0.5`, confirmed on a real phone;
-latest release `v0.19`** (2026-08-16 — wear estimate 1-5 scale, supersedes the 3-tier field,
-+ Disc Suggest "buying mode"; release naming moved from `mobile-preview-X` to bare `vX` at
-`v0.16`). **Disc Suggest suggest-engine Phases 1-3** (Flex Shot scenario, Throw Style,
+latest tagged release `v0.20`** (2026-08-18 — Try Discs catalog integration + C7 Shareable
+Bag Report + GH Pages fix + nginx rate-limit; release naming moved from `mobile-preview-X`
+to bare `vX` at `v0.16`). **On `main`, not yet tagged**: the catalog UI reworked into a
+three-way Built-in/Try Discs/Custom picker + first-run prompt, verified on a real Pixel 7 —
+see "Three-way source picker" in `app/plan/docs/catalog-v2-scope.md`. **Disc Suggest suggest-engine Phases 1-3** (Flex Shot scenario, Throw Style,
 personal stability adjustment, data audit, role tags) are all **verified on-device**
 (2026-08-15/16) — see `app/plan/docs/suggest-engine-plan.md`. All five tabs are real
 and working, verified on an Android emulator and sideloaded on hardware:
@@ -226,7 +228,7 @@ and working, verified on an Android emulator and sideloaded on hardware:
   share-sheet in/out (`src/utils/backup.ts`) — plus CSV disc-list export/import, delete-all, and
   About. (The old v1.1 sync placeholder is gone — R5 VPS sync was **dropped**, superseded by B4.)
 
-The SQLite CRUD layer is verified on-device. **115/115 Jest tests pass.** Several real
+The SQLite CRUD layer is verified on-device. **147/147 Jest tests pass.** Several real
 bugs were found and fixed by actually running the app (form-remount, native-slider/ScrollView
 gesture conflict, stale-bag-data on tab switch, document-picker re-entry crash) — all
 documented in `app/PORT_PLAN.md`.
@@ -278,24 +280,36 @@ Minimum Credible v1 Milestone is fully met. See `app/PORT_PLAN.md` Phase 9.
 
 ### Next immediate step:
 **v1 complete; R1–R4.5, B1–B4, production signing (R6 keystore step), Disc Suggest
-Phases 1-3, the website-parity track, wear estimate, and Disc Suggest buying mode all done
-and shipped.** Latest release is `v0.19` (2026-08-16 — upload key = Play app signing key
-since `v0.15`, one keystore signs Play+F-Droid+sideload). Release naming moved from
-`mobile-preview-X` to bare `vX` at `v0.16` (2026-08-15). The suggest-engine plan's Phase 1
-(Flex Shot, Throw Style, personal stability adjustment), Phase 2 (data audit), and Phase 3
-(role tags) are all verified on-device (logged in `app/plan/docs/suggest-engine-plan.md`).
-The **website-parity track** landed 2026-08-15 (`91883c3`): CSV "Both" export scope,
-`stability_adj`/`role_tag` columns + `/api/data` wiring, and an "Import backup" button on the
-website — see `app/plan/docs/archive/website-parity-scope.md`. **C2** ("what should I throw?"
-free-form screen) was **graveyarded** 2026-08-16 — too close to the existing Disc Suggest
-page, see `app/plan/GRAVEYARD.md`. **Catalog-v2 (TryDiscs)** — a brand-new external disc
-catalog (2,147 discs vs. the old 1,660, founder-approved access, terms accepted, VPS hosting
-security-reviewed) is **LIVE as of 2026-08-18**: `https://disc.flyboybyte.com/catalog/manifest.json`
-serves real data (`catalogVersion=2`, 1,874 discs), verified from outside. Only remaining step
-is an on-device confirmation that "Check for updates" in Settings actually downloads/activates it
-on a real phone. **Read `app/plan/docs/catalog-v2-scope.md` before touching this — it has a
-"Resume checklist" and a decision-by-decision pivot guide, so don't
-re-derive the design.** Forward priorities:
+Phases 1-3, the website-parity track, wear estimate, Disc Suggest buying mode, Try Discs
+catalog-v2, and C7 Shareable Bag Report all done and shipped as of `v0.20`** (2026-08-18 —
+upload key = Play app signing key since `v0.15`, one keystore signs Play+F-Droid+sideload).
+Release naming moved from `mobile-preview-X` to bare `vX` at `v0.16` (2026-08-15). The
+suggest-engine plan's Phase 1 (Flex Shot, Throw Style, personal stability adjustment), Phase 2
+(data audit), and Phase 3 (role tags) are all verified on-device (logged in
+`app/plan/docs/suggest-engine-plan.md`). The **website-parity track** landed 2026-08-15
+(`91883c3`): CSV "Both" export scope, `stability_adj`/`role_tag` columns + `/api/data` wiring,
+and an "Import backup" button on the website — see `app/plan/docs/archive/website-parity-scope.md`.
+**C2** ("what should I throw?" free-form screen) was **graveyarded** 2026-08-16 — too close to
+the existing Disc Suggest page, see `app/plan/GRAVEYARD.md`. **Catalog-v2 (TryDiscs)** — a
+brand-new external disc catalog (2,147 discs vs. the old 1,660, founder-approved access, terms
+accepted, VPS hosting security-reviewed) has been **LIVE since 2026-08-18**:
+`https://disc.flyboybyte.com/catalog/manifest.json` serves real data (`catalogVersion=2`,
+1,874 discs — the other 273 lack complete flight numbers and are deliberately excluded, now
+disclosed in Settings/website/README), shipped in `v0.20` and verified on-device.
+
+**Not yet tagged, on `main`**: the Disc Catalog Settings card was reworked from a single
+"downloaded vs. bundled" line into a real three-way **Built-in / Try Discs / Custom** source
+picker (each source caches independently, switching between already-cached sources is instant,
+nothing is ever deleted) plus a one-time first-run prompt offering the Try Discs download —
+Logan's idea, scoped and built same-session, **verified end-to-end on a real Pixel 7** (all
+three sources, both directions of switching, both Custom-import paths). Building it surfaced a
+real compliance gap that's since been fixed: the required Try Discs credit was keyed off which
+UI slot was active, so importing Try Discs' own manifest through the new "Custom" URL field
+would've silently dropped the credit — now keyed off the manifest's own `provider` field
+instead, with a regression test. See `app/plan/docs/catalog-v2-scope.md`'s "Three-way source
+picker + first-run prompt" section — **read it before touching this, don't re-derive the
+design.** Needs a version bump + tag before it's a real release (currently sitting at `0.20.0`
+same as the tagged `v0.20`). Forward priorities:
 - **Suggest-engine Phase 4** — intentionally parked behind C4 (fieldwork data), which doesn't
   exist yet. Not being pursued. See `app/plan/GRAVEYARD.md`.
 - **C-series (C1 loadouts, C7 confirmed-real-not-scheduled, C3 parked, C2 graveyarded)** — see
@@ -314,13 +328,33 @@ GitHub Releases stays the primary channel pre-store. To cut a release: build the
 arm64/armeabi APK (`JAVA_HOME=/usr/lib/jvm/java-21-openjdk`, `./gradlew assembleRelease
 -PreactNativeArchitectures=arm64-v8a,armeabi-v7a`), then `gh release create`.
 
-Emulator + toolchain on this machine: AVD `verify_test` (x86_64, API 37); `emulator` at
-`~/Android/Sdk/emulator/emulator`. To load live code changes on the emulator you must
-install the **debug** APK (Metro-connected) — the release APK has an embedded bundle and
-ignores Metro. For emulator smoke-testing a *release* build, build a throwaway x86_64
-release-config APK (`-PreactNativeArchitectures=x86_64`) since the shipped APK is
-arm64/armeabi only. Drag/long-press gestures: `adb input motionevent` hold-then-move (not
-`draganddrop`/`swipe`).
+Emulator + toolchain on this machine: two AVDs — `verify_test` (16KB-page-size
+`google_apis_playstore_ps16k` image, the original one) and `verify_std` (added 2026-08-18, a
+standard 4KB-page `google_apis` image, no Play Store). `emulator` binary at
+`~/Android/Sdk/emulator/emulator`. Boot with `-no-window -no-boot-anim` (headless — the GUI
+window's Qt/gfxstream compositing pipeline burns real CPU for no benefit when you're only
+driving it via `adb`) and give it real time: `adb devices` reports `device` well before
+`sys.boot_completed=1` — poll `adb shell getprop sys.boot_completed` too, not just transport
+state, or you'll interact with a half-booted guest. To load live code changes you must install
+the **debug** APK (Metro-connected) — the release APK has an embedded bundle and ignores
+Metro. For emulator smoke-testing a *release* build, build a throwaway x86_64 release-config
+APK (`-PreactNativeArchitectures=x86_64`) since the shipped APK is arm64/armeabi only.
+Drag/long-press gestures: `adb input motionevent` hold-then-move (not `draganddrop`/`swipe`).
+
+**2026-08-18 finding — debug-APK installs can crash `system_server` on a loaded host.**
+Installing this app's debug build (83MB+, unminified, several native modules) can trip
+Android's own internal `system_server` Watchdog (a 60s thread-scheduling deadline — visible in
+`adb logcat` as `Watchdog timeout updated to 60000 millis` / `WAITED_UNTIL_PRE_WATCHDOG`) when
+the **host** is CPU-contended (e.g. multiple concurrent Claude Code sessions sharing the same
+cores) — confirmed this is host scheduling pressure, not a broken AVD, broken app, or app-size
+problem per se (reproduced identically on a brand-new standard AVD, and even a 16KB test APK
+stalled once the host was loaded). If `adb install`/`pm install` hangs or comes back with
+`Failure calling service package: Broken pipe`, that's the symptom — `adb reboot` the guest
+before retrying (a half-crashed `system_server` can leave the package service dead even though
+the process itself lingers), and prefer a moment when other sessions on this box are quiet. A
+real Pixel 7 over USB has none of this — a 122MB 2-ABI debug APK installed in under 5 seconds
+the same session. Prefer physical-device testing when it's available; treat the emulator as a
+fallback, not the default, until this host has more headroom.
 
 ---
 

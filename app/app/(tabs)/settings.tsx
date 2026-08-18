@@ -22,6 +22,7 @@ import { buildBackup, parseBackup, backupSummary } from '../../src/utils/backup'
 import {
   getCatalog,
   getCatalogSource,
+  getActiveCatalogMeta,
   getSlotMeta,
   switchToSource,
   type CatalogSource,
@@ -61,11 +62,18 @@ export default function SettingsScreen() {
   const [catalogSourceState, setCatalogSourceState] = useState<CatalogSource>('bundled');
   const [trydiscsSlot, setTrydiscsSlot] = useState<CatalogSlotMeta | null>(null);
   const [customSlot, setCustomSlot] = useState<CatalogSlotMeta | null>(null);
+  const [activeCatalogMeta, setActiveCatalogMeta] = useState<CatalogSlotMeta | null>(null);
   const [customImportOpen, setCustomImportOpen] = useState(false);
   const userIdRef = useRef<number | null>(null);
 
+  // Try Discs credit must key off where the *data* actually came from (manifest.provider),
+  // not which picker row it's active under — pointing "Custom" at Try Discs' own manifest URL
+  // still owes the same credit. See catalogSync.ts's syncCustomCatalogFromUrl note.
+  const isTryDiscsAttributed = activeCatalogMeta?.provider === 'Try Discs';
+
   const refreshCatalogState = useCallback(async () => {
     setCatalogSourceState(getCatalogSource());
+    setActiveCatalogMeta(getActiveCatalogMeta());
     const [td, cu] = await Promise.all([getSlotMeta('trydiscs'), getSlotMeta('custom')]);
     setTrydiscsSlot(td);
     setCustomSlot(cu);
@@ -524,6 +532,10 @@ export default function SettingsScreen() {
             <Text style={styles.sectionHint}>
               {trydiscsSlot ? `Downloaded — ${trydiscsSlot.recordCount} discs.` : 'A larger third-party catalog. Downloads on first tap.'}
             </Text>
+            <Text style={styles.sectionHint}>
+              Try Discs lists 2,147 molds; 273 without complete flight numbers are left out so every
+              disc here works fully in Flight Shaper and Disc Suggest.
+            </Text>
           </View>
           <Text style={[styles.rowValue, catalogChecking && styles.rowDisabled]}>
             {catalogChecking
@@ -622,7 +634,7 @@ export default function SettingsScreen() {
           <Text style={[styles.rowText, styles.link]}>shotshaper</Text>
           <Text style={[styles.rowChevron, styles.link]}>↗</Text>
         </Pressable>
-        {catalogSourceState === 'trydiscs' && (
+        {isTryDiscsAttributed && (
           <>
             <View style={styles.divider} />
             <Pressable style={styles.row} onPress={() => Linking.openURL(TRYDISCS_URL)} accessibilityRole="link" accessibilityLabel="Open Try Discs">

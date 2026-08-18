@@ -392,11 +392,48 @@ inline in `settings.tsx`), new `src/components/CustomCatalogModal.tsx`, `app/(ta
 (three-row picker replaces the old single-source card), `app/_layout.tsx` (first-run prompt),
 `src/db/migrations.ts` + `src/db/db.ts` (`catalog_prompt_shown` column).
 
-**Verified:** `tsc --noEmit` clean, full Jest suite green (146/146, up from 141 — added coverage
-for the new slot-cache/switch/import behavior in `catalogLoader.test.ts` /
-`catalogSync.test.ts`). **Not yet verified on a real device** — no phone was connected this
-session. Before shipping in a release: confirm on-device that (1) the three rows switch
-correctly and instantly when already cached, (2) a fresh Try Discs download and a custom
-file/URL import both work end to end, (3) the first-run prompt actually fires on a clean
-install (or after clearing app data) and both its buttons behave correctly, (4) Disc Suggest
-picks up whichever source is active.
+**Verified 2026-08-18, on a real Pixel 7 (`panther`), end to end:**
+- First-run prompt fired correctly on first launch (bundled still active at that point); tapping
+  "Download" triggered a real `syncTryDiscsCatalog` + activate, confirmed via Settings showing
+  "Try Discs — ✓ Active — Downloaded — 1874 discs."
+- Built-in ↔ Try Discs switching is instant in both directions once cached (no re-download —
+  confirmed by watching the toast and record count flip immediately, and that Try Discs stayed
+  captioned "Downloaded — 1874 discs" after switching away from it, not reverting to
+  "Download").
+- Custom import via URL (pointed at the same Try Discs manifest, since no second real catalog
+  was available to test against): label correctly showed the URL's host
+  (`disc.flyboybyte.com`), not "Try Discs" — confirms Custom's slot is genuinely independent of
+  the Try Discs slot, not just a relabeled alias.
+- Disc Suggest opened cleanly with the custom-sourced catalog active — no crash, scenario grid
+  rendered normally.
+- **Not separately verified:** file-based Custom import (`Choose file…` → `expo-document-picker`)
+  — only covered by `catalogSync.test.ts`'s `importCustomCatalogFromFile` unit tests, not
+  exercised on a real device. Low risk (same validation path as the already-verified URL import,
+  just skipping the network fetch+hash step), but worth a real pass before relying on it.
+
+**Compliance fix from the same session:** building the Custom-import path surfaced a real gap —
+the required Try Discs credit (Settings → Credits → "Disc data by Try Discs") was gated on
+`catalogSourceState === 'trydiscs'`, i.e. which *UI slot* was active, not on where the data
+actually came from. Since Custom accepts any manifest URL, a user pointing it at Try Discs' own
+manifest (as the on-device test above did) would have downloaded real Try Discs data while the
+credit stayed hidden — a real, if inadvertent, violation of Azeem's credit requirement. Fixed by
+adding `provider?: string` to `CatalogSlotMeta` (`catalogLoader.ts`), populated from
+`manifest.provider` in both `syncTryDiscsCatalog` and `syncCustomCatalogFromUrl`
+(`catalogSync.ts`), and keying the credit in `settings.tsx` off
+`activeCatalogMeta?.provider === 'Try Discs'` instead of the slot name. A file-based Custom
+import (no manifest, so no `provider`) correctly never claims the credit — appropriate, since a
+raw JSON file's origin can't be attested. Covered by a new regression test in
+`catalogSync.test.ts` ("preserves manifest.provider even though the label is the URL host").
+
+**Disclosure added the same session** (Logan's call, in response to "why is there still ~1874
+discs" after the picker rework): Try Discs' live API lists 2,147 molds; 1,874 make it into the
+app's catalog, the other 273 are dropped by `tools/trydiscs-sync.js`'s `normalizeRecord()`
+(`~273/2,147 discontinued/niche molds` — actually a mix: only 106 of the 273 are marked
+`discontinued` in Try Discs' own data, the other 167 are current molds Try Discs simply hasn't
+populated flight numbers for) because this app requires complete speed/glide/turn/fade to
+render sensibly in Flight Shaper/Disc Suggest. Now disclosed in three places: the mobile
+Settings Try Discs row, the website's `#catalogCredit` line, and `README.md`.
+
+**Not yet tagged/released** — this landed on `main` after `v0.20`, still at app version
+`0.20.0`. Needs a version bump before it's a real release (see CLAUDE.md's "Next immediate
+step").

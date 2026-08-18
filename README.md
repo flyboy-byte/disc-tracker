@@ -22,7 +22,10 @@ Both share the same 1,660-disc library, the same flight-arc math, and the same c
 private place to manage your bag, understand how your discs fly, and figure out what to throw.
 The mobile app also offers an optional, larger catalog as an in-app download — [disc data by
 Try Discs](https://api.trydiscs.com), used only for on-device lookup/suggest/audit, never
-re-served or published as a standalone dataset.
+re-served or published as a standalone dataset. Try Discs lists 2,147 molds; the downloaded
+catalog includes 1,874 of them — the other 273 are left out because they're missing complete
+flight numbers (speed/glide/turn/fade), which this app requires so every disc works fully in
+Flight Shaper and Disc Suggest.
 
 ---
 

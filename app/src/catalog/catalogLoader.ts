@@ -26,6 +26,12 @@ export interface CatalogSlotMeta {
   // Human-readable origin: "Try Discs", a filename, or a URL host.
   label: string;
   datasetVersion?: string;
+  // The manifest's own `provider` field, when known (network-sourced slots only — a plain file
+  // import has no manifest to attest provenance). Drives attribution: crediting Try Discs must
+  // key off who the *data* actually came from, not which UI slot (trydiscs vs. custom) it landed
+  // in — otherwise re-importing the Try Discs manifest through the custom-URL path would silently
+  // drop the required credit. See app/plan/docs/catalog-v2-scope.md.
+  provider?: string;
 }
 
 export function catalogDir(): Directory {
