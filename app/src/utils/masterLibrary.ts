@@ -45,22 +45,21 @@ function sortByRank(discs: MasterDisc[], q: string): MasterDisc[] {
   return [...discs].sort((a, b) => rank(a, q) - rank(b, q));
 }
 
-export function searchMaster(query: string, limit = 60): MasterDisc[] {
+// Generic versions parameterized by the disc list to search — lets catalogLoader.ts search
+// whatever catalog is currently active (bundled fallback or a downloaded override) by reusing
+// this exact ranking logic, instead of duplicating it.
+export function searchIn(discs: MasterDisc[], query: string, limit = 60): MasterDisc[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
-  return sortByRank(masterDiscs.filter((d) => matches(d, q)), q).slice(0, limit);
+  return sortByRank(discs.filter((d) => matches(d, q)), q).slice(0, limit);
 }
 
-// Search the whole library the user sees: their custom discs first (so a disc they declared always
-// ranks above the bundled catalog), then the bundled master list. When `mfr` is already typed
-// (the common add-disc flow — manufacturer first, then mold), narrow to that manufacturer first so
-// a short mold query like "pa" doesn't get crowded out by unrelated discs that merely contain it.
-export function searchLibrary(query: string, custom: CustomMasterDisc[], limit = 60, mfr = ''): LibraryDisc[] {
+export function searchLibraryIn(discs: MasterDisc[], query: string, custom: CustomMasterDisc[], limit = 60, mfr = ''): LibraryDisc[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
   const mfrQ = mfr.trim().toLowerCase();
   const customHits = sortByRank(custom.filter((d) => matches(d, q)), q);
-  let masterHits = masterDiscs.filter((d) => matches(d, q));
+  let masterHits = discs.filter((d) => matches(d, q));
   if (mfrQ) {
     const sameMfr = masterHits.filter((d) => d.mfr.toLowerCase().includes(mfrQ));
     const otherMfr = masterHits.filter((d) => !d.mfr.toLowerCase().includes(mfrQ));
@@ -69,4 +68,16 @@ export function searchLibrary(query: string, custom: CustomMasterDisc[], limit =
     masterHits = sortByRank(masterHits, q);
   }
   return [...customHits, ...masterHits].slice(0, limit);
+}
+
+export function searchMaster(query: string, limit = 60): MasterDisc[] {
+  return searchIn(masterDiscs, query, limit);
+}
+
+// Search the whole library the user sees: their custom discs first (so a disc they declared always
+// ranks above the bundled catalog), then the bundled master list. When `mfr` is already typed
+// (the common add-disc flow — manufacturer first, then mold), narrow to that manufacturer first so
+// a short mold query like "pa" doesn't get crowded out by unrelated discs that merely contain it.
+export function searchLibrary(query: string, custom: CustomMasterDisc[], limit = 60, mfr = ''): LibraryDisc[] {
+  return searchLibraryIn(masterDiscs, query, custom, limit, mfr);
 }

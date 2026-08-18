@@ -147,6 +147,13 @@ const COLUMN_MIGRATIONS: { ddl: string }[] = [
   // buying-mode-scope.md — Disc Suggest's Throwing/Buying mode toggle. Default 'throwing' is a
   // no-op: existing behavior is completely unchanged until a user taps into Buying mode.
   { ddl: "ALTER TABLE user_meta ADD COLUMN suggest_mode TEXT DEFAULT 'throwing'" },
+  // catalog-v2-scope.md — state for the optional downloaded disc catalog (src/catalog/).
+  // All NULL/default until a user explicitly downloads a catalog pack; the app keeps using the
+  // bundled fallback library until then. Never written to from anywhere except a successful
+  // catalogSync.syncCatalog() activation.
+  { ddl: 'ALTER TABLE user_meta ADD COLUMN catalog_version INTEGER DEFAULT NULL' },
+  { ddl: 'ALTER TABLE user_meta ADD COLUMN catalog_dataset_version TEXT DEFAULT NULL' },
+  { ddl: 'ALTER TABLE user_meta ADD COLUMN catalog_hash TEXT DEFAULT NULL' },
 ];
 
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {

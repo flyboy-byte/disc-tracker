@@ -10,11 +10,20 @@
 > bag results in Disc Suggest keyed on `name-mfr`, so two owned discs of the same mold (e.g. two
 > Leopard3s) collided under React's duplicate-key warning — fixed by keying on the owned disc's
 > `id` (`6ad0445`). **Also DONE 2026-08-16 (`019f480`):** wear estimate (1-5, supersedes the
-> 3-tier wear level) and Disc Suggest buying mode — see `wear-estimate-scope.md` /
-> `buying-mode-scope.md`. Also `e8ef678`: adb `testID` instrumentation across the interactive
+> 3-tier wear level) and Disc Suggest buying mode — see `archive/wear-estimate-scope.md` /
+> `archive/buying-mode-scope.md`. Also `e8ef678`: adb `testID` instrumentation across the interactive
 > surfaces, so future on-device passes use `uiautomator dump | grep resource-id` instead of
-> coordinate-hunting. Website-parity is scoped (`website-parity-scope.md`) but not started —
+> coordinate-hunting. Website-parity is scoped (`archive/website-parity-scope.md`) but not started —
 > that's next up.
+>
+> **2026-08-17 — Buying mode perf fix:** the "Discs to consider" list was an uncapped result
+> set (every qualifying library disc, easily hundreds) rendered via a plain `.map()` inside a
+> `ScrollView` — every card fully mounted at once. Same "mount-bound scroll cliff" B2 already
+> diagnosed for the Bag screen (`archive/b2-spike.md`); fixed the same way — 30/page pagination
+> + `FlatList` (only Buying mode; Throwing mode's lists are already small/capped, untouched).
+> `disc-suggest.tsx`. **Not done in this pass, noted for later:** Buying mode's UI and the
+> suggestion quality/parameters themselves (result count, banding, default sort, filter
+> defaults) — flagged by Logan as worth revisiting, but a separate pass from this perf fix.
 >
 > **Read this first, don't re-derive:** `plan/docs/direction-2026-08-08.md` Decision 1 (the
 > three-layer flight-data rule — factory / user-declared / observed) is the one architectural
@@ -119,7 +128,7 @@ this phase's status line DONE with the commit hash, same convention as PORT_PLAN
 
 ## Phase 2 — Data Audit — DONE, verified on-device 2026-08-16
 
-Full scope doc: [`data-audit-scope.md`](./data-audit-scope.md). All three decisions confirmed
+Full scope doc: [`data-audit-scope.md`](./archive/data-audit-scope.md). All three decisions confirmed
 by Logan and built: wear-level scale (New/Seasoned/Beat), Settings-tab entry point, and —
 revised from the original "reuse `DiscFormModal`" proposal — **inline-editable audit rows**
 (weight/plastic text fields + wear-level pills, committing per-field via the new
@@ -148,7 +157,7 @@ that:
   correction against the 1,660-disc library — that was the part of the original handoff correctly
   flagged as highest false-positive risk, and Logan doesn't want it.
 
-**Before starting:** needs its own short scope pass (mirror `scorekeeper-scope.md`'s structure —
+**Before starting:** needs its own short scope pass (mirror `archive/scorekeeper-scope.md`'s structure —
 Decisions/Non-goals/Data model/Screens) once picked up. Open questions to resolve then: does this
 live as a step inside the existing CSV import flow (`CsvImportModal.tsx`) or as a new standalone
 screen reachable from Settings or the Bag tab; exact wear-level scale/labels; whether wear-level
@@ -182,7 +191,7 @@ tags (above) are the cheap mitigation for that trap, not a full fix.
 
 ## Separate track — Website (Flask app) parity catch-up — DONE 2026-08-15 (`91883c3`)
 
-Full scope doc: [`website-parity-scope.md`](./website-parity-scope.md). Verified while scoping:
+Full scope doc: [`website-parity-scope.md`](./archive/website-parity-scope.md). Verified while scoping:
 the CSV format is already byte-identical between the app and website (one real gap — the app's
 newer "Both" export scope isn't on the website yet); the meatier piece is deciding how much of a
 mobile backup file the website should accept (landed on: discs + settings import cleanly, rounds/
@@ -191,7 +200,7 @@ customDiscs are visibly reported as unsupported rather than silently dropped).
 Originally flagged 2026-08-15 as a full feature-parity audit (mobile has shipped
 backup/restore, the custom-disc library, stability-adjustment, and role tags; the website has
 none of it). **Rescoped the same day, narrower, per Logan's actual priority**, then **fully
-scoped** in `website-parity-scope.md` — see the pointer above.
+scoped** in `archive/website-parity-scope.md` — see the pointer above.
 
 The app is quietly becoming the dominant platform going forward; the website's remaining value
 is being the **persistent, always-there, cross-OS** copy — the two things it's actually good for
@@ -214,7 +223,7 @@ up" is lower priority than that.
 4. **Suggest-engine parity (Phase 1/3 fields — stability-adjustment, role tags) on the website**
    — explicitly **after** 1–3, not blocking them.
 
-Not yet scoped in detail (no data model / screens doc like `data-audit-scope.md` yet) — this
+Not yet scoped in detail (no data model / screens doc like `archive/data-audit-scope.md` yet) — this
 section is the priority ordering, not a build-ready spec. Do that scoping pass when this track is
 actually picked up.
 

@@ -9,24 +9,26 @@
 // the title. Same scenario grid, same scorer — Throwing mode ranks discs you own (unchanged from
 // above); Buying mode ranks the library minus what you already own, with category/stability/brand
 // filters and a one-line bag-gap summary. Zero behavior change to Throwing mode from this addition.
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import ScenarioGrid from '../../src/components/ScenarioGrid';
 import SuggestResultCard from '../../src/components/SuggestResultCard';
 import { getDiscs, getMeta, getOrCreateDefaultUser, setMeta, type SuggestMode } from '../../src/db/db';
 import { colors } from '../../src/theme';
 import { bagToDisc, discType, stab, TYPE_META, type Disc, type DiscType, type ScenarioDisc, type Stability } from '../../src/utils/disc';
-import { masterDiscs } from '../../src/utils/masterLibrary';
+import { getCatalog } from '../../src/catalog/catalogLoader';
 import { SCENARIOS, type Scenario } from '../../src/utils/scenarios';
 import { PROFILES, rankDiscs, type Scored, type SkillPreset, type ThrowStyle } from '../../src/utils/suggestScore';
 
 // Same shape check the website applies to the raw master JSON before treating a row as a
 // valid ScenarioDisc — bundled discs_master.json already satisfies this, but stay defensive
-// since this is the app's own copy of that file.
-const LIBRARY_DISCS: ScenarioDisc[] = masterDiscs.filter(
-  (d): d is ScenarioDisc => d.stability != null && !!d.type
-);
+// since this is the app's own copy (or a downloaded catalog-v2 override, see src/catalog/) of
+// that file. Recomputed on every focus (not a module-level constant) so a catalog swap while
+// Settings is open is reflected here without needing an app restart.
+function libraryDiscsFromCatalog(): ScenarioDisc[] {
+  return getCatalog().filter((d): d is ScenarioDisc => d.stability != null && !!d.type);
+}
 
 const CATEGORY_FILTERS: { id: DiscType | 'all'; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -58,6 +60,7 @@ export default function DiscSuggestScreen() {
   const [categoryFilter, setCategoryFilter] = useState<DiscType | 'all'>('all');
   const [stabilityFilter, setStabilityFilter] = useState<Stability | 'all'>('all');
   const [brandFilter, setBrandFilter] = useState('');
+  const [libraryDiscs, setLibraryDiscs] = useState<ScenarioDisc[]>(() => libraryDiscsFromCatalog());
   // Resolve the user once and hold it in a ref so the focus effect below has stable ([])
   // deps — depending on a `userId` state instead caused a double-fetch on cold open (the
   // first run set the state, whose change re-fired the still-focused effect).
@@ -75,6 +78,7 @@ export default function DiscSuggestScreen() {
         setSkill(meta.skill);
         setThrowStyle(meta.throwStyle);
         setMode(meta.suggestMode);
+        setLibraryDiscs(libraryDiscsFromCatalog());
         setLoading(false);
       })();
     }, [])
@@ -93,20 +97,20 @@ export default function DiscSuggestScreen() {
     // identically (fixes the old bag/library criteria mismatch). No cap on bag matches; library
     // capped inside rankDiscs.
     const bag = rankDiscs(bagDiscs.map(bagToDisc), activeScenario.id, skill, bagDiscs.length || undefined, throwStyle);
-    const lib = rankDiscs(LIBRARY_DISCS, activeScenario.id, skill, 15, throwStyle);
+    const lib = rankDiscs(libraryDiscs, activeScenario.id, skill, 15, throwStyle);
     const bagNames = new Set(bag.map((s) => `${s.disc.name}|${s.disc.mfr}`.toLowerCase()));
     const libOnly = lib.filter((s) => !bagNames.has(`${s.disc.name}|${s.disc.mfr}`.toLowerCase()));
     return { bagMatches: bag, libOnly };
-  }, [activeScenario, bagDiscs, skill, throwStyle]);
+  }, [activeScenario, bagDiscs, skill, throwStyle, libraryDiscs]);
 
   // Buying mode: same scorer, wider net (every qualifying library disc, not just top 15), minus
   // whatever's already owned — filters below narrow it down, not the scorer itself.
   const buyResults = useMemo(() => {
     if (!activeScenario || mode !== 'buying') return [] as Scored[];
     const ownedNames = new Set(bagDiscs.map((d) => `${d.mold}|${d.mfr}`.toLowerCase()));
-    const notOwned = LIBRARY_DISCS.filter((d) => !ownedNames.has(`${d.name}|${d.mfr}`.toLowerCase()));
+    const notOwned = libraryDiscs.filter((d) => !ownedNames.has(`${d.name}|${d.mfr}`.toLowerCase()));
     return rankDiscs(notOwned, activeScenario.id, skill, notOwned.length, throwStyle);
-  }, [activeScenario, mode, bagDiscs, skill, throwStyle]);
+  }, [activeScenario, mode, bagDiscs, skill, throwStyle, libraryDiscs]);
 
   const filteredBuyResults = useMemo(() => {
     const brand = brandFilter.trim().toLowerCase();
@@ -117,6 +121,25 @@ export default function DiscSuggestScreen() {
       return true;
     });
   }, [buyResults, categoryFilter, stabilityFilter, brandFilter]);
+
+  // Perf fix: Buying mode's result set is uncapped (every qualifying library disc, easily
+  // hundreds), and was being fully mounted via a plain .map() inside the screen's ScrollView —
+  // the same "mount-bound scroll cliff" B2 already diagnosed and fixed for the Bag screen
+  // (b2-spike.md). Same fix here: paginate at PAGE_SIZE and render via FlatList instead of a
+  // ScrollView + .map(), so only a bounded number of cards ever mount.
+  const BUY_PAGE_SIZE = 30;
+  const [buyPage, setBuyPage] = useState(0);
+  const buyPaginated = filteredBuyResults.length > BUY_PAGE_SIZE;
+  const buyPageCount = Math.max(1, Math.ceil(filteredBuyResults.length / BUY_PAGE_SIZE));
+  const clampedBuyPage = Math.min(buyPage, buyPageCount - 1);
+  const pagedBuyResults = useMemo(
+    () => (buyPaginated ? filteredBuyResults.slice(clampedBuyPage * BUY_PAGE_SIZE, (clampedBuyPage + 1) * BUY_PAGE_SIZE) : filteredBuyResults),
+    [buyPaginated, filteredBuyResults, clampedBuyPage]
+  );
+  // Any change to what's shown resets to the first page — a stale page index would show nothing.
+  useEffect(() => {
+    setBuyPage(0);
+  }, [activeId, mode, categoryFilter, stabilityFilter, brandFilter]);
 
   // Bag-gap summary — the actual differentiator vs. just re-filtering the library
   // (buying-mode-scope.md decision 5). Derives the active scenario's ideal category+stability
@@ -156,8 +179,8 @@ export default function DiscSuggestScreen() {
     );
   }
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+  const header = (
+    <>
       <Text style={styles.title}>Disc Suggest</Text>
       <Text style={styles.substat}>
         {mode === 'throwing' ? 'Pick a scenario — see what fits from your bag and the full library' : 'Pick a scenario — see what to add to your bag'}
@@ -187,8 +210,121 @@ export default function DiscSuggestScreen() {
       </View>
 
       <ScenarioGrid scenarios={SCENARIOS} activeId={activeId} onSelect={onSelect} />
+    </>
+  );
 
-      {activeScenario && mode === 'throwing' && (
+  if (mode === 'buying') {
+    // Perf fix (see BUY_PAGE_SIZE above): a FlatList, not a ScrollView + .map(), so an
+    // uncapped result set (easily hundreds of discs) never fully mounts at once — only a
+    // page's worth of cards render, same fix B2 already proved out for the Bag screen.
+    return (
+      <FlatList
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        data={activeScenario ? pagedBuyResults : []}
+        keyExtractor={(s) => `buy-${s.disc.name}-${s.disc.mfr}`}
+        renderItem={({ item: s }) => <SuggestResultCard disc={s.disc} inBag={false} band={s.band} />}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={7}
+        removeClippedSubviews
+        ListHeaderComponent={
+          <>
+            {header}
+            {activeScenario && (
+              <View style={styles.results}>
+                {gapMessage && (
+                  <View testID="buy-gap-banner" style={styles.gapBanner}>
+                    <Text style={styles.gapText}>{gapMessage}</Text>
+                  </View>
+                )}
+
+                <View style={styles.filterRow}>
+                  {CATEGORY_FILTERS.map((c) => (
+                    <Pressable
+                      key={c.id}
+                      testID={`buy-filter-category-${c.id}`}
+                      onPress={() => setCategoryFilter(c.id)}
+                      style={[styles.filterPill, categoryFilter === c.id && styles.filterPillActive]}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: categoryFilter === c.id }}
+                    >
+                      <Text style={[styles.filterPillText, categoryFilter === c.id && styles.filterPillTextActive]}>{c.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <View style={styles.filterRow}>
+                  {STABILITY_FILTERS.map((s) => (
+                    <Pressable
+                      key={s.id}
+                      testID={`buy-filter-stability-${s.id}`}
+                      onPress={() => setStabilityFilter(s.id)}
+                      style={[styles.filterPill, stabilityFilter === s.id && styles.filterPillActive]}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: stabilityFilter === s.id }}
+                    >
+                      <Text style={[styles.filterPillText, stabilityFilter === s.id && styles.filterPillTextActive]}>{s.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <TextInput
+                  testID="buy-filter-brand"
+                  style={styles.brandInput}
+                  value={brandFilter}
+                  onChangeText={setBrandFilter}
+                  placeholder="Filter by brand…"
+                  placeholderTextColor={colors.muted}
+                />
+
+                <View style={styles.resultsHeader}>
+                  <Text style={styles.resultsHeaderText}>Discs to consider</Text>
+                  <View style={styles.countPill}>
+                    <Text style={styles.countPillText}>{filteredBuyResults.length}</Text>
+                  </View>
+                </View>
+                {filteredBuyResults.length === 0 && (
+                  <Text style={styles.emptyBag}>No library discs match these filters for this scenario.</Text>
+                )}
+              </View>
+            )}
+          </>
+        }
+        ListFooterComponent={
+          buyPaginated ? (
+            <View style={styles.pager}>
+              <Pressable
+                style={[styles.pagerBtn, clampedBuyPage === 0 && styles.pagerBtnDisabled]}
+                onPress={() => setBuyPage((p) => Math.max(0, p - 1))}
+                disabled={clampedBuyPage === 0}
+                accessibilityRole="button"
+                accessibilityLabel="Previous page"
+              >
+                <Text style={[styles.pagerBtnText, clampedBuyPage === 0 && styles.pagerBtnTextDisabled]}>‹ Prev</Text>
+              </Pressable>
+              <Text style={styles.pagerLabel}>
+                Page {clampedBuyPage + 1} of {buyPageCount}
+              </Text>
+              <Pressable
+                style={[styles.pagerBtn, clampedBuyPage >= buyPageCount - 1 && styles.pagerBtnDisabled]}
+                onPress={() => setBuyPage((p) => Math.min(buyPageCount - 1, p + 1))}
+                disabled={clampedBuyPage >= buyPageCount - 1}
+                accessibilityRole="button"
+                accessibilityLabel="Next page"
+              >
+                <Text style={[styles.pagerBtnText, clampedBuyPage >= buyPageCount - 1 && styles.pagerBtnTextDisabled]}>Next ›</Text>
+              </Pressable>
+            </View>
+          ) : null
+        }
+      />
+    );
+  }
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {header}
+
+      {activeScenario && (
         <View style={styles.results}>
           <View style={styles.resultsHeader}>
             <Text style={styles.resultsHeaderText}>From your bag</Text>
@@ -217,67 +353,6 @@ export default function DiscSuggestScreen() {
           ))}
         </View>
       )}
-
-      {activeScenario && mode === 'buying' && (
-        <View style={styles.results}>
-          {gapMessage && (
-            <View testID="buy-gap-banner" style={styles.gapBanner}>
-              <Text style={styles.gapText}>{gapMessage}</Text>
-            </View>
-          )}
-
-          <View style={styles.filterRow}>
-            {CATEGORY_FILTERS.map((c) => (
-              <Pressable
-                key={c.id}
-                testID={`buy-filter-category-${c.id}`}
-                onPress={() => setCategoryFilter(c.id)}
-                style={[styles.filterPill, categoryFilter === c.id && styles.filterPillActive]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: categoryFilter === c.id }}
-              >
-                <Text style={[styles.filterPillText, categoryFilter === c.id && styles.filterPillTextActive]}>{c.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <View style={styles.filterRow}>
-            {STABILITY_FILTERS.map((s) => (
-              <Pressable
-                key={s.id}
-                testID={`buy-filter-stability-${s.id}`}
-                onPress={() => setStabilityFilter(s.id)}
-                style={[styles.filterPill, stabilityFilter === s.id && styles.filterPillActive]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: stabilityFilter === s.id }}
-              >
-                <Text style={[styles.filterPillText, stabilityFilter === s.id && styles.filterPillTextActive]}>{s.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <TextInput
-            testID="buy-filter-brand"
-            style={styles.brandInput}
-            value={brandFilter}
-            onChangeText={setBrandFilter}
-            placeholder="Filter by brand…"
-            placeholderTextColor={colors.muted}
-          />
-
-          <View style={styles.resultsHeader}>
-            <Text style={styles.resultsHeaderText}>Discs to consider</Text>
-            <View style={styles.countPill}>
-              <Text style={styles.countPillText}>{filteredBuyResults.length}</Text>
-            </View>
-          </View>
-          {filteredBuyResults.length === 0 ? (
-            <Text style={styles.emptyBag}>No library discs match these filters for this scenario.</Text>
-          ) : (
-            filteredBuyResults.map((s) => (
-              <SuggestResultCard key={`buy-${s.disc.name}-${s.disc.mfr}`} disc={s.disc} inBag={false} band={s.band} />
-            ))
-          )}
-        </View>
-      )}
     </ScrollView>
   );
 }
@@ -286,6 +361,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   content: { padding: 14, paddingTop: 56, paddingBottom: 40, gap: 12 },
+  // Buying-mode pagination footer — same pattern/styling as Bag's B2 pager (index.tsx).
+  pager: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, paddingHorizontal: 4 },
+  pagerBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: colors.border },
+  pagerBtnDisabled: { opacity: 0.4 },
+  pagerBtnText: { color: colors.accent, fontSize: 13, fontWeight: '600' },
+  pagerBtnTextDisabled: { color: colors.muted },
+  pagerLabel: { color: colors.muted, fontSize: 12, fontWeight: '600' },
   title: { color: colors.text, fontSize: 26, fontWeight: '800' },
   substat: { color: colors.muted, fontSize: 12, marginBottom: 4 },
   modeBar: {

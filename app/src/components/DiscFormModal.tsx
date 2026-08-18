@@ -7,7 +7,8 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleShee
 import { colors } from '../theme';
 import { wearEstimateLabel, type Disc } from '../utils/disc';
 import { DISC_COLORS } from '../utils/discColors';
-import { isCustom, searchLibrary, type CustomMasterDisc, type LibraryDisc } from '../utils/masterLibrary';
+import { isCustom, type CustomMasterDisc, type LibraryDisc } from '../utils/masterLibrary';
+import { searchLibraryCatalog } from '../catalog/catalogLoader';
 import ColorPicker from './ColorPicker';
 import GradientButton from './GradientButton';
 import NumberInput from './NumberInput';
@@ -53,7 +54,7 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
 
   const suggestions = useMemo<LibraryDisc[]>(() => {
     if (!isNew || pickedFromLibrary || !customDiscs) return [];
-    return searchLibrary(form.mold, customDiscs, 6, form.mfr);
+    return searchLibraryCatalog(form.mold, customDiscs, 6, form.mfr);
   }, [isNew, pickedFromLibrary, customDiscs, form.mold, form.mfr]);
 
   const set = <K extends keyof Disc>(key: K, value: Disc[K]) => setForm((f) => ({ ...f, [key]: value }));

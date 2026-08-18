@@ -8,7 +8,7 @@ import urllib.parse
 import urllib.request
 from contextlib import contextmanager
 from functools import wraps
-from flask import Flask, jsonify, request, render_template, session, redirect, url_for, abort
+from flask import Flask, jsonify, request, render_template, session, redirect, url_for, abort, send_from_directory
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 DB_FILE  = os.path.join(DATA_DIR, 'disc_tracker.db')
@@ -535,6 +535,26 @@ def get_master():
             return jsonify({'error': 'Master disc library unavailable'}), 500
     return app.response_class(_master_cache, mimetype='application/json')
 
+
+# ── Optional downloaded disc catalog (Try Discs) ───────────────────────────────
+#
+# catalog-v2-scope.md / vps-catalog-hosting-proposal.md. Serves a maintainer-published catalog
+# data pack + manifest to the mobile app's optional "Check for updates" download — the bundled
+# library stays the default, this is never required. Deliberately shaped as two fixed-name
+# static-file fetches (no query params, no search, no listing) per Try Discs' own terms: publicly
+# fetchable by the app, but never a re-served public search API. Nothing here is written by this
+# process — files land in CATALOG_DIR only via the separate `tools/trydiscs-sync.js publish` step
+# (scp, maintainer-run, never through git). Deliberately NOT @login_required: the mobile app has
+# no website session to send.
+CATALOG_DIR = os.path.join(DATA_DIR, 'catalog')
+
+@app.route('/catalog/manifest.json')
+def get_catalog_manifest():
+    return send_from_directory(CATALOG_DIR, 'manifest.json', mimetype='application/json')
+
+@app.route('/catalog/<path:asset>')
+def get_catalog_asset(asset):
+    return send_from_directory(CATALOG_DIR, asset, mimetype='application/json')
 
 
 @app.route('/discsuggestion')

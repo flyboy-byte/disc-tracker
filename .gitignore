@@ -17,3 +17,7 @@ Thumbs.db
 node_modules/
 test-results/
 playwright-report/
+
+# TryDiscs catalog sync (tools/trydiscs-sync.js) — working cache + reports, never committed
+# per Try Discs' request to coordinate before any generated catalog data lands in the repo.
+tools/.trydiscs-cache/

@@ -30,7 +30,11 @@ candidate pool for this feature — its coverage/accuracy directly is the featur
 ceiling, more than any scoring logic. Not a hard blocker (existing Disc Suggest already ranks
 against this same library today), but a real risk: a buying-mode feature makes library gaps more
 visible than "what should I throw with what I own" does, since there's no accuracy floor. Flagged
-here as a risk to weigh, not resolved.
+here as a risk to weigh, not resolved. **Update 2026-08-17:** exactly this library expansion is
+now in progress (TryDiscs, 2,147 discs vs. today's 1,660) — see `catalog-v2-scope.md`. Not live
+yet (blocked on the catalog founder's packaging reply), but once it ships, Buying mode is the
+feature that directly benefits most from it — no code change needed here, `getCatalog()` already
+flows into this screen's library results.
 
 ## Non-goals (v1, the guardrails)
 

@@ -5,7 +5,8 @@
 import { useMemo, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors } from '../theme';
-import { searchLibrary, isCustom, type CustomMasterDisc, type LibraryDisc } from '../utils/masterLibrary';
+import { isCustom, type CustomMasterDisc, type LibraryDisc } from '../utils/masterLibrary';
+import { searchLibraryCatalog } from '../catalog/catalogLoader';
 
 interface Props {
   visible: boolean;
@@ -19,7 +20,7 @@ interface Props {
 export default function DiscLibraryModal({ visible, customDiscs, onCancel, onPick, onAddCustom, onDeleteCustom }: Props) {
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
-  const results = useMemo(() => searchLibrary(query, customDiscs), [query, customDiscs]);
+  const results = useMemo(() => searchLibraryCatalog(query, customDiscs), [query, customDiscs]);
 
   const close = () => {
     setQuery('');

@@ -30,6 +30,11 @@ export interface UserMeta {
   fieldShowAll: boolean;
   // buying-mode-scope.md — Disc Suggest's mode toggle. Default 'throwing' (today's behavior).
   suggestMode: SuggestMode;
+  // catalog-v2-scope.md — state for the last successfully-activated downloaded catalog pack.
+  // All null until a user downloads one; src/catalog/ is the only writer.
+  catalogVersion: number | null;
+  catalogDatasetVersion: string | null;
+  catalogHash: string | null;
 }
 
 export type SuggestMode = 'throwing' | 'buying';
@@ -377,8 +382,9 @@ export function reorderDiscs(userId: number, orderedIds: number[]): Promise<void
 async function readMeta(db: SQLiteDatabase, userId: number): Promise<UserMeta> {
   const row = await db.getFirstAsync<{
     next_id: number; sort_mode: string; arc_view: string; ms_ref: number; skill: string; field_show_all: number; throw_style: string; suggest_mode: string;
+    catalog_version: number | null; catalog_dataset_version: string | null; catalog_hash: string | null;
   }>(
-    'SELECT next_id, sort_mode, arc_view, ms_ref, skill, field_show_all, throw_style, suggest_mode FROM user_meta WHERE user_id = ?',
+    'SELECT next_id, sort_mode, arc_view, ms_ref, skill, field_show_all, throw_style, suggest_mode, catalog_version, catalog_dataset_version, catalog_hash FROM user_meta WHERE user_id = ?',
     [userId]
   );
   const skill = row?.skill;
@@ -393,6 +399,9 @@ async function readMeta(db: SQLiteDatabase, userId: number): Promise<UserMeta> {
     fieldShowAll: !!row?.field_show_all,
     throwStyle: throwStyle === 'forehand' ? 'forehand' : 'backhand',
     suggestMode: suggestMode === 'buying' ? 'buying' : 'throwing',
+    catalogVersion: row?.catalog_version ?? null,
+    catalogDatasetVersion: row?.catalog_dataset_version ?? null,
+    catalogHash: row?.catalog_hash ?? null,
   };
 }
 
@@ -406,13 +415,18 @@ export function setMeta(userId: number, updates: Partial<UserMeta>): Promise<voi
     const current = await readMeta(db, userId);
     const next = { ...current, ...updates };
     await db.runAsync(
-      `INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view, ms_ref, skill, field_show_all, throw_style, suggest_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO user_meta (user_id, next_id, sort_mode, arc_view, ms_ref, skill, field_show_all, throw_style, suggest_mode, catalog_version, catalog_dataset_version, catalog_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id) DO UPDATE SET
          next_id = excluded.next_id, sort_mode = excluded.sort_mode,
          arc_view = excluded.arc_view, ms_ref = excluded.ms_ref, skill = excluded.skill,
          field_show_all = excluded.field_show_all, throw_style = excluded.throw_style,
-         suggest_mode = excluded.suggest_mode`,
-      [userId, next.nextId, next.sortMode, next.arcView, next.msRefEnabled ? 1 : 0, next.skill, next.fieldShowAll ? 1 : 0, next.throwStyle, next.suggestMode]
+         suggest_mode = excluded.suggest_mode, catalog_version = excluded.catalog_version,
+         catalog_dataset_version = excluded.catalog_dataset_version, catalog_hash = excluded.catalog_hash`,
+      [
+        userId, next.nextId, next.sortMode, next.arcView, next.msRefEnabled ? 1 : 0, next.skill,
+        next.fieldShowAll ? 1 : 0, next.throwStyle, next.suggestMode,
+        next.catalogVersion, next.catalogDatasetVersion, next.catalogHash,
+      ]
     );
   });
 }

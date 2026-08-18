@@ -18,6 +18,17 @@ import { colors } from '../../src/theme';
 import type { Disc } from '../../src/utils/disc';
 import type { SkillPreset, ThrowStyle } from '../../src/utils/suggestScore';
 import { buildBackup, parseBackup, backupSummary } from '../../src/utils/backup';
+import { getCatalog, getCatalogSource, initCatalog } from '../../src/catalog/catalogLoader';
+import { syncCatalog } from '../../src/catalog/catalogSync';
+
+// Azeem (Try Discs) approved Option C — VPS-hosted, app-downloaded, never committed to the
+// public repo. See app/plan/docs/catalog-v2-scope.md. Nothing is published to this URL yet
+// (Phase 3 prep only) — the endpoint 404s cleanly until a maintainer runs
+// `tools/trydiscs-sync.js publish`, and the client already treats any failed check as a no-op.
+const CATALOG_MANIFEST_URL = 'https://disc.flyboybyte.com/catalog/manifest.json';
+// The only Try Discs URL confirmed to exist from Azeem's own correspondence — their public
+// marketing site's URL wasn't given, so this points at the documented API instead of guessing.
+const TRYDISCS_URL = 'https://api.trydiscs.com';
 
 type ArcView = 'RHBH' | 'RHFH' | 'LHBH' | 'LHFH';
 const ARC_VIEWS: ArcView[] = ['RHBH', 'RHFH', 'LHBH', 'LHFH'];
@@ -46,7 +57,28 @@ export default function SettingsScreen() {
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
+  const [catalogChecking, setCatalogChecking] = useState(false);
   const userIdRef = useRef<number | null>(null);
+
+  const handleCatalogCheck = async () => {
+    setCatalogChecking(true);
+    try {
+      const { manifest } = await syncCatalog(CATALOG_MANIFEST_URL);
+      await initCatalog();
+      if (userIdRef.current != null) {
+        await setMeta(userIdRef.current, {
+          catalogVersion: manifest.catalogVersion,
+          catalogDatasetVersion: manifest.datasetVersion,
+          catalogHash: manifest.sha256,
+        });
+      }
+      toast(`Catalog updated — ${manifest.recordCount} discs.`);
+    } catch {
+      toast('Catalog update failed — kept your current catalog.');
+    } finally {
+      setCatalogChecking(false);
+    }
+  };
 
   // Phase 2 (data-audit-scope.md): live count of discs missing weight, plastic, or wear-level.
   const incompleteCount = useMemo(
@@ -418,6 +450,31 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
+      {/* Disc catalog — catalog-v2-scope.md. Bundled fallback always works offline; this only
+          ever offers an optional, explicit download, never a background/automatic one. */}
+      <View style={styles.card}>
+        <Text style={styles.sectionLabel}>DISC CATALOG</Text>
+        <View style={styles.aboutRow}>
+          <Text style={styles.rowText}>Source</Text>
+          <Text style={styles.rowValue}>
+            {getCatalogSource() === 'downloaded' ? 'Downloaded' : 'Bundled'} — {getCatalog().length} discs
+          </Text>
+        </View>
+        <View style={styles.divider} />
+        <Pressable
+          testID="settings-catalog-check"
+          style={styles.row}
+          onPress={handleCatalogCheck}
+          disabled={catalogChecking}
+          accessibilityRole="button"
+          accessibilityLabel="Check for a catalog update"
+        >
+          <Text style={[styles.rowText, catalogChecking && styles.rowDisabled]}>
+            {catalogChecking ? 'Checking…' : 'Check for updates'}
+          </Text>
+        </Pressable>
+      </View>
+
       {/* About */}
       <View style={styles.card}>
         <Text style={styles.sectionLabel}>ABOUT</Text>
@@ -458,6 +515,15 @@ export default function SettingsScreen() {
           <Text style={[styles.rowText, styles.link]}>shotshaper</Text>
           <Text style={[styles.rowChevron, styles.link]}>↗</Text>
         </Pressable>
+        {getCatalogSource() === 'downloaded' && (
+          <>
+            <View style={styles.divider} />
+            <Pressable style={styles.row} onPress={() => Linking.openURL(TRYDISCS_URL)} accessibilityRole="link" accessibilityLabel="Open Try Discs">
+              <Text style={[styles.rowText, styles.link]}>Disc data by Try Discs</Text>
+              <Text style={[styles.rowChevron, styles.link]}>↗</Text>
+            </Pressable>
+          </>
+        )}
       </View>
 
       <CsvExportModal visible={exportOpen} discs={discs} onCancel={() => setExportOpen(false)} />

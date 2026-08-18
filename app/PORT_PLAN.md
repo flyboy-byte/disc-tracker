@@ -17,7 +17,16 @@
 
 ---
 
-## ⚡ CURRENT STATUS (2026-08-16) — read this first
+## ⚡ CURRENT STATUS (2026-08-17) — read this first
+
+**Catalog-v2 (TryDiscs) is code-complete and CLEAR TO DEPLOY, but NOT shipped in any release
+yet — read `plan/docs/catalog-v2-scope.md` before touching `src/catalog/` or
+`tools/trydiscs-sync.js`.** It has its own "Resume checklist" and pivot guide; don't re-derive
+the design or re-ask questions already answered there. Short version: the catalog's founder
+approved VPS-hosted access, a security review of the hosting design came back clean (one
+non-blocking nginx rate-limit recommendation), reconciliation tooling + full client-side
+runtime-swappable-catalog scaffolding are built and tested (141/141 Jest) — what's left is
+purely mechanical (`deploy.sh` + `tools/trydiscs-sync.js publish`), whenever Logan runs it.
 
 **Latest release: `v0.19`** (2026-08-16) — wear estimate (1-5 scale, supersedes the shipped
 3-tier New/Seasoned/Beat field) + Disc Suggest **"buying mode"** (rank library discs you don't
@@ -136,7 +145,7 @@ sessions without half-finished work in the tree.
 
 | Step | What | Depends on | Detailed section |
 |------|------|-----------|------------------|
-| **R1** | Parity & Kink Audit → punch-list | — | ✅ done — `plan/docs/punch-list.md` |
+| **R1** | Parity & Kink Audit → punch-list | — | ✅ done — `plan/docs/archive/punch-list.md` |
 | **R2** | Flight Shaper UX rework (layout-only) | R1 | ✅ done + emulator-verified (`acd1a4c`) |
 | **R3** | App-wide polish & parity fixes | R1 | ✅ DONE 2026-07-26 (commit `6ce23e1`) — see below |
 
@@ -149,13 +158,13 @@ sessions without half-finished work in the tree.
 > deliberately skipped** (meaningless on local-only data). **Remaining (minor):** a known
 > keyboard-coverage kink on lower form fields (KeyboardAvoidingView fix deferred), large-bag
 > scroll perf (untestable with the 3-disc fixture), and two cosmetic nits. Item-level status in
-> `plan/docs/punch-list.md`.
+> `plan/docs/archive/punch-list.md`.
 | **R4** | Marshall Street reference images | R3 mostly | ✅ DONE 2026-07-29 — "Marshall Street Flight Path Images" below |
-| **R4.5** | Physics-sim port (shotshaper) — **re-sequenced before R5 by Logan 2026-07-29** | R4 | ✅ DONE 2026-07-29 — Path B (on-device TS port). `src/physics/sim/`, parity-tested. Scoping: `plan/docs/physics-sim-port.md` |
-| **R5** | ~~VPS sync (opt-in, own server)~~ | — | **DROPPED 2026-07-30 (Logan).** Superseded by B4 — CSV covers backup/migration/interop and the *unique* add of push/pull sync was always narrow (infra + F-Droid cost > payoff). "Take the vps idea and make import/export much better and integrated instead." `sync-design.md` kept as a record; not the plan. |
-| **B1** | Disc-suggestion accuracy rewrite (scoring model + thrower setting + validation harness) | R4.5 | ✅ DONE 2026-07-30 — shipped `mobile-preview-0.10`. Unified `src/utils/suggestScore.ts` (skill presets, one-sided tolerances, band chips), `user_meta.skill`, frozen baseline harness. 98/98 tests + on-device verified. `plan/docs/direction-2026-07-29.md` Decision 3, `plan/docs/suggest-model.md` |
-| **B2** | Big-collection support (~200 discs: measurement spike → perf fixes + bag/collection IA) | — | ✅ DONE 2026-07-30 — shipped `mobile-preview-0.11`. Incremental DB writes, Field-view scope + Settings opt-in, memoized cards, Bag/Collection segmented split, 30/page pagination + per-card Move-to-top. Spike + results: `plan/docs/b2-spike.md` |
-| **B3** | Offline scorekeeper (UDisc-fallback scorecard) | — | ✅ DONE 2026-07-30 (ships `0.12`). 5th "Score" tab, rounds list / setup / hole-by-hole card / summary, local SQLite (4 tables), up-to-8 players. `plan/docs/scorekeeper-scope.md` |
+| **R4.5** | Physics-sim port (shotshaper) — **re-sequenced before R5 by Logan 2026-07-29** | R4 | ✅ DONE 2026-07-29 — Path B (on-device TS port). `src/physics/sim/`, parity-tested. Scoping: `plan/docs/archive/physics-sim-port.md` |
+| **R5** | ~~VPS sync (opt-in, own server)~~ | — | **DROPPED 2026-07-30 (Logan).** Superseded by B4 — CSV covers backup/migration/interop and the *unique* add of push/pull sync was always narrow (infra + F-Droid cost > payoff). "Take the vps idea and make import/export much better and integrated instead." `plan/docs/archive/sync-design.md` kept as a record; not the plan. |
+| **B1** | Disc-suggestion accuracy rewrite (scoring model + thrower setting + validation harness) | R4.5 | ✅ DONE 2026-07-30 — shipped `mobile-preview-0.10`. Unified `src/utils/suggestScore.ts` (skill presets, one-sided tolerances, band chips), `user_meta.skill`, frozen baseline harness. 98/98 tests + on-device verified. `plan/docs/archive/direction-2026-07-29.md` Decision 3, `plan/docs/suggest-model.md` |
+| **B2** | Big-collection support (~200 discs: measurement spike → perf fixes + bag/collection IA) | — | ✅ DONE 2026-07-30 — shipped `mobile-preview-0.11`. Incremental DB writes, Field-view scope + Settings opt-in, memoized cards, Bag/Collection segmented split, 30/page pagination + per-card Move-to-top. Spike + results: `plan/docs/archive/b2-spike.md` |
+| **B3** | Offline scorekeeper (UDisc-fallback scorecard) | — | ✅ DONE 2026-07-30 (ships `0.12`). 5th "Score" tab, rounds list / setup / hole-by-hole card / summary, local SQLite (4 tables), up-to-8 players. `plan/docs/archive/scorekeeper-scope.md` |
 | **B4** | Better, integrated import/export (replaces R5 sync) | — | ✅ DONE 2026-07-30 (ships `0.12`). Full-device JSON **Back up everything / Restore** (discs+in-bag+settings+rounds, share-sheet) + relabeled CSV disc interop. `src/utils/backup.ts`. |
 | **R6** | Release signing + Play closed testing | B1/B2 as desired | "Distribution Track → D1" below — now unblocked (no sync paperwork) |
 | **R7** | F-Droid (self-hosted → official index) | R6 proven | "Distribution Track → D2/D3" below; rubric = fdroiddata MR checklist in `plan/docs/fdroid-reference.md`. **Before building:** the dep tree got a *minimal* reproducibility fix (2026-07-31, commit `2601506`) — a deferred SDK patch-alignment + its full revisit procedure is documented in `plan/docs/fdroid-reference.md` § "Dependency reproducibility — done vs. DEFERRED". Do that first. |
@@ -171,7 +180,7 @@ sessions without half-finished work in the tree.
 > **2026-07-29 direction pivot:** R5 sync **deferred (researched-and-ready, not cut)**; new
 > priorities **B1 (suggestion accuracy — thrower = skill presets)** and **B2 (big collections)**
 > inserted ahead of the distribution track. `physicsV2.ts` parked/obsolete (RESEARCH §7). Full
-> rationale + B1 step-by-step in `plan/docs/direction-2026-07-29.md`.
+> rationale + B1 step-by-step in `plan/docs/archive/direction-2026-07-29.md`.
 
 > **2026-08-08 strategy re-plan (C-series):** a competitor-grounded strategy review
 > (`plan/research/strategy-review-2026-08-08.md`) reframes the goal — turn the app from a *disc
@@ -199,7 +208,7 @@ so the polish work is driven by a list instead of ad hoc.
 - [ ] Real-device bug sweep — install the current build and hunt kinks (form focus/scroll,
       slow lists, awkward taps, anything that "feels off"), logging each honestly.
 - [ ] Triage into **P0 bug** / **P1 parity gap** / **P2 polish**, and record it here (or a
-      sibling `app/plan/docs/punch-list.md`). This list is the input to R2 and R3.
+      sibling `app/plan/docs/archive/punch-list.md`). This list is the input to R2 and R3.
 
 **Exit:** a written, triaged punch-list exists. No app code changed yet.
 
@@ -898,7 +907,7 @@ in the meantime. Do not let D3 block anything.
 > steps (R1–R3) and Marshall Street (R4). Still opt-in, still the developer's own VPS, still
 > local-first.
 >
-> **⚠️ The authoritative design is now [`plan/docs/sync-design.md`](plan/docs/sync-design.md)**
+> **⚠️ The authoritative design is now [`plan/docs/archive/sync-design.md`](plan/docs/archive/sync-design.md)**
 > (locked 2026-07-25) — it supersedes the minimal sketch below where they differ. Key
 > decisions made there: manual backup/restore (full-replace, one direction, with a pre-flight
 > "overwrite?" check), TLS mandatory + plaintext at rest, a single `SYNC_TOKEN` gating the

@@ -20,6 +20,9 @@ Disc Tracker is two things that share one brain:
 
 Both share the same 1,660-disc library, the same flight-arc math, and the same core idea: a fast,
 private place to manage your bag, understand how your discs fly, and figure out what to throw.
+The mobile app also offers an optional, larger catalog as an in-app download — [disc data by
+Try Discs](https://api.trydiscs.com), used only for on-device lookup/suggest/audit, never
+re-served or published as a standalone dataset.
 
 ---
 

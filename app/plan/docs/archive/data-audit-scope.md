@@ -1,9 +1,11 @@
 # Data audit — scope (Phase 2 of the suggest-engine plan)
 
-**Status:** SCOPING — not started. Written 2026-08-15, mirrors `scorekeeper-scope.md`'s structure
-per `suggest-engine-plan.md`'s own instruction. Not the fuzzy confidence-matching engine the
-original ChatGPT handoff described — that's explicitly rejected as over-engineered for this app
-(see "Non-goals").
+**Status:** DONE 2026-08-16 — shipped as Phase 2 of the suggest-engine plan (`6bb2651`), verified
+on-device. This scope doc's "SCOPING — not started" framing below is kept as the original design
+record, not current status — see `suggest-engine-plan.md` for the live status and verification
+notes. Written 2026-08-15, mirrors `scorekeeper-scope.md`'s structure per `suggest-engine-plan.md`'s
+own instruction. Not the fuzzy confidence-matching engine the original ChatGPT handoff
+described — that's explicitly rejected as over-engineered for this app (see "Non-goals").
 
 ## What this is
 
