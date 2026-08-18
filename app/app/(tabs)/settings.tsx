@@ -2,10 +2,11 @@
 // backup/restore, the Marshall Street reference-image opt-in (R4), and (later) the VPS sync UI —
 // hence the disabled placeholder below.
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
 import { Directory, File, Paths } from 'expo-file-system';
+import { StorageAccessFramework } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import CsvExportModal from '../../src/components/CsvExportModal';
@@ -187,31 +188,62 @@ export default function SettingsScreen() {
     await saveDiscs(uid, next);
   };
 
-  // Full-device backup (B4): one JSON file with discs + settings + rounds → share sheet.
+  // Full-device backup (B4): one JSON file with discs + settings + rounds. Two ways out, same
+  // pattern as CsvExportModal's split — share sheet (any app, including "Save to Files") or a
+  // direct SAF write to a folder the user picks once (e.g. Downloads), no share sheet round-trip.
   const [busy, setBusy] = useState(false);
-  const handleBackup = async () => {
+  const [downloadError, setDownloadError] = useState(false);
+  const buildBackupPayload = async () => {
     const uid = userIdRef.current;
-    if (uid == null || busy) return;
+    if (uid == null) return null;
+    const [allDiscs, meta, rounds, custom] = await Promise.all([getDiscs(uid), getMeta(uid), listRounds(uid), getCustomDiscs(uid)]);
+    const json = buildBackup(allDiscs, { sortMode: meta.sortMode, arcView: meta.arcView, skill: meta.skill, throwStyle: meta.throwStyle, suggestMode: meta.suggestMode, msRefEnabled: meta.msRefEnabled, fieldShowAll: meta.fieldShowAll }, rounds, custom);
+    const summary = `${allDiscs.length} disc${allDiscs.length === 1 ? '' : 's'}${rounds.length ? ` · ${rounds.length} round${rounds.length === 1 ? '' : 's'}` : ''}`;
+    return { json, summary };
+  };
+
+  const handleBackupShare = async () => {
+    if (userIdRef.current == null || busy) return;
     setBusy(true);
     try {
-      const [allDiscs, meta, rounds, custom] = await Promise.all([getDiscs(uid), getMeta(uid), listRounds(uid), getCustomDiscs(uid)]);
-      const json = buildBackup(allDiscs, { sortMode: meta.sortMode, arcView: meta.arcView, skill: meta.skill, throwStyle: meta.throwStyle, suggestMode: meta.suggestMode, msRefEnabled: meta.msRefEnabled, fieldShowAll: meta.fieldShowAll }, rounds, custom);
+      const payload = await buildBackupPayload();
+      if (!payload) return;
       const dir = new Directory(Paths.cache, 'exports');
       if (!dir.exists) dir.create({ intermediates: true });
       const date = new Date().toISOString().slice(0, 10);
       const file = new File(dir, `disc-tracker-backup-${date}.json`);
       if (file.exists) file.delete();
       file.create();
-      file.write(json);
-      const summary = `${allDiscs.length} disc${allDiscs.length === 1 ? '' : 's'}${rounds.length ? ` · ${rounds.length} round${rounds.length === 1 ? '' : 's'}` : ''}`;
+      file.write(payload.json);
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Back up Disc Tracker' });
-        toast(`Backup ready — ${summary}`);
+        toast(`Backup ready — ${payload.summary}`);
       } else {
-        Alert.alert('Backup saved', `Saved ${summary} to:\n${file.uri}`);
+        Alert.alert('Backup saved', `Saved ${payload.summary} to:\n${file.uri}`);
       }
     } catch (e) {
       Alert.alert('Backup failed', e instanceof Error ? e.message : 'Could not create the backup file.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // "Save to device" — Android only (SAF picker), same as CsvExportModal's handleDownload.
+  const handleBackupDownload = async () => {
+    if (userIdRef.current == null || busy) return;
+    setBusy(true);
+    setDownloadError(false);
+    try {
+      const payload = await buildBackupPayload();
+      if (!payload) return;
+      const perm = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+      if (!perm.granted) return;
+      const date = new Date().toISOString().slice(0, 10);
+      const fileUri = await StorageAccessFramework.createFileAsync(perm.directoryUri, `disc-tracker-backup-${date}.json`, 'application/json');
+      await StorageAccessFramework.writeAsStringAsync(fileUri, payload.json);
+      toast(`Backup saved — ${payload.summary}`);
+    } catch {
+      setDownloadError(true);
     } finally {
       setBusy(false);
     }
@@ -438,11 +470,12 @@ export default function SettingsScreen() {
             backup moves your entire app.
           </Text>
         </View>
+        {downloadError && <Text style={styles.errorText}>Couldn't save the file — try again.</Text>}
         <GradientButton
           style={styles.actionBtn}
-          onPress={handleBackup}
+          onPress={handleBackupShare}
           disabled={busy}
-          accessibilityLabel="Back up everything to a file"
+          accessibilityLabel="Share a backup file"
         >
           {busy ? (
             <ActivityIndicator color="#fff" size="small" />
@@ -450,6 +483,17 @@ export default function SettingsScreen() {
             <Text style={styles.actionBtnText}>Back up everything</Text>
           )}
         </GradientButton>
+        {Platform.OS === 'android' && (
+          <Pressable
+            style={[styles.actionBtnGhost, busy && styles.actionBtnDisabled]}
+            onPress={handleBackupDownload}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel="Save a backup file directly to a folder on this device"
+          >
+            <Text style={styles.actionBtnGhostText}>Save to device</Text>
+          </Pressable>
+        )}
         <Pressable
           style={[styles.actionBtnGhost, busy && styles.actionBtnDisabled]}
           onPress={handleRestore}
@@ -692,6 +736,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(145,94,255,0.25)',
   },
   noteText: { color: colors.muted, fontSize: 12, lineHeight: 18 },
+  errorText: { color: colors.danger, fontSize: 12, marginTop: 10 },
   actionBtn: {
     marginTop: 14,
     backgroundColor: colors.accent,
