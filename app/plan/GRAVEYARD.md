@@ -59,6 +59,38 @@ mechanism Throw Style already uses. That reuses the shipped UI instead of buildi
 
 ---
 
+### C1 — Named loadouts — GRAVEYARDED 2026-08-18
+
+**What it was:** multiple named, saved disc sets (e.g. "wooded course," "open field," "tournament
+bag") you could apply to swap Today's Bag in one action, instead of manually re-toggling each
+disc's in-bag flag. Gated 2026-08-15 behind a storage-robustness look first (Logan: "it only
+makes sense if we look closer into how we store discs... organizing it all cohesively and
+maintaining it without a cloud-backup seems clunky").
+
+**The storage-robustness look happened 2026-08-18 — verdict: no changes needed.** Read the
+actual schema (`app/src/db/migrations.ts`) and backup round-trip (`app/src/utils/backup.ts`)
+rather than assuming: `discs` is a flat per-user table with a single `in_bag` boolean — that's
+the real gap for loadouts, not the storage engine. The fix would have been purely additive (a
+`loadouts` table + a `loadout_discs` many-to-many join table, `ON DELETE CASCADE`, zero changes
+to any existing table), the exact same shape every other feature here has shipped with
+(`rounds`, `custom_discs`, wear tracking, catalog state) via the established tolerant
+`ALTER TABLE`/`CREATE TABLE IF NOT EXISTS` migration pattern. Backup is already versioned
+(`BackupData.version: 1`) and tolerant of missing optional sections, so a `loadouts` array would
+have round-tripped the same way `customDiscs` did when it was added. **The "clunky" feeling was
+a UI/data-model gap (only one grouping — Today's Bag — exists), not a storage-robustness
+problem** — so this gate is resolved without needing to touch the schema at all.
+
+**Why graveyarded anyway, right after clearing the gate:** asked directly whether the underlying
+play pattern (swapping bags often enough that manual re-toggling is real friction) actually
+applies, Logan's answer was "having second thoughts what's the point even of it" — i.e. the
+feature was scoped from an abstract idea back on 2026-08-08, not from an actual recurring pain
+point. With the storage question closed and the product need itself now in doubt, building it
+would be complexity without a clear driver. **Status: not parked, actually graveyarded** — if a
+real recurring need for saved bag presets shows up later, the storage-robustness finding above
+means it can be built in an afternoon, no re-research required.
+
+---
+
 ## What's still alive (not graveyarded, for contrast)
 
 - **C7 — Shareable Bag Report (image export).** NOT parked — confirmed real by Logan 2026-08-15,
@@ -67,13 +99,6 @@ mechanism Throw Style already uses. That reuses the shipped UI instead of buildi
   accounts, no server, no feed. Cheap to build (no new data model, reuses existing rendering).
   **Scoped 2026-08-17, built and verified on a real device 2026-08-18** — see
   `docs/c7-shareable-report-scope.md`. Done.
-- **C1 — Named loadouts:** not parked, but explicitly gated behind a storage-robustness look
-  first (Logan 2026-08-15: "it only makes sense if we look closer into how we store discs...
-  organizing it all cohesively and maintaining it without a cloud-backup seems clunky"). **The
-  storage-robustness look itself is sequenced for the end of this plan, after the website-refactor
-  track below is done** (Logan's call, 2026-08-15) — not urgent, deliberately last. See
-  `suggest-engine-plan.md`'s Phase-2/Phase-4 notes for the adjacent Phase 3 role-tag work this
-  would eventually build on.
 - **C4/C5/C6:** downstream of C3, so effectively paused with it, not separately parked.
 - **Suggest-engine Phase 2 (data audit)** and **website parity catch-up:** both shipped and
   verified on-device 2026-08-16/17 — see `docs/suggest-engine-plan.md` and

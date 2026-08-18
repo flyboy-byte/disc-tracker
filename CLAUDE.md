@@ -312,9 +312,12 @@ design.** Needs a version bump + tag before it's a real release (currently sitti
 same as the tagged `v0.20`). Forward priorities:
 - **Suggest-engine Phase 4** — intentionally parked behind C4 (fieldwork data), which doesn't
   exist yet. Not being pursued. See `app/plan/GRAVEYARD.md`.
-- **C-series (C1 loadouts, C3 parked, C2 graveyarded)** — **C7 shipped in `v0.20`**, done. See
-  `app/plan/GRAVEYARD.md` and `app/plan/docs/direction-2026-08-08.md`. A storage-robustness
-  look (gating C1) is deliberately sequenced to the end of this plan.
+- **C-series (C3 parked, C2 graveyarded)** — **C7 shipped in `v0.20`**, done. **C1 (named
+  loadouts) graveyarded 2026-08-18** — the storage-robustness look that gated it happened and
+  concluded the schema needs no changes (purely additive if ever revisited — see
+  `app/plan/GRAVEYARD.md`'s "C1 — Named loadouts" entry), but Logan reconsidered whether the
+  feature itself was worth building and passed. See `app/plan/GRAVEYARD.md` and
+  `app/plan/docs/direction-2026-08-08.md`.
 - **R5 VPS sync** — DROPPED (2026-07-29), superseded by B4 backup/restore. Not being revisited.
 - **R6 Play closed testing** — signing is done (upload key = Play app signing key); still
   needs the actual Play Console submission (Data Safety form, privacy policy, content
