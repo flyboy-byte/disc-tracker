@@ -253,8 +253,12 @@ built ahead of having something real to point it at).
   `https://disc.flyboybyte.com/catalog/manifest.json` — **confirmed live and correct**,
   `curl`-verified to return real JSON with a SHA-256 matching the served asset byte-for-byte.
 - Attribution: Android Settings → Credits shows a linked "Disc data by Try Discs" row, gated on
-  `getCatalogSource() === 'downloaded'`. README has an inline linked mention. Website: not done,
-  deliberately (see "Azeem's reply" above).
+  `getCatalogSource() === 'downloaded'`. README has an inline linked mention. **Website: confirmed
+  deferred (Logan, 2026-08-18)** — no data flows through the website yet, and it currently has
+  *no* credits/attribution UI at all (checked: not even for shotshaper, which it does use live).
+  Add a website credit once/if the website actually integrates the catalog, not before —
+  literal compliance with Azeem's "Android app, web app, and README" wording is a known,
+  deliberate gap until then, not an oversight.
 - **Security review complete, 2026-08-17 — clear to deploy.** A separate Claude session with
   direct VPS access reviewed `docs/vps-catalog-hosting-proposal.md` against the box's real
   config. Findings:
