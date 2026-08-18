@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, Text
 import { FlatList } from 'react-native-gesture-handler';
 import { useFocusEffect } from 'expo-router';
 import ArcDetailModal from '../../src/components/ArcDetailModal';
+import BagReportModal from '../../src/components/BagReportModal';
 import CsvExportModal from '../../src/components/CsvExportModal';
 import CsvImportModal from '../../src/components/CsvImportModal';
 import DiscCard from '../../src/components/DiscCard';
@@ -116,6 +117,7 @@ export default function BagScreen() {
   // search alongside the bundled 1,660. Loaded with the bag; refreshed on focus (Settings restore).
   const [customDiscs, setCustomDiscs] = useState<CustomMasterDisc[]>([]);
   const [exportOpen, setExportOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [detailDisc, setDetailDisc] = useState<Disc | null>(null);
   // Guards the focus refetch so it only runs after the initial mount load below (which the
@@ -613,6 +615,9 @@ export default function BagScreen() {
         <Pressable testID="bag-export" style={styles.ghostBtn} onPress={() => setExportOpen(true)} accessibilityRole="button" accessibilityLabel="Export discs to CSV">
           <Text style={styles.ghostBtnText}>Export</Text>
         </Pressable>
+        <Pressable testID="bag-share-report" style={styles.ghostBtn} onPress={() => setReportOpen(true)} accessibilityRole="button" accessibilityLabel="Share your bag as an image">
+          <Text style={styles.ghostBtnText}>Share</Text>
+        </Pressable>
         {customDiscs.length > 0 && (
           <Pressable style={styles.ghostBtn} onPress={() => setLibraryOpen(true)} accessibilityRole="button" accessibilityLabel="Browse or manage your custom disc library">
             <Text style={styles.ghostBtnText}>My library ({customDiscs.length})</Text>
@@ -788,6 +793,7 @@ export default function BagScreen() {
         onDeleteCustom={handleDeleteCustom}
       />
       <CsvExportModal visible={exportOpen} discs={discs} onCancel={() => setExportOpen(false)} />
+      <BagReportModal visible={reportOpen} discs={discs.filter((d) => d.inBag)} onCancel={() => setReportOpen(false)} />
       <CsvImportModal visible={importOpen} existingDiscs={discs} onCancel={() => setImportOpen(false)} onImport={handleImportDiscs} />
     </View>
   );

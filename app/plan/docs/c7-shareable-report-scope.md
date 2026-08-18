@@ -1,7 +1,18 @@
 # C7 — Shareable Bag Report — scope
 
-**Status:** SCOPING — not started. Written 2026-08-17, following the wear-estimate/buying-mode
-scope-doc template. Confirmed real by Logan 2026-08-15 (`GRAVEYARD.md` "What's still alive").
+**Status (2026-08-18): built, `tsc`/Jest clean, NOT yet verified on-device.** Decision 1 (Today's
+Bag only, not a Collection toggle) went with the leaning proposed below — confirm this holds
+after real use. `react-native-view-shot` added (`5.1.0`, pinned via `expo install`) — this
+project's Android autolinking is dynamic (`expo-autolinking-settings` Gradle plugin scans
+`node_modules` at build time, not a committed static list), so no extra registration step was
+needed, but the next real Gradle build is the first one that actually links it — worth watching
+for autolinking issues specifically on that first build. `BagReportModal.tsx` — new component,
+wired into the Bag screen's existing header-button row (`app/(tabs)/index.tsx`, "Share" button
+next to Import/Export). Scoped to Today's Bag (`discs.filter(d => d.inBag)`), matching the same
+pattern `bagCount` already uses on that screen. Empty-state handled (button disabled, clear
+message, no attempt to export a blank image). Written 2026-08-17, following the
+wear-estimate/buying-mode scope-doc template. Confirmed real by Logan 2026-08-15 (`GRAVEYARD.md`
+"What's still alive").
 
 ## What this is
 
