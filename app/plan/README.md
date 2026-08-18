@@ -38,7 +38,8 @@ Live docs — read these:
 | [`DECISIONS.md`](./DECISIONS.md) | Numbered index of *why*, pointing into the docs where each decision was actually made |
 | [`GRAVEYARD.md`](./GRAVEYARD.md) | Ideas floated, scoped a little, then parked or killed — with the reasoning, so they don't get re-litigated |
 | [`docs/direction-2026-08-08.md`](./docs/direction-2026-08-08.md) | Current strategic direction — the C-series "personal disc intelligence" roadmap, the 3-layer flight-data rule |
-| [`docs/catalog-v2-scope.md`](./docs/catalog-v2-scope.md) | TryDiscs catalog integration — in progress, has its own resume checklist |
+| [`docs/catalog-v2-scope.md`](./docs/catalog-v2-scope.md) | TryDiscs catalog integration — code-complete, security-reviewed, deploy pending |
+| [`docs/c7-shareable-report-scope.md`](./docs/c7-shareable-report-scope.md) | Shareable Bag Report (C7) — scoped, not yet built |
 | [`docs/suggest-engine-plan.md`](./docs/suggest-engine-plan.md) | Live umbrella status doc for the Disc Suggest scoring engine's phased work |
 | [`docs/suggest-model.md`](./docs/suggest-model.md) | Source-of-truth scoring numbers/tolerances — keep in lockstep with `suggestScore.ts` |
 | [`docs/risks.md`](./docs/risks.md) | Scope, dependency, legal, technical, and operational risks — includes the external-research queue |

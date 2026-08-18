@@ -9,6 +9,7 @@
 //
 // Usage:
 //   export TRYDISCS_API_KEY="..."      # set this yourself, never commit it
+//   node tools/trydiscs-sync.js check      # cheap: is there a newer dataset_version upstream?
 //   node tools/trydiscs-sync.js fetch      # pull the full catalog into the local cache
 //   node tools/trydiscs-sync.js reconcile  # compare cached pull against our library
 //   node tools/trydiscs-sync.js generate   # build a catalog-vN.json + manifest.json data pack
@@ -16,6 +17,11 @@
 //
 //   fetch --force   re-fetch even if the cached dataset_version is unchanged
 //   publish --dry-run   print the scp command instead of running it
+//
+// The maintainer runbook (when `check` finds something new):
+//   check -> reconcile (READ the report — sanity-check new-count and flight-number drift before
+//   going any further) -> generate -> publish. Never skip straight from check to publish; the
+//   whole point of reconcile is catching a bad pull before it goes live to real users.
 //
 // `publish` is intentionally separate from deploy.sh — deploy.sh pushes CODE via git; this
 // pushes PRIVATE DATA via scp straight to data/catalog/ on the VPS, which is gitignored and
@@ -78,6 +84,31 @@ async function fetchPage(offset, apiKey) {
     fail(`TryDiscs API returned ${resp.status} ${resp.statusText} for offset=${offset}.`);
   }
   return resp.json();
+}
+
+// Cheap check: one page (just for its meta.dataset_version), no full fetch, no cache writes.
+// Safe to run often — this is the thing to actually remember to do periodically, since there's
+// no automation here on purpose (no cron, no CI — matches this project's no-unattended-jobs
+// posture).
+async function cmdCheck() {
+  const apiKey = process.env.TRYDISCS_API_KEY;
+  if (!apiKey) {
+    fail('TRYDISCS_API_KEY is not set. Export it yourself first: export TRYDISCS_API_KEY="..."');
+  }
+
+  const first = await fetchPage(0, apiKey);
+  const liveVersion = first?.meta?.dataset_version ?? 'unknown';
+  const cachedVersion = fs.existsSync(VERSION_CACHE) ? JSON.parse(fs.readFileSync(VERSION_CACHE, 'utf8')).dataset_version : null;
+
+  if (cachedVersion === liveVersion) {
+    console.log(`✓ Up to date (dataset_version: ${liveVersion}).`);
+  } else if (cachedVersion == null) {
+    console.log(`No local cache yet. Live dataset_version: ${liveVersion}.`);
+    console.log('  Run: fetch -> reconcile (read it!) -> generate -> publish');
+  } else {
+    console.log(`⚠ NEW dataset available: ${cachedVersion} -> ${liveVersion}`);
+    console.log('  Run: fetch -> reconcile (read it!) -> generate -> publish');
+  }
 }
 
 async function cmdFetch(args) {
@@ -354,7 +385,9 @@ function cmdPublish(args) {
 
 async function main() {
   const [, , cmd, ...rest] = process.argv;
-  if (cmd === 'fetch') {
+  if (cmd === 'check') {
+    await cmdCheck();
+  } else if (cmd === 'fetch') {
     await cmdFetch(rest);
   } else if (cmd === 'reconcile') {
     cmdReconcile();
@@ -363,7 +396,7 @@ async function main() {
   } else if (cmd === 'publish') {
     cmdPublish(rest);
   } else {
-    fail('Usage: node tools/trydiscs-sync.js <fetch|reconcile|generate|publish> [--force|--dry-run]');
+    fail('Usage: node tools/trydiscs-sync.js <check|fetch|reconcile|generate|publish> [--force|--dry-run]');
   }
 }
 

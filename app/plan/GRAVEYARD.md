@@ -64,8 +64,8 @@ mechanism Throw Style already uses. That reuses the shipped UI instead of buildi
 - **C7 — Shareable Bag Report (image export).** NOT parked — confirmed real by Logan 2026-08-15,
   unrelated to C2's graveyarding (C7 doesn't overlap with any shipped screen the way C2 did).
   Render a shareable PNG of your bag locally, push it through the Android share sheet — no
-  accounts, no server, no feed. Cheap to build (no new data model, reuses existing rendering)
-  whenever it's picked up. Not yet scoped in detail.
+  accounts, no server, no feed. Cheap to build (no new data model, reuses existing rendering).
+  **Scoped in detail 2026-08-17**, not yet built — see `docs/c7-shareable-report-scope.md`.
 - **C1 — Named loadouts:** not parked, but explicitly gated behind a storage-robustness look
   first (Logan 2026-08-15: "it only makes sense if we look closer into how we store discs...
   organizing it all cohesively and maintaining it without a cloud-backup seems clunky"). **The

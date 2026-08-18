@@ -143,6 +143,24 @@ with no published flight numbers), `catalogVersion=1`. This lets the entire pipe
 locally end to end without deciding hosting or touching the repo — generate, serve the cache
 directory locally, point Settings' manual check at that local URL, confirm activation.
 
+**`check` subcommand (added 2026-08-17)** — a cheap, single-page API call that just compares the
+live `dataset_version` against what's cached locally and prints a verdict. No cache writes, no
+full fetch. This is the thing to actually run periodically, since there's deliberately no
+automation here (no cron, no CI — matches this project's no-unattended-jobs posture; keeping the
+catalog fresh is a manual, maintainer-run habit, not a background job).
+
+**The runbook, when `check` finds something new:**
+1. `check` — confirms there's actually a new `dataset_version` before doing anything heavier.
+2. `fetch` — pulls the full new catalog into the local cache.
+3. `reconcile` — **read the report before going further.** Sanity-check the new-disc count looks
+   reasonable and there's no mass flight-number drift versus last time. This step exists
+   specifically to catch a bad pull before it goes live to real users — never skip straight from
+   `fetch`/`check` to `publish`.
+4. `generate` — builds the new `catalog-vN.json` + `manifest.json` (version auto-increments off
+   the last locally-generated manifest — the local cache, not the VPS, is the source of truth for
+   what's already been generated).
+5. `publish` — ships it to the VPS for real.
+
 ## Verification done this session
 
 - `tsc --noEmit` clean, full Jest suite green: **141/141** (was 115 baseline + Phase 1/2/3 tests
@@ -282,19 +300,16 @@ not assumed:
 **Conclusion: clean.** Nothing from Try Discs' catalog, and no credential, is anywhere in a
 tracked file or about to be committed.
 
-## Known follow-up, not yet fixed: the GitHub Pages privacy policy link
+## RESOLVED — GitHub Pages privacy policy link
 
-Separate from the catalog work, but flagged here so it lands in the next planning pass rather
-than getting lost: **the privacy policy page
-(`https://flyboy-byte.github.io/disc-tracker/privacy.html`, linked from mobile Settings → About)
-is not live.** Diagnosed 2026-08-17: `gh api repos/flyboy-byte/disc-tracker/pages` shows
-`status: "building"` and has for hours; `gh api .../pages/builds/latest` shows that build's
-`created_at` and `updated_at` are identical (`2026-08-17T18:14:06Z`) and `duration: 0` — the
-build genuinely never started, it's not just slow. The site itself 404s ("Site not found ·
-GitHub Pages"). Source config (`branch: main`, `path: /docs`) is correct; this looks like a
-stuck/dead GitHub Pages build, not a config error. Likely fix: a new commit to `docs/` to
-re-trigger a build, or re-toggling Pages off/on via the API/UI if a retrigger doesn't help.
-Settings' link itself doesn't need to change — only the underlying Pages build does.
+Was stuck (diagnosed 2026-08-17: `gh api repos/flyboy-byte/disc-tracker/pages` showed
+`status: "building"` for hours, latest build's `created_at`/`updated_at` identical with
+`duration: 0` — never actually started). **Fixed itself** when `d633fc2` (the catalog-v2 commit)
+pushed a new file under `docs/` (`docs/vps-catalog-hosting-proposal.md`), which re-triggered a
+fresh Pages build — exactly the "cheapest fix, try first" predicted here. Confirmed:
+`gh api repos/flyboy-byte/disc-tracker/pages` now shows `status: "built"`, and
+`curl -I https://flyboy-byte.github.io/disc-tracker/privacy.html` returns `200`. No further
+action needed.
 
 ## Not yet done
 
