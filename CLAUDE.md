@@ -289,12 +289,12 @@ The **website-parity track** landed 2026-08-15 (`91883c3`): CSV "Both" export sc
 website — see `app/plan/docs/archive/website-parity-scope.md`. **C2** ("what should I throw?"
 free-form screen) was **graveyarded** 2026-08-16 — too close to the existing Disc Suggest
 page, see `app/plan/GRAVEYARD.md`. **Catalog-v2 (TryDiscs)** — a brand-new external disc
-catalog (2,147 discs vs. the current 1,660, founder-approved access, terms accepted, VPS
-hosting security-reviewed and cleared) — code + tests are done (2026-08-17, 141/141 Jest
-green), but is **not live**: no real data shipped yet, purely because nobody's run `deploy.sh`
-+ `tools/trydiscs-sync.js publish` against the real VPS. Nothing left to design or review.
-**Read `app/plan/docs/catalog-v2-scope.md` before touching this — it has a "Resume checklist"
-and a decision-by-decision pivot guide, so don't
+catalog (2,147 discs vs. the old 1,660, founder-approved access, terms accepted, VPS hosting
+security-reviewed) is **LIVE as of 2026-08-18**: `https://disc.flyboybyte.com/catalog/manifest.json`
+serves real data (`catalogVersion=2`, 1,874 discs), verified from outside. Only remaining step
+is an on-device confirmation that "Check for updates" in Settings actually downloads/activates it
+on a real phone. **Read `app/plan/docs/catalog-v2-scope.md` before touching this — it has a
+"Resume checklist" and a decision-by-decision pivot guide, so don't
 re-derive the design.** Forward priorities:
 - **Suggest-engine Phase 4** — intentionally parked behind C4 (fieldwork data), which doesn't
   exist yet. Not being pursued. See `app/plan/GRAVEYARD.md`.

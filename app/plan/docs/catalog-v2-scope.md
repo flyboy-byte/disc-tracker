@@ -1,13 +1,21 @@
 # Catalog-v2 — optional downloaded disc catalog — scope
 
-**Status (2026-08-17): Azeem approved Option C, security review complete, CLEAR TO DEPLOY —
-not yet deployed.** VPS-hosted, app-downloaded, never committed to GitHub — see "Azeem's reply"
-below for his guardrails, and the "Real hosting" section's review write-up below for the VPS-side
-findings (routes correct as written; one recommended-not-blocking nginx rate-limit addition).
-**Nothing from TryDiscs' catalog has shipped to a real user yet** — `discs_master.json` (both
-copies) is unchanged, and the live app still only has the bundled fallback. What's left is purely
-mechanical: `deploy.sh` for the code, `tools/trydiscs-sync.js publish` (for real, no `--dry-run`)
-for the data — both are Logan's call on timing, nothing left to design or review.
+**Status (2026-08-18): LIVE.** `app.py`'s `/catalog/*` routes deployed via `deploy.sh`; real data
+published via `tools/trydiscs-sync.js publish` (`catalogVersion=2`, 1,874 discs,
+`datasetVersion=2026-08-14`). Verified from outside:
+`curl https://disc.flyboybyte.com/catalog/manifest.json` returns real JSON, and the served
+asset's SHA-256 matches the manifest exactly. `discs_master.json` (both bundled copies) is still
+unchanged — that's correct and permanent, it's the FOSS fallback, not something this replaces.
+**Not yet verified: an actual on-device "Check for updates" pass** — the server side is
+confirmed working end to end, but nobody's tapped the button on a real phone yet to confirm
+activation + the "Disc data by Try Discs" credit appearing + persistence across restart. That's
+the one remaining verification step, whenever there's a device in hand.
+
+One deploy-time fix worth knowing about: `tools/trydiscs-sync.js`'s original `publish` pointed
+`scp` at the public HTTPS domain (`disc.flyboybyte.com`) with no SSH user — wrong on both counts
+(no separate `known_hosts` trust for that hostname, and no user defaults to `ubuntu`). Fixed to
+reuse the same `ubuntu@51.81.80.126` deploy.sh already trusts — the public HTTPS domain is
+unrelated to this and still what the app itself talks to.
 
 ## Azeem's reply (2026-08-17) — the actual terms, verbatim guardrails
 
@@ -228,20 +236,22 @@ real data is actually flowing — build the website's `/api/catalog` mirror of `
 "What the audit found," point 4 above — it's a small, well-scoped addition, deliberately not
 built ahead of having something real to point it at).
 
-## Real hosting (Phase 3, built 2026-08-17, NOT deployed)
+## Real hosting (Phase 3, built 2026-08-17, DEPLOYED 2026-08-18)
 
 - `app.py` gained `/catalog/manifest.json` + `/catalog/<asset>` — public, unauthenticated,
   `send_from_directory`-served from a new gitignored `data/catalog/` directory (sibling of the
-  existing SQLite DB / secret-key dir). Verified locally: correct serving, clean 404 on missing
-  files, path traversal blocked. Not yet pushed to the live VPS.
+  existing SQLite DB / secret-key dir). Verified locally, then verified live: correct serving,
+  clean 404 on missing files/before publish, path traversal blocked. **Deployed to the VPS via
+  `deploy.sh` 2026-08-18.**
 - `tools/trydiscs-sync.js publish` — new subcommand, `scp`s the `generate`d manifest + data pack
-  to `disc.flyboybyte.com:~/disc_tracker/data/catalog/`. Deliberately separate from `deploy.sh`
-  (code goes through git; this is private data that must never touch git). Verified with
-  `--dry-run` only — never run for real.
-- `CATALOG_MANIFEST_URL` in `app/(tabs)/settings.tsx` now points at
-  `https://disc.flyboybyte.com/catalog/manifest.json` — the endpoint 404s cleanly until a
-  maintainer actually runs `publish`, and the client already treats a failed check as a no-op, so
-  this is safe to have live in the app before any real data exists there.
+  to the VPS. Deliberately separate from `deploy.sh` (code goes through git; this is private data
+  that must never touch git). **Run for real 2026-08-18** — `catalogVersion=2`, 1,874 discs. One
+  bug found running it for real: `PUBLISH_HOST` was the public HTTPS domain with no SSH user
+  (wrong `known_hosts` entry, no default user) — fixed to reuse `ubuntu@51.81.80.126`, the same
+  host `deploy.sh` already trusts.
+- `CATALOG_MANIFEST_URL` in `app/(tabs)/settings.tsx` points at
+  `https://disc.flyboybyte.com/catalog/manifest.json` — **confirmed live and correct**,
+  `curl`-verified to return real JSON with a SHA-256 matching the served asset byte-for-byte.
 - Attribution: Android Settings → Credits shows a linked "Disc data by Try Discs" row, gated on
   `getCatalogSource() === 'downloaded'`. README has an inline linked mention. Website: not done,
   deliberately (see "Azeem's reply" above).
@@ -313,12 +323,12 @@ action needed.
 
 ## Not yet done
 
-- **Deploying any of the above to the live VPS**, and running `publish` for real — no longer
-  gated on review (that's done and clean), just on Logan actually running the two commands.
-  Optionally: the recommended nginx `limit_req_zone` addition first (see above) — not required.
-- On-device dry run (serve the generated pack locally, point Settings at it, confirm
-  activation + persistence across app restart on the emulator/a physical device) — the unit
-  tests cover the logic; a real device pass makes most sense once real data exists to fetch
-  (i.e., after the VPS deploy above).
+- ~~Deploying to the live VPS, running `publish` for real~~ — **DONE 2026-08-18.** Server side
+  fully verified from outside (`curl`, SHA-256 match).
+- The optional nginx `limit_req_zone` addition (see "Real hosting" review write-up above) — still
+  not applied. Non-blocking, was never required.
+- **On-device "Check for updates" pass** — the one thing left. Server side is confirmed working;
+  nobody's tapped the button on a real phone yet to confirm download → activation → the "Disc
+  data by Try Discs" credit appearing → persistence across app restart.
 - Website `/catalog` consumer + website credit — noted, not built.
 - The pre-store-submission check-in with Azeem — gated on R6/R7 actually starting.

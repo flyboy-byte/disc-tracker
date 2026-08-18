@@ -17,16 +17,14 @@
 
 ---
 
-## ⚡ CURRENT STATUS (2026-08-17) — read this first
+## ⚡ CURRENT STATUS (2026-08-18) — read this first
 
-**Catalog-v2 (TryDiscs) is code-complete and CLEAR TO DEPLOY, but NOT shipped in any release
-yet — read `plan/docs/catalog-v2-scope.md` before touching `src/catalog/` or
-`tools/trydiscs-sync.js`.** It has its own "Resume checklist" and pivot guide; don't re-derive
-the design or re-ask questions already answered there. Short version: the catalog's founder
-approved VPS-hosted access, a security review of the hosting design came back clean (one
-non-blocking nginx rate-limit recommendation), reconciliation tooling + full client-side
-runtime-swappable-catalog scaffolding are built and tested (141/141 Jest) — what's left is
-purely mechanical (`deploy.sh` + `tools/trydiscs-sync.js publish`), whenever Logan runs it.
+**Catalog-v2 (TryDiscs) is LIVE** — read `plan/docs/catalog-v2-scope.md` before touching
+`src/catalog/` or `tools/trydiscs-sync.js`. The catalog's founder approved VPS-hosted access, a
+security review came back clean, and the real catalog (`catalogVersion=2`, 1,874 discs) is
+published and being served at `https://disc.flyboybyte.com/catalog/manifest.json`, verified from
+outside. Only remaining step: confirm on a real phone that Settings → "Check for updates"
+actually downloads/activates it.
 
 **Latest release: `v0.19`** (2026-08-16) — wear estimate (1-5 scale, supersedes the shipped
 3-tier New/Seasoned/Beat field) + Disc Suggest **"buying mode"** (rank library discs you don't
