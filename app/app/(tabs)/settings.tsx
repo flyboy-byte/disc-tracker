@@ -17,18 +17,18 @@ import { getDiscs, getMeta, getOrCreateDefaultUser, listRounds, replaceRounds, s
 import { colors } from '../../src/theme';
 import type { Disc } from '../../src/utils/disc';
 import type { SkillPreset, ThrowStyle } from '../../src/utils/suggestScore';
+import CustomCatalogModal from '../../src/components/CustomCatalogModal';
 import { buildBackup, parseBackup, backupSummary } from '../../src/utils/backup';
-import { getCatalog, getCatalogSource, initCatalog } from '../../src/catalog/catalogLoader';
-import { syncCatalog } from '../../src/catalog/catalogSync';
-
-// Azeem (Try Discs) approved Option C — VPS-hosted, app-downloaded, never committed to the
-// public repo. See app/plan/docs/catalog-v2-scope.md. Nothing is published to this URL yet
-// (Phase 3 prep only) — the endpoint 404s cleanly until a maintainer runs
-// `tools/trydiscs-sync.js publish`, and the client already treats any failed check as a no-op.
-const CATALOG_MANIFEST_URL = 'https://disc.flyboybyte.com/catalog/manifest.json';
-// The only Try Discs URL confirmed to exist from Azeem's own correspondence — their public
-// marketing site's URL wasn't given, so this points at the documented API instead of guessing.
-const TRYDISCS_URL = 'https://api.trydiscs.com';
+import {
+  getCatalog,
+  getCatalogSource,
+  getSlotMeta,
+  switchToSource,
+  type CatalogSource,
+  type CatalogSlotMeta,
+} from '../../src/catalog/catalogLoader';
+import { syncTryDiscsCatalog } from '../../src/catalog/catalogSync';
+import { TRYDISCS_MANIFEST_URL, TRYDISCS_URL } from '../../src/catalog/constants';
 
 type ArcView = 'RHBH' | 'RHFH' | 'LHBH' | 'LHFH';
 const ARC_VIEWS: ArcView[] = ['RHBH', 'RHFH', 'LHBH', 'LHFH'];
@@ -58,13 +58,28 @@ export default function SettingsScreen() {
   const [importOpen, setImportOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [catalogChecking, setCatalogChecking] = useState(false);
+  const [catalogSourceState, setCatalogSourceState] = useState<CatalogSource>('bundled');
+  const [trydiscsSlot, setTrydiscsSlot] = useState<CatalogSlotMeta | null>(null);
+  const [customSlot, setCustomSlot] = useState<CatalogSlotMeta | null>(null);
+  const [customImportOpen, setCustomImportOpen] = useState(false);
   const userIdRef = useRef<number | null>(null);
 
-  const handleCatalogCheck = async () => {
+  const refreshCatalogState = useCallback(async () => {
+    setCatalogSourceState(getCatalogSource());
+    const [td, cu] = await Promise.all([getSlotMeta('trydiscs'), getSlotMeta('custom')]);
+    setTrydiscsSlot(td);
+    setCustomSlot(cu);
+  }, []);
+
+  // Downloads + activates Try Discs in one tap. If it's already cached, this just re-downloads
+  // to check for updates (cheap — the manifest short-circuits nothing here, but the pack itself
+  // is a few hundred KB) and re-activates.
+  const handleTryDiscsTap = async () => {
+    if (catalogChecking) return;
     setCatalogChecking(true);
     try {
-      const { manifest } = await syncCatalog(CATALOG_MANIFEST_URL);
-      await initCatalog();
+      const { manifest } = await syncTryDiscsCatalog(TRYDISCS_MANIFEST_URL);
+      await switchToSource('trydiscs');
       if (userIdRef.current != null) {
         await setMeta(userIdRef.current, {
           catalogVersion: manifest.catalogVersion,
@@ -72,11 +87,30 @@ export default function SettingsScreen() {
           catalogHash: manifest.sha256,
         });
       }
-      toast(`Catalog updated — ${manifest.recordCount} discs.`);
+      await refreshCatalogState();
+      toast(`Try Discs catalog active — ${manifest.recordCount} discs.`);
     } catch {
-      toast('Catalog update failed — kept your current catalog.');
+      toast('Could not reach Try Discs — kept your current catalog.');
     } finally {
       setCatalogChecking(false);
+    }
+  };
+
+  const handleSwitchSource = async (source: CatalogSource) => {
+    if (catalogChecking || source === catalogSourceState) return;
+    const ok = await switchToSource(source);
+    if (ok) {
+      await refreshCatalogState();
+      toast(source === 'bundled' ? 'Switched to the built-in catalog.' : 'Switched catalog.');
+    }
+  };
+
+  const handleCustomImported = async (recordCount: number) => {
+    setCustomImportOpen(false);
+    const ok = await switchToSource('custom');
+    if (ok) {
+      await refreshCatalogState();
+      toast(`Custom catalog active — ${recordCount} discs.`);
     }
   };
 
@@ -103,9 +137,10 @@ export default function SettingsScreen() {
         setThrowStyle(meta.throwStyle);
         setMsRefEnabled(meta.msRefEnabled);
         setFieldShowAll(meta.fieldShowAll);
+        await refreshCatalogState();
         setLoading(false);
       })();
-    }, [])
+    }, [refreshCatalogState])
   );
 
   const changeArcView = async (v: ArcView) => {
@@ -450,30 +485,102 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
-      {/* Disc catalog — catalog-v2-scope.md. Bundled fallback always works offline; this only
-          ever offers an optional, explicit download, never a background/automatic one. */}
+      {/* Disc catalog — catalog-v2-scope.md. Bundled fallback always works offline; every other
+          source is an explicit, user-initiated switch/download/import, never automatic. Whichever
+          source isn't active stays cached on disk (if it's ever been fetched) so switching back
+          doesn't require re-downloading. */}
       <View style={styles.card}>
         <Text style={styles.sectionLabel}>DISC CATALOG</Text>
-        <View style={styles.aboutRow}>
-          <Text style={styles.rowText}>Source</Text>
-          <Text style={styles.rowValue}>
-            {getCatalogSource() === 'downloaded' ? 'Downloaded' : 'Bundled'} — {getCatalog().length} discs
-          </Text>
-        </View>
+        <Text style={styles.sectionHint}>{getCatalog().length} discs in the active catalog. Switch sources anytime — nothing downloads until you ask.</Text>
+
         <View style={styles.divider} />
         <Pressable
-          testID="settings-catalog-check"
+          testID="settings-catalog-bundled"
           style={styles.row}
-          onPress={handleCatalogCheck}
+          onPress={() => handleSwitchSource('bundled')}
+          accessibilityRole="button"
+          accessibilityState={{ selected: catalogSourceState === 'bundled' }}
+          accessibilityLabel="Use the built-in catalog"
+        >
+          <View style={styles.msTextCol}>
+            <Text style={styles.rowText}>Built-in</Text>
+            <Text style={styles.sectionHint}>Bundled with the app, always available offline.</Text>
+          </View>
+          <Text style={styles.rowValue}>{catalogSourceState === 'bundled' ? '✓ Active' : 'Switch'}</Text>
+        </Pressable>
+
+        <View style={styles.divider} />
+        <Pressable
+          testID="settings-catalog-trydiscs"
+          style={styles.row}
+          onPress={() => (trydiscsSlot && catalogSourceState !== 'trydiscs' ? handleSwitchSource('trydiscs') : handleTryDiscsTap())}
           disabled={catalogChecking}
           accessibilityRole="button"
-          accessibilityLabel="Check for a catalog update"
+          accessibilityState={{ selected: catalogSourceState === 'trydiscs' }}
+          accessibilityLabel="Use the Try Discs catalog"
         >
-          <Text style={[styles.rowText, catalogChecking && styles.rowDisabled]}>
-            {catalogChecking ? 'Checking…' : 'Check for updates'}
+          <View style={styles.msTextCol}>
+            <Text style={styles.rowText}>Try Discs</Text>
+            <Text style={styles.sectionHint}>
+              {trydiscsSlot ? `Downloaded — ${trydiscsSlot.recordCount} discs.` : 'A larger third-party catalog. Downloads on first tap.'}
+            </Text>
+          </View>
+          <Text style={[styles.rowValue, catalogChecking && styles.rowDisabled]}>
+            {catalogChecking
+              ? 'Checking…'
+              : catalogSourceState === 'trydiscs'
+                ? '✓ Active'
+                : trydiscsSlot
+                  ? 'Switch'
+                  : 'Download'}
           </Text>
         </Pressable>
+        {catalogSourceState === 'trydiscs' && (
+          <Pressable
+            testID="settings-catalog-check-updates"
+            style={styles.row}
+            onPress={handleTryDiscsTap}
+            disabled={catalogChecking}
+            accessibilityRole="button"
+            accessibilityLabel="Check Try Discs for updates"
+          >
+            <Text style={[styles.rowTextSub, catalogChecking && styles.rowDisabled]}>
+              {catalogChecking ? 'Checking…' : 'Check for updates'}
+            </Text>
+          </Pressable>
+        )}
+
+        <View style={styles.divider} />
+        <Pressable
+          testID="settings-catalog-custom"
+          style={styles.row}
+          onPress={() => (customSlot && catalogSourceState !== 'custom' ? handleSwitchSource('custom') : setCustomImportOpen(true))}
+          accessibilityRole="button"
+          accessibilityState={{ selected: catalogSourceState === 'custom' }}
+          accessibilityLabel="Use a custom catalog"
+        >
+          <View style={styles.msTextCol}>
+            <Text style={styles.rowText}>Custom</Text>
+            <Text style={styles.sectionHint}>
+              {customSlot ? `${customSlot.label} — ${customSlot.recordCount} discs.` : 'Import your own catalog file or a self-hosted URL.'}
+            </Text>
+          </View>
+          <Text style={styles.rowValue}>{catalogSourceState === 'custom' ? '✓ Active' : customSlot ? 'Switch' : 'Import'}</Text>
+        </Pressable>
+        {customSlot && catalogSourceState !== 'custom' && (
+          <Pressable
+            testID="settings-catalog-custom-reimport"
+            style={styles.row}
+            onPress={() => setCustomImportOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Import a different custom catalog"
+          >
+            <Text style={styles.rowTextSub}>Import a different file/URL</Text>
+          </Pressable>
+        )}
       </View>
+
+      <CustomCatalogModal visible={customImportOpen} onCancel={() => setCustomImportOpen(false)} onImported={handleCustomImported} />
 
       {/* About */}
       <View style={styles.card}>
@@ -515,7 +622,7 @@ export default function SettingsScreen() {
           <Text style={[styles.rowText, styles.link]}>shotshaper</Text>
           <Text style={[styles.rowChevron, styles.link]}>↗</Text>
         </Pressable>
-        {getCatalogSource() === 'downloaded' && (
+        {catalogSourceState === 'trydiscs' && (
           <>
             <View style={styles.divider} />
             <Pressable style={styles.row} onPress={() => Linking.openURL(TRYDISCS_URL)} accessibilityRole="link" accessibilityLabel="Open Try Discs">
@@ -557,6 +664,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
   msTextCol: { flex: 1, paddingRight: 12 },
   rowText: { color: colors.text, fontSize: 15 },
+  rowTextSub: { color: colors.accent, fontSize: 13, fontWeight: '600' },
   rowValue: { color: colors.muted, fontSize: 15 },
   rowChevron: { color: colors.muted, fontSize: 20 },
   rowDisabled: { color: colors.muted, opacity: 0.6 },

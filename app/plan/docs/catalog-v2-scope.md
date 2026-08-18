@@ -353,3 +353,50 @@ action needed.
   data live (i.e., open `/discsuggestion`, confirm the credit line appears and results reflect
   the larger library) — the route and fallback logic are verified via Flask's test client, but
   nobody's loaded the real page in a real browser since deploying.
+
+## Three-way source picker + first-run prompt (2026-08-18, post-v0.20)
+
+Logan's idea, floated right after confirming v0.20 on-device: the old Settings card only ever
+showed one active source (bundled vs. "downloaded"). Rebuilt as a real picker with three
+independent, switchable sources, each cached separately on disk so switching between them never
+re-downloads something already fetched:
+
+- **Built-in** — bundled `masterLibrary.ts`, always available offline (unchanged fallback).
+- **Try Discs** — same pipeline as before, now writable to its own cache slot
+  (`trydiscs-active.json` / `trydiscs-meta.json` in the catalog dir) instead of a single
+  `active.json`.
+- **Custom** — new. Either a local JSON file (via `expo-document-picker`, same pattern as backup
+  restore) or a URL to a self-hosted manifest+asset pair in the *exact same format* Try Discs
+  uses (reuses `checkManifest`/`downloadAndVerify` unchanged, just aimed at a different slot).
+  Logan's answer when asked "file or URL?" was "both?" — so both paths land in the same `custom`
+  slot; whichever was imported last is what's active when you switch to Custom.
+
+Switching sources is instant when the target is already cached (`switchToSource()` just reads
+its file and persists the choice to `source-pref.json`); it only re-fetches if there's nothing
+cached yet. Nothing is ever deleted on switch — per Logan's explicit call ("it keeps it bc its
+fallback... code the catalog as it as the fallback"), a previously-downloaded/imported catalog
+stays on disk indefinitely so it's a free instant-switch target later, not a re-download.
+
+**First-run prompt:** on the very first launch where the user is still on the bundled default
+(`user_meta.catalog_prompt_shown = 0`, new column, defaults 0 for existing installs too — they
+just see it once on next launch), `app/_layout.tsx` shows a native `Alert` offering to download
+and switch to Try Discs immediately. "Not now" or a failed download both just mark the prompt
+shown and leave bundled active — never retries automatically, matches "explicit, never
+automatic" for anything touching the network.
+
+**Files:** `src/catalog/catalogLoader.ts` (rewritten around named cache slots +
+`source-pref.json`, `switchToSource()`), `src/catalog/catalogSync.ts` (generalized to target a
+slot; added `syncCustomCatalogFromUrl` + `importCustomCatalogFromFile`), new
+`src/catalog/constants.ts` (shared `TRYDISCS_MANIFEST_URL`/`TRYDISCS_URL`, previously duplicated
+inline in `settings.tsx`), new `src/components/CustomCatalogModal.tsx`, `app/(tabs)/settings.tsx`
+(three-row picker replaces the old single-source card), `app/_layout.tsx` (first-run prompt),
+`src/db/migrations.ts` + `src/db/db.ts` (`catalog_prompt_shown` column).
+
+**Verified:** `tsc --noEmit` clean, full Jest suite green (146/146, up from 141 — added coverage
+for the new slot-cache/switch/import behavior in `catalogLoader.test.ts` /
+`catalogSync.test.ts`). **Not yet verified on a real device** — no phone was connected this
+session. Before shipping in a release: confirm on-device that (1) the three rows switch
+correctly and instantly when already cached, (2) a fresh Try Discs download and a custom
+file/URL import both work end to end, (3) the first-run prompt actually fires on a clean
+install (or after clearing app data) and both its buttons behave correctly, (4) Disc Suggest
+picks up whichever source is active.

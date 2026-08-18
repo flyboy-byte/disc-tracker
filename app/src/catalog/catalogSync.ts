@@ -1,14 +1,20 @@
-// Manifest-check / download / verify / atomic-swap logic for the optional downloaded catalog.
-// This is decision-independent scaffolding — the manifest URL is never set to anything real
-// until hosting is decided with Try Discs. See app/plan/docs/catalog-v2-scope.md.
+// Download/verify/import logic for the two cacheable catalog slots ('trydiscs' and 'custom').
+// See app/plan/docs/catalog-v2-scope.md.
 //
-// Every step here fails closed: any error at any point leaves the currently-active catalog
-// (bundled fallback or a prior downloaded one) completely untouched. Nothing is activated until
-// the downloaded content has been hash-verified and schema-validated.
+// Every path here fails closed: any error at any point leaves the currently-active catalog and
+// every already-cached slot completely untouched. Nothing is written to a slot's active file
+// until the new content has been hash-verified (network path) or schema-validated (file path).
 import * as Crypto from 'expo-crypto';
 import { File } from 'expo-file-system';
 import { isValidManifest, type CatalogManifest } from './types';
-import { catalogDir, isValidCatalogArray, ACTIVE_FILE_NAME, PREVIOUS_FILE_NAME } from './catalogLoader';
+import {
+  catalogDir,
+  isValidCatalogArray,
+  activeFileName,
+  metaFileName,
+  type DownloadableSource,
+  type CatalogSlotMeta,
+} from './catalogLoader';
 
 export class CatalogSyncError extends Error {}
 
@@ -26,8 +32,8 @@ function resolveAssetUrl(manifestUrl: string, asset: string): string {
 }
 
 // Downloads + hash-verifies + schema-validates the catalog pack, writing it to a temp file.
-// Returns the temp File — nothing is activated yet (see activateCatalog).
-export async function downloadAndVerify(manifest: CatalogManifest, manifestUrl: string): Promise<File> {
+// Returns the temp File — nothing is activated yet (see writeSlot).
+export async function downloadAndVerify(manifest: CatalogManifest, manifestUrl: string, target: DownloadableSource): Promise<File> {
   const assetUrl = resolveAssetUrl(manifestUrl, manifest.asset);
   const resp = await fetch(assetUrl);
   if (!resp.ok) throw new CatalogSyncError(`Catalog download failed: ${resp.status} ${resp.statusText}`);
@@ -50,49 +56,88 @@ export async function downloadAndVerify(manifest: CatalogManifest, manifestUrl: 
 
   const dir = catalogDir();
   if (!dir.exists) dir.create({ intermediates: true });
-  const tmpFile = new File(dir, `tmp-v${manifest.catalogVersion}.json`);
+  const tmpFile = new File(dir, `${target}-tmp-v${manifest.catalogVersion}.json`);
   if (tmpFile.exists) tmpFile.delete();
   tmpFile.create();
   tmpFile.write(text);
   return tmpFile;
 }
 
-// Atomically (as atomic as the filesystem allows) swaps the verified temp file in as the active
-// catalog, keeping the previous active catalog around as a rollback point.
-export async function activateCatalog(tmpFile: File): Promise<void> {
+// Moves an already-verified temp file into place as the given slot's active file, and writes
+// its metadata sidecar. Overwrites anything previously cached for that slot.
+async function writeSlot(tmpFile: File, target: DownloadableSource, meta: CatalogSlotMeta): Promise<void> {
   const dir = catalogDir();
-  const activePath = new File(dir, ACTIVE_FILE_NAME);
-  const previousPath = new File(dir, PREVIOUS_FILE_NAME);
-
-  if (activePath.exists) {
-    if (previousPath.exists) previousPath.delete();
-    await activePath.move(previousPath);
-  }
-  await tmpFile.move(new File(dir, ACTIVE_FILE_NAME));
-}
-
-// Restores the previously-active catalog, if one was kept. Returns false if there's nothing to
-// roll back to (caller falls back to the bundled catalog, which is always available).
-export async function rollbackCatalog(): Promise<boolean> {
-  const dir = catalogDir();
-  const previousPath = new File(dir, PREVIOUS_FILE_NAME);
-  if (!previousPath.exists) return false;
-  const activePath = new File(dir, ACTIVE_FILE_NAME);
+  const activePath = new File(dir, activeFileName(target));
   if (activePath.exists) activePath.delete();
-  await previousPath.move(new File(dir, ACTIVE_FILE_NAME));
-  return true;
+  await tmpFile.move(activePath);
+
+  const metaPath = new File(dir, metaFileName(target));
+  if (metaPath.exists) metaPath.delete();
+  metaPath.create();
+  metaPath.write(JSON.stringify(meta));
 }
 
 export interface SyncResult {
   manifest: CatalogManifest;
 }
 
-// Full pipeline: check manifest -> download+verify -> activate. Call catalogLoader's
-// initCatalog() again afterward (or restart the app) to pick up the newly-activated catalog —
-// this function only updates the file on disk, it doesn't mutate the in-memory active catalog.
-export async function syncCatalog(manifestUrl: string): Promise<SyncResult> {
+// Full pipeline for the Try Discs slot: check manifest -> download+verify -> cache. Call
+// catalogLoader's switchToSource('trydiscs') afterward to activate it.
+export async function syncTryDiscsCatalog(manifestUrl: string): Promise<SyncResult> {
   const manifest = await checkManifest(manifestUrl);
-  const tmpFile = await downloadAndVerify(manifest, manifestUrl);
-  await activateCatalog(tmpFile);
+  const tmpFile = await downloadAndVerify(manifest, manifestUrl, 'trydiscs');
+  await writeSlot(tmpFile, 'trydiscs', {
+    recordCount: manifest.recordCount,
+    label: manifest.provider || 'Try Discs',
+    datasetVersion: manifest.datasetVersion,
+  });
   return { manifest };
+}
+
+// Same pipeline, aimed at the 'custom' slot — for a self-hosted manifest+asset pair the user
+// points the app at directly (same format Try Discs uses).
+export async function syncCustomCatalogFromUrl(manifestUrl: string): Promise<SyncResult> {
+  const manifest = await checkManifest(manifestUrl);
+  const tmpFile = await downloadAndVerify(manifest, manifestUrl, 'custom');
+  let label = manifest.provider || 'Custom';
+  try {
+    label = new URL(manifestUrl).host;
+  } catch {
+    // Keep the manifest-provided label if the URL somehow doesn't parse.
+  }
+  await writeSlot(tmpFile, 'custom', {
+    recordCount: manifest.recordCount,
+    label,
+    datasetVersion: manifest.datasetVersion,
+  });
+  return { manifest };
+}
+
+// Imports a local JSON file (from the document picker) straight into the 'custom' slot — no
+// hash to check since it isn't fetched over the network; schema validation is the only gate.
+export async function importCustomCatalogFromFile(fileUri: string, fileName: string): Promise<{ recordCount: number }> {
+  const text = await new File(fileUri).text();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new CatalogSyncError('That file is not valid JSON.');
+  }
+  if (!isValidCatalogArray(parsed)) {
+    throw new CatalogSyncError("That file doesn't match the expected disc catalog format.");
+  }
+
+  const dir = catalogDir();
+  if (!dir.exists) dir.create({ intermediates: true });
+  const activePath = new File(dir, activeFileName('custom'));
+  if (activePath.exists) activePath.delete();
+  activePath.create();
+  activePath.write(text);
+
+  const metaPath = new File(dir, metaFileName('custom'));
+  if (metaPath.exists) metaPath.delete();
+  metaPath.create();
+  const recordCount = (parsed as unknown[]).length;
+  metaPath.write(JSON.stringify({ recordCount, label: fileName }));
+  return { recordCount };
 }

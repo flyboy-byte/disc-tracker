@@ -154,6 +154,14 @@ const COLUMN_MIGRATIONS: { ddl: string }[] = [
   { ddl: 'ALTER TABLE user_meta ADD COLUMN catalog_version INTEGER DEFAULT NULL' },
   { ddl: 'ALTER TABLE user_meta ADD COLUMN catalog_dataset_version TEXT DEFAULT NULL' },
   { ddl: 'ALTER TABLE user_meta ADD COLUMN catalog_hash TEXT DEFAULT NULL' },
+  // catalog-v2-scope.md follow-up — three-way catalog source picker (bundled/trydiscs/custom)
+  // + the one-time first-run download prompt. Which source is *active* still lives entirely in
+  // catalogLoader.ts's own source-pref.json (that's what actually decides what loads at startup)
+  // — this column only tracks whether the first-run prompt has fired, since that's a one-time
+  // user-facing event, not catalog state. Defaults 0 so existing installs (already past first
+  // run) still see the prompt once — harmless, matches "explicit, never automatic" for anything
+  // network.
+  { ddl: 'ALTER TABLE user_meta ADD COLUMN catalog_prompt_shown INTEGER DEFAULT 0' },
 ];
 
 export async function runMigrations(db: SQLiteDatabase): Promise<void> {
