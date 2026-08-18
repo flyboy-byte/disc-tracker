@@ -6,10 +6,10 @@ recorded in; read that doc for the reasoning and tradeoffs, not this list.
 
 | # | Decision | Where |
 | --- | --- | --- |
-| D-1 | VPS sync (R5) deferred, then dropped — kept researched-and-ready, not killed; later superseded outright by B4 backup/restore | `docs/direction-2026-07-29.md` §"Decision 1", confirmed dropped in `PORT_PLAN.md` |
-| D-2 | Big-collection support (B2) scoped to ~200 discs; measure-first performance approach | `docs/direction-2026-07-29.md` §"Decision 2" |
-| D-3 | Disc-suggestion engine (B1) rewritten for accuracy — one unified scoring model replaces the two-path bagTest/filterLibrary logic | `docs/direction-2026-07-29.md` §"Decision 3" |
-| D-4 | Sync protocol design (locked, later superseded by D-1's drop) | `docs/sync-design.md` §"Decisions (locked 2026-07-25)" |
+| D-1 | VPS sync (R5) deferred, then dropped — kept researched-and-ready, not killed; later superseded outright by B4 backup/restore | `docs/archive/direction-2026-07-29.md` §"Decision 1", confirmed dropped in `PORT_PLAN.md` |
+| D-2 | Big-collection support (B2) scoped to ~200 discs; measure-first performance approach | `docs/archive/direction-2026-07-29.md` §"Decision 2" |
+| D-3 | Disc-suggestion engine (B1) rewritten for accuracy — one unified scoring model replaces the two-path bagTest/filterLibrary logic | `docs/archive/direction-2026-07-29.md` §"Decision 3" |
+| D-4 | Sync protocol design (locked, later superseded by D-1's drop) | `docs/archive/sync-design.md` §"Decisions (locked 2026-07-25)" |
 | D-5 | Sequencing: features + future-proofing + audience planning FIRST; Play/F-Droid store track (R6/R7) stays deliberately parked until Logan's ready | `docs/direction-2026-08-08.md` §"Decision 0" |
 | D-6 | The 3-layer flight-data rule — factory data, user-declared adjustment, observed/measured data are never conflated into one field | `docs/direction-2026-08-08.md` §"Decision 1" |
 | D-7 | The C-series roadmap (loadouts → suggest → fieldwork → Learn My Bag → throw advisor → overlap/compare → shareable report), in dependency order | `docs/direction-2026-08-08.md` §"Decision 2" |

@@ -23,7 +23,7 @@
 > Replaces the old two-path logic (raw `bagTest` thresholds for the bag; `stability`-scalar filter
 > + `|stability − mid|` sort for the library) with **one** scoring function used for both. The
 > CLAUDE.md "don't change suggestion behavior" guard is explicitly lifted for this workstream
-> (see `direction-2026-07-29.md`).
+> (see `archive/direction-2026-07-29.md`).
 
 ## How scoring works (the shape step 3 implements)
 

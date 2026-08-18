@@ -6,7 +6,7 @@
 > builds/operates for the technical section · **Use when:** before committing to the
 > approach (scope/legal section), before scaling or shipping (operational section), and
 > as an ongoing check during build (technical section). Legal-research candidates are
-> flagged in [`research-handoff.md`](./research-handoff.md).
+> tracked in the "External research queue" section at the end of this doc.
 
 ## Scope / dependency risk
 
@@ -28,7 +28,8 @@
   it depends on server-side NumPy/SciPy (`vendor/shotshaper/`), which can't run
   on-device. If this is ever wanted on mobile it would need either a from-scratch port
   of a GPLv3 rigid-body simulator to run natively, or a network call back to the VPS —
-  both are real scope additions, not currently planned (see `notes.md`).
+  both are real scope additions, not currently planned. Genuinely undecided, not just
+  deferred — nobody has said yes or no to this one.
 - ~~F-Droid's reproducibility bar for RN apps is a real unknown~~ — **resolved
   2026-07-23**: the developer's DragTree app already achieved a full `Binaries:` byte
   match and got merged into F-Droid's index, proving it's achievable for this exact
@@ -46,9 +47,8 @@
   was already deliberately pre-empted: `RESEARCH.md` §3 records that the mobile app's
   own license was chosen as GPLv3 *specifically* to allow porting/deriving code from
   GPLv3 prior art like shotshaper, not MIT. So if physics-sim ever comes to mobile, the
-  licensing question is already answered by that choice — the remaining open question
-  (see `notes.md`) is purely whether it's worth building at all, not whether it's legally
-  permitted.
+  licensing question is already answered by that choice — the remaining open question is
+  purely whether it's worth building at all, not whether it's legally permitted.
 - **F-Droid / Play Store distribution policies** both have real, current requirements
   (GMS-free dependency check already built into Phase 8, Play Console's Data Safety
   form, privacy policy URL) — `PORT_PLAN.md` already accounts for the GMS check
@@ -57,7 +57,10 @@
 - **Disc master library data** (`discs_master.json`, bundled in both website and app) —
   its original source/licensing isn't addressed anywhere in the docs reviewed for this
   packet. Not necessarily a problem, but worth a deliberate one-time check rather than
-  an assumption, since it's redistributed inside a public app.
+  an assumption, since it's redistributed inside a public app. **In progress (2026-08-17):**
+  a real, licensed, founder-approved replacement/supplement (TryDiscs) is being evaluated —
+  see `catalog-v2-scope.md`. Not resolved yet (blocked on the founder's packaging reply), but
+  this is the path that closes this risk out, not a hypothetical.
 
 ## Technical risk
 
@@ -85,7 +88,7 @@
   in-screen heading) and the tab bar shows no icons; (3) no accessibility labels on any
   control — fine for personal use, a real gap before Play Store review. The a11y and
   cosmetics items are exactly the "polish needed for public release vs. good enough for
-  personal use" tension flagged in `notes.md`.
+  personal use" tension that runs through this whole project's store-sequencing decisions.
 
 ## Operational risk
 
@@ -97,8 +100,46 @@
   constraint) means any real-world bug post-launch is invisible unless self-noticed or
   reported directly — acceptable for a personal-use-first app, worth remembering before
   wide public distribution.
+- **Sync design for v1.1 (R5) — DROPPED, not revisited.** `archive/direction-2026-07-29.md`
+  (archived) has the real design thinking (own-VPS sync, opt-in), but B4's full
+  backup/restore superseded the need for it — see `PORT_PLAN.md`'s R5 row. Kept here as a
+  pointer in case it's ever reconsidered, not as an open risk.
 - **Distribution sequencing risk is already mitigated by policy**: `PORT_PLAN.md`
   explicitly forbids running D1 (Play Console) and D2 (F-Droid) in parallel, based on
   DragTree's experience that debugging both build/signing/metadata systems at once
   makes failures impossible to isolate. Worth keeping that discipline when this phase
   is actually reached.
+
+## External research queue
+
+(Folded in from the former `research-handoff.md`, 2026-08-17 — merged here since it's really
+just a section of this doc, not a separate file.)
+
+Some risks above are things a coding session shouldn't resolve by guessing — they need a **deep
+research engine with live web access** (claude.ai research mode, ChatGPT research mode), run by
+Logan in the browser, not fabricated here. Something qualifies if it's **externally verifiable**
+(a real answer exists in a license, a platform policy, current docs) and not an internal
+judgment call.
+
+Open queue:
+
+| # | Question | Why it needs external research |
+| - | -------- | -------------------------------- |
+| 1 | What does Play Console's Data Safety form currently require for an app that makes zero network calls and collects zero data (fully local-only, no accounts)? | Policy specifics change over time — needs a live, dated source, not training-data recall. |
+| 2 | Is `expo-sqlite`'s current API (SDK 57-era) stable enough across recent Expo SDK versions that this project's `withExclusiveTransactionAsync`-based design won't need rework on the next SDK bump? | Framework/library-specific behavior — favors an engine with strong access to current Expo/RN docs and changelogs. |
+
+Resolved, kept for the record:
+- ~~F-Droid reproducible-build acceptance for Expo/RN apps built with local Gradle~~ —
+  **resolved 2026-07-23 without external research**: DragTree (this developer's other app)
+  already achieved a full `Binaries:` byte match and got merged into F-Droid's official index.
+  Real answer lives in `fdroid-reference.md`.
+- ~~`discs_master.json`'s origin/license~~ — **superseded 2026-08-17, not resolved-in-place**:
+  rather than researching the existing file's murky origin, a real licensed
+  replacement/supplement (TryDiscs, founder-approved) is in progress instead — see
+  `catalog-v2-scope.md`.
+
+**Procedure when picking up a queue item:** research one question at a time (don't batch —
+dilutes sourcing). Ask for citations/dated sources explicitly. Save the raw output to
+`research/YYYY-MM-DD-<topic>-<engine>.md` before doing anything else with it. Merge the finding
+back into this doc (replace the risk's "unverified" language, keep the fact that it was once
+unverified rather than deleting that history) and update this table.

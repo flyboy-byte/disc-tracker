@@ -35,7 +35,7 @@ The Flask app is a localhost server that can't serve a phone directly. Paths con
 - **Path A (LAN bridge):** Phone calls Flask API over WiFi. Fragile, server-dependent, not a real app. Rejected.
 - **Path B (local SQLite only):** `expo-sqlite` on device. Fully offline, no server dependency. **Chosen — and it stayed the whole story.**
 - **Path C (encrypted blob backup):** Encrypt disc data, push opaque blob to VPS. Considered, not built.
-- **Path D (sync with own Flask server):** was going to be roadmap step R5. **DROPPED 2026-07-30** — CSV already covered interop and sync's unique add was narrow vs. its infra + F-Droid cost. Replaced by B4's local backup file. `plan/docs/sync-design.md` is kept as a superseded record only.
+- **Path D (sync with own Flask server):** was going to be roadmap step R5. **DROPPED 2026-07-30** — CSV already covered interop and sync's unique add was narrow vs. its infra + F-Droid cost. Replaced by B4's local backup file. `plan/docs/archive/sync-design.md` is kept as a superseded record only.
 
 ### Path D — Sync Architecture
 
@@ -304,7 +304,7 @@ Note: Path D's sync (§2) is plain HTTPS + a bearer token, not client-side encry
 > demonstrated. As of R4.5 the app already has a genuinely physics-grounded model on-device (the
 > shotshaper CFD sim, `src/physics/sim/`). A third, made-up empirical model wedged between the
 > Bézier arc and the real sim buys little, so this is **not on the active roadmap**; kept here for
-> provenance. Don't build it without a specific reason. See `plan/docs/direction-2026-07-29.md`.
+> provenance. Don't build it without a specific reason. See `plan/docs/archive/direction-2026-07-29.md`.
 
 > This section documents the planned physics improvement. The port is **not** a rewrite — current math is preserved as `legacyPhysics.ts`. V2 is built alongside it.
 
@@ -641,6 +641,30 @@ The `pic` field is a 400×340 webp from Marshall Street's S3 bucket showing the 
 - PDGA physical specs (embedded in the image, not as separate fields in the API)
 
 **Decision:** Use `pic` URLs as an optional reference display in v1.1. See PORT_PLAN.md — Marshall Street Flight Path Images section.
+
+---
+
+## 11.5. TryDiscs API (evaluated 2026-08-17 — reconciliation tooling only, no data committed)
+
+Azeem, founder of Try Discs, granted Disc Tracker full access to `api.trydiscs.com` (2,147-disc
+catalog, keyed auth, `GET /v1/discs?limit=2000&offset=0` paginated, `meta.dataset_version` for
+change detection) with explicit permission to store/bundle a locally-generated copy for offline
+lookup/suggest/audit/bag-analysis — a real candidate to finally resolve `discs_master.json`'s
+undocumented provenance (open risk tracked in `risks.md`). Two boundaries from
+him shape how this gets built: no re-publishing the catalog as a standalone dataset/API, and
+**coordinate on packaging before any generated catalog is committed to this public repo** — he
+raised that himself, unprompted.
+
+**Status (2026-08-17): reconciliation tooling (Phase 1) AND decision-independent client
+scaffolding (Phase 2) are both built. Full detail, current state, and exactly what to do next
+for each possible answer from Azeem lives in `plan/docs/catalog-v2-scope.md` — read that doc
+first, not this section, when picking this back up.** Short version: `tools/trydiscs-sync.js`
+(`fetch`/`reconcile`/`generate`) and a whole `app/src/catalog/` runtime-swappable-catalog module
+(loader + manifest/download/verify/atomic-swap sync, 18 passing tests, wired into Settings) are
+done and committed. **Nothing from TryDiscs' catalog has shipped anywhere** — `discs_master.json`
+(both copies) is untouched, Settings' "Check for updates" button is inert (no manifest URL
+set). Still waiting on Azeem's reply to Logan's packaging proposal (bundled-fallback +
+optional-runtime-download, so forks/F-Droid stay buildable from public source alone).
 
 ---
 

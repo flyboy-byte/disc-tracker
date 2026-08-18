@@ -29,8 +29,11 @@ Update the checkboxes below as things actually happen. This file is the honest a
 > Throw Style, personal stability adjustment), Phase 2 (data audit), and Phase 3 (role tags)
 > all done and verified on-device; Phase 4 parked behind C4. Newest: wear estimate (1-5
 > scale, supersedes the 3-tier field) + Disc Suggest "buying mode", shipped `v0.19`
-> (2026-08-16, `wear-estimate-scope.md` / `buying-mode-scope.md`). C2 graveyarded 2026-08-16
-> (see `../GRAVEYARD.md`). The phase checkboxes below are
+> (2026-08-16, `archive/wear-estimate-scope.md` / `archive/buying-mode-scope.md`). C2 graveyarded 2026-08-16
+> (see `../GRAVEYARD.md`). **In progress, not shipped: Catalog-v2 (TryDiscs)** — a new
+> external disc catalog under a founder-approved, coordination-pending relationship; see
+> `docs/catalog-v2-scope.md` (has its own resume checklist — read that before this file's
+> checkboxes for that workstream). The phase checkboxes below are
 > the *original v1 build* record — the live roadmap is the table in
 > [`../PORT_PLAN.md`](../PORT_PLAN.md) plus [`docs/suggest-engine-plan.md`](./docs/suggest-engine-plan.md).
 
@@ -46,26 +49,30 @@ Capture   ──►   Scoping  ──►   Validation ──►  Build   ──�
 - [x] Source material captured: `PORT_PLAN.md` (618 lines, phases 0–8 + distribution
       track), `RESEARCH.md` (636 lines, framework/toolchain/sync decisions), the live
       `app.py`/templates as the parity spec, `MOBILE_PORT_AUDIT.md`
-- [x] Read/understood well enough to extract the real open questions (see
-      `docs/notes.md`)
+- [x] Read/understood well enough to extract the real open questions (was tracked in
+      `docs/notes.md`, deleted 2026-08-17 doc consolidation — its live content had
+      already migrated to `docs/direction-2026-08-08.md`/`GRAVEYARD.md`)
 
 **Gate to Phase 1:** none — automatic once the source material exists. **Done.**
 
 ### Phase 1 — Scoping
 
-- [x] `docs/overview.md`
-- [x] `docs/approach.md`
+- [x] `docs/overview.md` — deleted 2026-08-17, durable content folded into `README.md`
+- [x] `docs/approach.md` — deleted 2026-08-17, durable content folded into `README.md`
 - [x] `docs/risks.md`
 - [x] `docs/infrastructure.md`
-- [x] `docs/notes.md`
-- [x] `docs/documentation-guide.md` + `docs/research-handoff.md`
+- [x] `docs/notes.md` — deleted 2026-08-17, superseded by `direction-*.md`/`GRAVEYARD.md`
+- [x] `docs/documentation-guide.md` (deleted 2026-08-17, stale taxonomy) + `docs/research-handoff.md`
+      (deleted 2026-08-17, folded into `docs/risks.md`'s "External research queue" section)
 
 **Gate to Phase 2:** none blocking. **Done** (this session).
 
 ### Phase 2 — Validation
 
-- [ ] Run the `docs/research-handoff.md` queue (F-Droid RN reproducible-build reality,
-      Play Console Data Safety form for a zero-network app, expo-sqlite API stability)
+- [ ] Run the external-research queue (F-Droid RN reproducible-build reality — since
+      resolved without external research, see `docs/risks.md`'s "External research
+      queue"; Play Console Data Safety form for a zero-network app; expo-sqlite API
+      stability — both still open there)
 - [x] **Verify the Phase 3 SQLite layer on a real Android emulator/device** — done
       2026-07-23 on a fresh `verify_test` AVD (API 37, x86_64, 4GB RAM). Built and
       installed a real debug APK, ran `openDatabase` → `getOrCreateDefaultUser` →
@@ -79,8 +86,9 @@ Capture   ──►   Scoping  ──►   Validation ──►  Build   ──�
       **it holds up**, verified end-to-end above.
 
 **Gate to Phase 3:** at least one real signal that the SQLite layer works on-device —
-**met** (2026-07-23). The research-handoff queue is still open but isn't build-blocking
-(see `docs/research-handoff.md`) — safe to proceed to Phase 4 (Bag screen) in parallel.
+**met** (2026-07-23). The external-research queue is still open but isn't build-blocking
+(see `docs/risks.md`'s "External research queue") — safe to proceed to Phase 4 (Bag
+screen) in parallel.
 
 ### Phase 3 — Build
 
@@ -114,9 +122,9 @@ Maps directly onto `PORT_PLAN.md`'s own phases:
       concurrency bug by serializing DB ops. Also added a **Settings tab** (default throw
       view, data backup/import/delete, About, v1.1 sync placeholder). Shipped as
       **`mobile-preview-0.5`**. See `../PORT_PLAN.md` Phase 9.
-- [ ] Phase 10 (VPS Sync) — **roadmap step R5** (2026-07-25 replan): pulled forward to
-      *before* the store track, after app polish (R3). Fully designed in `RESEARCH.md` §2,
-      not started yet (see `docs/notes.md`)
+- [x] Phase 10 (VPS Sync) — **DROPPED 2026-07-30**, superseded by B4 (full local
+      backup/restore). Was roadmap step R5; design history in `RESEARCH.md` §2 and
+      `docs/archive/sync-design.md`. Not being revisited.
 
 **Gate to Phase 4 (of this framework):** one working version that does the core thing
 end-to-end on a real device. **Met (2026-07-24)** — all four screens built, Phase 9 polish

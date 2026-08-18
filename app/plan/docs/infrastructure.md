@@ -2,8 +2,8 @@
 
 > **Tier:** Low-level (build detail) · **Audience:** whoever is actually building this ·
 > **Use when:** setting up tools and scaffolding before building the first real
-> version. Assumes the reader has already read
-> [`overview.md`](./overview.md) and doesn't need the framing re-explained.
+> version. Assumes the reader has already read the "About this project" section in
+> [`../README.md`](../README.md) and doesn't need the framing re-explained.
 
 What's actually needed to build and run the smallest real version of this project.
 

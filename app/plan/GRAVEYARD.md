@@ -74,11 +74,10 @@ mechanism Throw Style already uses. That reuses the shipped UI instead of buildi
   `suggest-engine-plan.md`'s Phase-2/Phase-4 notes for the adjacent Phase 3 role-tag work this
   would eventually build on.
 - **C4/C5/C6:** downstream of C3, so effectively paused with it, not separately parked.
-- **Suggest-engine Phase 2 (data audit):** code-complete 2026-08-15, untested on-device — see
-  `data-audit-scope.md` and `suggest-engine-plan.md`.
-- **Website parity catch-up:** being scoped in detail 2026-08-15 — see
-  `plan/docs/website-parity-scope.md`.
+- **Suggest-engine Phase 2 (data audit)** and **website parity catch-up:** both shipped and
+  verified on-device 2026-08-16/17 — see `docs/suggest-engine-plan.md` and
+  `docs/archive/data-audit-scope.md` / `docs/archive/website-parity-scope.md` for the record.
 - **Wear-level 1–5 "estimated broke-in" scale** and **Disc Suggest "buying mode"** — both
   floated 2026-08-15, scoped in detail and **shipped 2026-08-16** (`019f480`). No longer graveyard
-  material; see `plan/docs/wear-estimate-scope.md` / `plan/docs/buying-mode-scope.md` for the
+  material; see `plan/docs/archive/wear-estimate-scope.md` / `plan/docs/archive/buying-mode-scope.md` for the
   confirmed decisions and `suggest-engine-plan.md` for verification notes.

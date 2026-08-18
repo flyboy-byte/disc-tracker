@@ -6,7 +6,7 @@ Two things in one repo:
 
 1. **A live Flask web app** — personal disc golf bag tracker running on a VPS at `51.81.80.126`. Multi-user, local SQLite, no cloud, no accounts. The website is the canonical version and the spec for everything else.
 
-2. **An Android app port — v1 feature-complete, actively growing** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest release is **`v0.19`** (2026-08-16, wear estimate + Disc Suggest buying mode; release naming moved from `mobile-preview-X` to bare `vX` at `v0.16`). Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **DONE:** R1–R4.5, B1 disc-suggest rewrite (`0.10`), B2 big-collection support (`0.11`), B3 offline scorekeeper + B4 full backup/restore (`0.12`), mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker (`0.13`), UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`), production signing (`0.15`), the Disc Suggest suggest-engine plan **Phases 1-3** — Flex Shot scenario (13th), Throw Style modifier, personal stability adjustment, role tags, data audit/wear level, all **verified on-device** (`plan/docs/suggest-engine-plan.md`, shipped across `v0.16`–`v0.17`) — the **website-parity track** (CSV Both scope, `stability_adj`/`role_tag` on the website, backup-file import; `plan/docs/website-parity-scope.md`, `v0.17`) — and, newest, **wear estimate (1–5, supersedes the 3-tier field) + Disc Suggest "buying mode"** (`v0.19`, `plan/docs/wear-estimate-scope.md` / `plan/docs/buying-mode-scope.md`). **R5 VPS sync DROPPED** (superseded by B4 — Logan's call). C2 ("what should I throw?" free-form screen) **graveyarded** 2026-08-16 — too close to existing Disc Suggest (`app/plan/GRAVEYARD.md`). **Next = Phase 4 (parked behind C4) or the C-series (see `plan/GRAVEYARD.md`), or stores (R6 Play → R7 F-Droid) when Logan's ready** ("not emotionally ready for store release" — building features first). See "Mobile app — current state" below.
+2. **An Android app port — v1 feature-complete, actively growing** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest release is **`v0.19`** (2026-08-16, wear estimate + Disc Suggest buying mode; release naming moved from `mobile-preview-X` to bare `vX` at `v0.16`). Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **DONE:** R1–R4.5, B1 disc-suggest rewrite (`0.10`), B2 big-collection support (`0.11`), B3 offline scorekeeper + B4 full backup/restore (`0.12`), mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker (`0.13`), UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`), production signing (`0.15`), the Disc Suggest suggest-engine plan **Phases 1-3** — Flex Shot scenario (13th), Throw Style modifier, personal stability adjustment, role tags, data audit/wear level, all **verified on-device** (`plan/docs/suggest-engine-plan.md`, shipped across `v0.16`–`v0.17`) — the **website-parity track** (CSV Both scope, `stability_adj`/`role_tag` on the website, backup-file import; `plan/docs/archive/website-parity-scope.md`, `v0.17`) — and, newest, **wear estimate (1–5, supersedes the 3-tier field) + Disc Suggest "buying mode"** (`v0.19`, `plan/docs/archive/wear-estimate-scope.md` / `plan/docs/archive/buying-mode-scope.md`). **R5 VPS sync DROPPED** (superseded by B4 — Logan's call). C2 ("what should I throw?" free-form screen) **graveyarded** 2026-08-16 — too close to existing Disc Suggest (`app/plan/GRAVEYARD.md`). **Next = Phase 4 (parked behind C4) or the C-series (see `plan/GRAVEYARD.md`), or stores (R6 Play → R7 F-Droid) when Logan's ready** ("not emotionally ready for store release" — building features first). See "Mobile app — current state" below.
 
 ---
 
@@ -214,12 +214,12 @@ and working, verified on an Android emulator and sideloaded on hardware:
   (supersedes the shipped 3-tier New/Seasoned/Beat field, which is now derived from it), and a
   **"buying mode"** toggle on Disc Suggest ranks library discs you don't own against the active
   scenario, with a bag-gap summary and category/stability/brand filters — see
-  `app/plan/docs/wear-estimate-scope.md` / `app/plan/docs/buying-mode-scope.md`.
+  `app/plan/docs/archive/wear-estimate-scope.md` / `app/plan/docs/archive/buying-mode-scope.md`.
 - **Score** (4th tab, `0.12`) — **offline scorekeeper** (B3), the UDisc-fallback for no-signal
   rounds. One screen, four internal views (rounds list → setup → hole-by-hole active card →
   summary standings+grid). 1–8 players, editable par, live totals + vs-par. 4 app-only SQLite
   tables (`rounds`/`round_holes`/`round_players`/`round_scores`); pure scoring math in
-  `src/utils/roundMath.ts`. `app/plan/docs/scorekeeper-scope.md`.
+  `src/utils/roundMath.ts`. `app/plan/docs/archive/scorekeeper-scope.md`.
 - **Settings** (5th tab, gear icon) — default throw view, **skill level** (drives Disc Suggest),
   Marshall Street reference images (opt-in), **Backup & Restore** (B4, `0.12`): full-device JSON
   "Back up everything" / "Restore" — discs + today's-bag + settings + scorecards in one file,
@@ -286,9 +286,16 @@ since `v0.15`, one keystore signs Play+F-Droid+sideload). Release naming moved f
 (role tags) are all verified on-device (logged in `app/plan/docs/suggest-engine-plan.md`).
 The **website-parity track** landed 2026-08-15 (`91883c3`): CSV "Both" export scope,
 `stability_adj`/`role_tag` columns + `/api/data` wiring, and an "Import backup" button on the
-website — see `app/plan/docs/website-parity-scope.md`. **C2** ("what should I throw?"
+website — see `app/plan/docs/archive/website-parity-scope.md`. **C2** ("what should I throw?"
 free-form screen) was **graveyarded** 2026-08-16 — too close to the existing Disc Suggest
-page, see `app/plan/GRAVEYARD.md`. Forward priorities:
+page, see `app/plan/GRAVEYARD.md`. **Catalog-v2 (TryDiscs)** — a brand-new external disc
+catalog (2,147 discs vs. the current 1,660, founder-approved access, terms accepted, VPS
+hosting security-reviewed and cleared) — code + tests are done (2026-08-17, 141/141 Jest
+green), but is **not live**: no real data shipped yet, purely because nobody's run `deploy.sh`
++ `tools/trydiscs-sync.js publish` against the real VPS. Nothing left to design or review.
+**Read `app/plan/docs/catalog-v2-scope.md` before touching this — it has a "Resume checklist"
+and a decision-by-decision pivot guide, so don't
+re-derive the design.** Forward priorities:
 - **Suggest-engine Phase 4** — intentionally parked behind C4 (fieldwork data), which doesn't
   exist yet. Not being pursued. See `app/plan/GRAVEYARD.md`.
 - **C-series (C1 loadouts, C7 confirmed-real-not-scheduled, C3 parked, C2 graveyarded)** — see
