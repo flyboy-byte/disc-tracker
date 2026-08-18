@@ -251,12 +251,18 @@ built ahead of having something real to point it at).
   `https://disc.flyboybyte.com/catalog/manifest.json` — **confirmed live and correct**,
   `curl`-verified to return real JSON with a SHA-256 matching the served asset byte-for-byte.
 - Attribution: Android Settings → Credits shows a linked "Disc data by Try Discs" row, gated on
-  `getCatalogSource() === 'downloaded'`. README has an inline linked mention. **Website: confirmed
-  deferred (Logan, 2026-08-18)** — no data flows through the website yet, and it currently has
-  *no* credits/attribution UI at all (checked: not even for shotshaper, which it does use live).
-  Add a website credit once/if the website actually integrates the catalog, not before —
-  literal compliance with Azeem's "Android app, web app, and README" wording is a known,
-  deliberate gap until then, not an oversight.
+  `getCatalogSource() === 'downloaded'`. README has an inline linked mention. **Website: built
+  2026-08-18** — `templates/discsuggestion.html`'s header shows a linked "Library data by Try
+  Discs" line, gated on the website consumer route (below) actually returning catalog data, same
+  honesty rule as Android (never credited for data that isn't flowing). Now **all three of
+  Azeem's specified surfaces carry the credit**, each correctly gated on real use.
+- **Website consumer route, built 2026-08-18**: `app.py` gained `/api/catalog`
+  (`@login_required`, mirrors `/api/master`'s `_master_cache` pattern exactly, reads straight off
+  `CATALOG_DIR` on disk rather than looping back through the public `/catalog/` routes over
+  HTTP). Returns 404 (not an error) when nothing's published, so
+  `discsuggestion.html`'s `loadData()` falls back to `/api/master` silently — verified both paths
+  with Flask's test client (catalog-absent: 404 + page loads fine on `/api/master`;
+  catalog-present: 200 with real data) before deploying.
 - **Security review complete, 2026-08-17 — clear to deploy.** A separate Claude session with
   direct VPS access reviewed `docs/vps-catalog-hosting-proposal.md` against the box's real
   config. Findings:
@@ -281,8 +287,14 @@ built ahead of having something real to point it at).
     ```
   - Reviewer's call: "add it, but not blocking." Deploy can proceed either way; adding it
     alongside is the recommended order, not a hard prerequisite.
-  - **Not this repo's job to apply** — it's a VPS/nginx change, done directly on the box (by
-    Logan or a VPS-side session), not through `deploy.sh`.
+  - **Applied and verified, 2026-08-18.** Zone added to `/etc/nginx/nginx.conf` (matching this
+    box's existing `limit_req_zone` convention — see the `login` zone already there for
+    budget/transcribe), `location /catalog/` block added to the vhost ahead of the generic
+    `location /`, config backed up first (`*.bak-20260818`), `nginx -t` validated before
+    `systemctl reload`. Verified for real: 60 concurrent requests → 21 succeeded (200), 39
+    correctly throttled (503) — right at the `burst=20` boundary. Confirmed the limiter recovers
+    (200 again within seconds) and doesn't affect the rest of the site (`/` unaffected). Not this
+    repo's job normally — done directly on the VPS, not through `deploy.sh`.
 
 ## Catalog-data cleanup audit (2026-08-17, before committing)
 
@@ -327,12 +339,17 @@ action needed.
 
 - ~~Deploying to the live VPS, running `publish` for real~~ — **DONE 2026-08-18.** Server side
   fully verified from outside (`curl`, SHA-256 match).
-- The optional nginx `limit_req_zone` addition (see "Real hosting" review write-up above) — still
-  not applied. Non-blocking, was never required.
+- ~~The optional nginx `limit_req_zone` addition~~ — **DONE 2026-08-18**, applied and verified
+  live (see "Real hosting" review write-up above).
 - ~~On-device "Check for updates" pass~~ — **DONE 2026-08-18, verified on a real Pixel 7.**
   Downloaded, activated (source flipped to "Downloaded — 1874 discs"), the "Disc data by Try
   Discs" credit appeared in Settings → Credits, and it persisted correctly across a full
   force-stop + relaunch. **The entire catalog-v2 pipeline is now confirmed working end to end,
   on a real device, with real data.**
-- Website `/catalog` consumer + website credit — noted, not built.
+- ~~Website `/catalog` consumer + website credit~~ — **DONE 2026-08-18.** All three of Azeem's
+  specified surfaces (Android, website, README) now carry the credit, correctly gated on real use.
 - The pre-store-submission check-in with Azeem — gated on R6/R7 actually starting.
+- **Not verified: an actual browser pass of the website's Disc Suggest page** with real catalog
+  data live (i.e., open `/discsuggestion`, confirm the credit line appears and results reflect
+  the larger library) — the route and fallback logic are verified via Flask's test client, but
+  nobody's loaded the real page in a real browser since deploying.

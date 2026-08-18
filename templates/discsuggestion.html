@@ -130,6 +130,9 @@
     <p class="eyebrow">Disc Suggest</p>
     <h1>What should I throw?</h1>
     <p class="substat">Pick a scenario — see what fits from your bag and the full library</p>
+    <p class="substat" id="catalogCredit" style="display:none">
+      Library data by <a href="https://api.trydiscs.com" target="_blank" rel="noopener">Try Discs</a>
+    </p>
   </header>
 
   <!-- Scenario selector -->
@@ -429,17 +432,30 @@ function buildScenarioGrid() {
 }
 
 async function loadData() {
-  // Load in parallel
-  const [discRes, bagRes] = await Promise.allSettled([
+  // Load in parallel. /api/catalog is the optional Try Discs-enhanced library (same shape as
+  // /api/master: {name, mfr, speed, glide, turn, fade, stability, type}) -- 404s harmlessly if
+  // nothing's been published yet, in which case /api/master (the bundled open library) is used
+  // exactly as before. See catalog-v2-scope.md: this is the deliberately-deferred website
+  // consumer, built once real catalog data existed to point it at.
+  const [catalogRes, masterRes, bagRes] = await Promise.allSettled([
+    fetch('/api/catalog'),
     fetch('/api/master'),
     fetch('/api/data'),
   ]);
 
-  if (discRes.status === 'fulfilled' && discRes.value.ok) {
-    const raw = await discRes.value.json();
-    // master JSON uses {name, mfr, speed, glide, turn, fade, stability, type}
+  let raw = null;
+  let usedCatalog = false;
+  if (catalogRes.status === 'fulfilled' && catalogRes.value.ok) {
+    raw = await catalogRes.value.json();
+    usedCatalog = true;
+  } else if (masterRes.status === 'fulfilled' && masterRes.value.ok) {
+    raw = await masterRes.value.json();
+  }
+  if (raw) {
     allDiscs = raw.filter(d => d.stability != null && d.type);
   }
+  const creditEl = document.getElementById('catalogCredit');
+  if (creditEl) creditEl.style.display = usedCatalog ? '' : 'none';
 
   if (bagRes.status === 'fulfilled' && bagRes.value.ok) {
     const data = await bagRes.value.json();

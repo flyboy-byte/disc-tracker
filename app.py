@@ -557,6 +557,31 @@ def get_catalog_asset(asset):
     return send_from_directory(CATALOG_DIR, asset, mimetype='application/json')
 
 
+# ── Website consumer of the same enhanced catalog ──────────────────────────────
+#
+# Authenticated (this is a logged-in-user feature, same as /api/master), reads straight off
+# disk from CATALOG_DIR rather than looping back through the public /catalog/ routes over HTTP —
+# same box, same files, no reason to round-trip through the network. Returns 404 (not an error)
+# when nothing's been published yet, so the frontend can fall back to /api/master silently.
+# catalog-v2-scope.md: this is the "website consumer" that was deliberately deferred until the
+# catalog was actually live — see that doc for status.
+_catalog_cache = None
+
+@app.route('/api/catalog')
+@login_required
+def get_catalog():
+    global _catalog_cache
+    if _catalog_cache is None:
+        try:
+            with open(os.path.join(CATALOG_DIR, 'manifest.json')) as f:
+                manifest = json.load(f)
+            with open(os.path.join(CATALOG_DIR, manifest['asset'])) as f:
+                _catalog_cache = f.read()
+        except (FileNotFoundError, IOError, KeyError, ValueError):
+            return jsonify({'error': 'Enhanced catalog not available'}), 404
+    return app.response_class(_catalog_cache, mimetype='application/json')
+
+
 @app.route('/discsuggestion')
 @login_required
 def discsuggestion():
