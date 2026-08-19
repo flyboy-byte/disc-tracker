@@ -131,16 +131,20 @@ signed with the production release key. Play Store and F-Droid are the next step
   </tr>
 </table>
 
-- **Bag** — full CRUD from the disc library, per-disc flight-arc thumbnails, filters, colors, and a
-  Today's-Bag / Collection split that scales to big collections.
+- **Bag** — full CRUD from the disc library, per-disc flight-arc thumbnails, filters, colors, a
+  Today's-Bag / Collection split that scales to big collections, and a **shareable bag report**
+  (a clean image of your bag, straight to the Android share sheet).
 - **Flight Shaper** — the slider tool with a live arc, plus an opt-in on-device physics sim.
 - **Disc Suggest** — skill-aware recommendations (Beginner / Intermediate / Advanced) with
   great/good/marginal fit chips.
 - **Score** — a dead-simple **offline scorekeeper** for when the scoring app won't load or there's
   no signal: hole-by-hole, 1–8 players, running totals vs. par, saved rounds. No account, no course
   lookup, no GPS.
-- **Settings** — throw view, skill level, opt-in reference images, and **full backup & restore**
-  (one file: discs + today's bag + settings + scorecards — move to a new phone, no server).
+- **Settings** — throw view, skill level, opt-in reference images, a **disc catalog picker**
+  (switch between the built-in library, the larger Try Discs catalog, or your own imported
+  catalog file/URL), and **full backup & restore** (one file: discs + today's bag + settings +
+  scorecards — share it, or save it straight to a folder on your device; move to a new phone, no
+  server).
 
 ---
 

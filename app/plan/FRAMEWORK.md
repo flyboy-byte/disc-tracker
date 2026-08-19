@@ -18,22 +18,26 @@ it" framing this packet adds.
 Update the checkboxes below as things actually happen. This file is the honest answer to
 "where are we" at any point in the future.
 
-> **STATUS (2026-08-16):** v1 shipped long ago; the app has grown well past this original
-> phase model. Latest release **`v0.19`** (release naming moved from `mobile-preview-X` to
+> **STATUS (2026-08-18):** v1 shipped long ago; the app has grown well past this original
+> phase model. Latest release **`v0.22`** (release naming moved from `mobile-preview-X` to
 > bare `vX` at `v0.16`), now **5 tabs** (Bag / Flight Shaper / Disc Suggest / **Score** /
 > Settings). Post-v1 work all DONE: R1–R4.5, B1 (suggest rewrite), B2 (big collections), B3
 > (offline scorekeeper), B4 (full backup/restore), R6 signing. **R5 VPS sync was DROPPED**
 > (→ B4). The store-submission track (R6 Play Console → R7 F-Droid) is deliberately parked —
-> Logan's building features first (2026-08-08 strategy re-plan). Current forward work is the
-> **suggest-engine plan** (`docs/suggest-engine-plan.md`) — Phase 1 (Flex Shot scenario,
-> Throw Style, personal stability adjustment), Phase 2 (data audit), and Phase 3 (role tags)
-> all done and verified on-device; Phase 4 parked behind C4. Newest: wear estimate (1-5
-> scale, supersedes the 3-tier field) + Disc Suggest "buying mode", shipped `v0.19`
-> (2026-08-16, `archive/wear-estimate-scope.md` / `archive/buying-mode-scope.md`). C2 graveyarded 2026-08-16
-> (see `../GRAVEYARD.md`). **In progress, not shipped: Catalog-v2 (TryDiscs)** — a new
-> external disc catalog under a founder-approved, coordination-pending relationship; see
-> `docs/catalog-v2-scope.md` (has its own resume checklist — read that before this file's
-> checkboxes for that workstream). The phase checkboxes below are
+> Logan's building features first (2026-08-08 strategy re-plan). The **suggest-engine plan**
+> (`docs/suggest-engine-plan.md`) — Phase 1 (Flex Shot scenario, Throw Style, personal
+> stability adjustment), Phase 2 (data audit), and Phase 3 (role tags) — is all done and
+> verified on-device; Phase 4 parked behind C4. Wear estimate (1-5 scale, supersedes the
+> 3-tier field) + Disc Suggest "buying mode" shipped `v0.19` (2026-08-16,
+> `archive/wear-estimate-scope.md` / `archive/buying-mode-scope.md`). C2 graveyarded
+> 2026-08-16; **C1 (named loadouts) graveyarded 2026-08-18** — the storage-robustness gate
+> that blocked it was cleared (schema needs no changes) but the feature itself was dropped
+> for lack of a real driver (see `../GRAVEYARD.md`). **Catalog-v2 (TryDiscs) is LIVE and
+> shipped**, not in-progress anymore — the catalog itself shipped `v0.20`, a three-way
+> Built-in/Try Discs/Custom source picker + first-run prompt shipped `v0.21` (verified on a
+> real Pixel 7, plus a real compliance gap found and fixed the same session); see
+> `docs/catalog-v2-scope.md` for the full record. **C7 (Shareable Bag Report) also shipped,
+> `v0.20`.** The phase checkboxes below are
 > the *original v1 build* record — the live roadmap is the table in
 > [`../PORT_PLAN.md`](../PORT_PLAN.md) plus [`docs/suggest-engine-plan.md`](./docs/suggest-engine-plan.md).
 

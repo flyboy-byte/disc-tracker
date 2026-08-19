@@ -19,30 +19,36 @@
 
 ## ⚡ CURRENT STATUS (2026-08-18) — read this first
 
-**Catalog-v2 (TryDiscs) is LIVE** — read `plan/docs/catalog-v2-scope.md` before touching
-`src/catalog/` or `tools/trydiscs-sync.js`. The catalog's founder approved VPS-hosted access, a
-security review came back clean, and the real catalog (`catalogVersion=2`, 1,874 discs) is
-published and being served at `https://disc.flyboybyte.com/catalog/manifest.json`, verified from
-outside. Only remaining step: confirm on a real phone that Settings → "Check for updates"
-actually downloads/activates it.
+**Catalog-v2 (TryDiscs) is LIVE and past the picker rework** — read
+`plan/docs/catalog-v2-scope.md` before touching `src/catalog/` or `tools/trydiscs-sync.js`. The
+catalog (`catalogVersion=2`, 1,874 discs, served from `https://disc.flyboybyte.com/catalog/manifest.json`)
+shipped in `v0.20`; `v0.21` reworked Settings into a three-way **Built-in / Try Discs / Custom**
+source picker (each source caches independently, instant switching, nothing deleted) + a
+first-run download prompt, verified end-to-end on a real Pixel 7, and fixed a real compliance
+gap (credit now follows the manifest's own `provider` field, not which picker slot is active —
+see `plan/docs/catalog-v2-scope.md`'s "Three-way source picker" section for the full record).
 
-**Latest release: `v0.19`** (2026-08-16) — wear estimate (1-5 scale, supersedes the shipped
-3-tier New/Seasoned/Beat field) + Disc Suggest **"buying mode"** (rank library discs you don't
-own against a scenario, with a bag-gap summary and category/stability/brand filters). Release
-naming moved from `mobile-preview-X` to bare `vX` starting at `v0.16` (2026-08-15). The app is
-well past v1 — **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings).
-Post-v1 work all DONE and shipped: R1–R4.5, **B1** disc-suggest rewrite (`0.10`), **B2**
-big-collection support (`0.11`), **B3** offline scorekeeper + **B4** full backup/restore
-(`0.12`), mobile-UX polish (tap-outside-close + RGB picker, `0.13`), UI "modern feel" polish
-pass + F-Droid-reproducible dependency tree (`0.14`), production signing (`0.15`), the
-suggest-engine plan's Phases 1-3 (Flex Shot scenario, Throw Style modifier, personal stability
-adjustment, data audit, personal role tags — all verified on-device, `v0.16`/`v0.17`), the
-website-parity track (`v0.17`), and wear estimate + Disc Suggest buying mode (`v0.19`).
+**Latest release: `v0.22`** (2026-08-18) — added a direct "Save to device" option next to the
+existing backup share sheet. Release naming moved from `mobile-preview-X` to bare `vX` starting
+at `v0.16` (2026-08-15). The app is well past v1 — **five tabs** (Bag / Flight Shaper / Disc
+Suggest / **Score** / Settings). Post-v1 work all DONE and shipped: R1–R4.5, **B1** disc-suggest
+rewrite (`0.10`), **B2** big-collection support (`0.11`), **B3** offline scorekeeper + **B4**
+full backup/restore (`0.12`), mobile-UX polish (tap-outside-close + RGB picker, `0.13`), UI
+"modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`), production signing
+(`0.15`), the suggest-engine plan's Phases 1-3 (Flex Shot scenario, Throw Style modifier,
+personal stability adjustment, data audit, personal role tags — all verified on-device,
+`v0.16`/`v0.17`), the website-parity track (`v0.17`), wear estimate + Disc Suggest buying mode
+(`v0.19`), **Try Discs catalog-v2 + C7 Shareable Bag Report (`v0.20`)**, and the **catalog
+source picker + compliance fix (`v0.21`)**.
 **R5 VPS sync was DROPPED** (→ B4). **C2** ("what should I throw?" free-form screen) was
-**graveyarded** 2026-08-16 — too close to the existing Disc Suggest page, see `plan/GRAVEYARD.md`.
-**Active forward plan (2026-08-08 re-plan, C-series minus C2): C1/C3/C4/C5/C6/C7** — turning
-the app from a disc *database* into a **personal disc-intelligence system** (loadouts →
-fieldwork → Learn My Bag → throw advisor → overlap/compare → shareable bag report). The
+**graveyarded** 2026-08-16 — too close to the existing Disc Suggest page. **C1 (named
+loadouts) graveyarded 2026-08-18** — its storage-robustness gate was cleared (schema needs no
+changes, would be purely additive if ever revisited) but the feature itself was dropped for lack
+of a real driver; see `plan/GRAVEYARD.md`.
+**Active forward plan (2026-08-08 re-plan, C-series minus C1/C2): C3/C4/C5/C6** — turning the
+app from a disc *database* into a **personal disc-intelligence system** (fieldwork → Learn My
+Bag → throw advisor → overlap/compare); **C7 (shareable bag report) already shipped in `v0.20`.**
+The
 **store track (R6 Play → R7 F-Droid) stays deliberately parked** — Logan's call is features +
 future-proofing + audience planning *before* any public release. See
 `plan/docs/direction-2026-08-08.md` (distills `plan/research/strategy-review-2026-08-08.md`)
@@ -686,9 +692,12 @@ real signing/distribution setup:
 | `v0.17` | Disc Suggest Phase 1 (Flex Shot scenario, Throw Style modifier, personal stability adjustment), Phase 2 (data audit — wear level, inline-editable Settings list), Phase 3 (personal role tags); website-parity track (CSV "Both" scope, `stability_adj`/`role_tag`, backup-file import); CSV import dedupe opt-in toggle |
 | `v0.18` | Data audit list scrollability fix; website CSV import allow-duplicates toggle |
 | `v0.19` | Wear estimate (1-5 scale, supersedes the 3-tier field) + Disc Suggest "buying mode" (rank library discs you don't own, bag-gap summary, category/stability/brand filters); adb `testID` instrumentation; two live bug fixes (duplicate-mold key collision, misleading net-stability wording) |
+| `v0.20` | Try Discs catalog-v2 live (external 2,147-mold catalog, 1,874 usable — see `plan/docs/catalog-v2-scope.md`) + C7 Shareable Bag Report; GitHub Pages fix; nginx rate-limiting |
+| `v0.21` | Disc Catalog Settings reworked into a three-way Built-in/Try Discs/Custom source picker + first-run prompt; fixed a real compliance gap (Try Discs credit now follows the manifest's `provider` field, not the picker slot) |
+| `v0.22` | "Save to device" option added next to the existing backup share sheet |
 
 `mobile-preview-0.1` through `-0.14` are **debug-signed** (ahead of the production keystore).
-`mobile-preview-0.15` onward (through `v0.19`) are **production-signed** with the real upload
+`mobile-preview-0.15` onward (through `v0.22`) are **production-signed** with the real upload
 keystore (see R6 below) — still GitHub Releases only, not Play Store or F-Droid yet. The repo
 is public, so releases are visible to anyone, not just the user.
 
