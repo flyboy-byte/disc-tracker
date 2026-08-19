@@ -434,6 +434,4 @@ populated flight numbers for) because this app requires complete speed/glide/tur
 render sensibly in Flight Shaper/Disc Suggest. Now disclosed in three places: the mobile
 Settings Try Discs row, the website's `#catalogCredit` line, and `README.md`.
 
-**Not yet tagged/released** — this landed on `main` after `v0.20`, still at app version
-`0.20.0`. Needs a version bump before it's a real release (see CLAUDE.md's "Next immediate
-step").
+**Shipped as `v0.21`** (2026-08-18).
