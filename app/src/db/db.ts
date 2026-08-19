@@ -9,7 +9,7 @@
 import * as SQLite from 'expo-sqlite';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { deriveWearLevel, type Disc } from '../utils/disc';
-import type { SkillPreset, ThrowStyle } from '../utils/suggestScore';
+import type { LearningState, SkillPreset, ThrowStyle } from '../utils/suggestScore';
 import type { Round } from '../utils/roundMath';
 import type { CustomMasterDisc } from '../utils/masterLibrary';
 import { runMigrations } from './migrations';
@@ -622,6 +622,161 @@ export function replaceRounds(userId: number, rounds: Round[]): Promise<void> {
       }
     });
   });
+}
+
+// ── Disc Suggest swipe-to-dismiss (suggest-swipe-scope.md) ────────────────────
+// suggest_demotions: a per-(user, list_key) manual reorder. list_key namespaces by mode +
+// scenario (`throw:headwind` / `buy:headwind`) so a swipe never leaks across scenarios or
+// between Throw/Buy. Nothing is ever deleted from the underlying ranked results — this only
+// reorders what applyManualOrder() (disc-suggest.tsx) renders on top of rankDiscs()'s output.
+
+export function getDemotions(userId: number, listKey: string): Promise<string[]> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    const rows = await db.getAllAsync<{ disc_key: string }>(
+      'SELECT disc_key FROM suggest_demotions WHERE user_id = ? AND list_key = ? ORDER BY position ASC',
+      [userId, listKey]
+    );
+    return rows.map((r) => r.disc_key);
+  });
+}
+
+export function demoteDisc(userId: number, listKey: string, discKey: string): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    const row = await db.getFirstAsync<{ maxPos: number | null }>(
+      'SELECT MAX(position) as maxPos FROM suggest_demotions WHERE user_id = ? AND list_key = ?',
+      [userId, listKey]
+    );
+    const nextPos = (row?.maxPos ?? 0) + 1;
+    await db.runAsync(
+      'INSERT INTO suggest_demotions (user_id, list_key, disc_key, position) VALUES (?, ?, ?, ?) ' +
+        'ON CONFLICT(user_id, list_key, disc_key) DO UPDATE SET position = excluded.position',
+      [userId, listKey, discKey, nextPos]
+    );
+  });
+}
+
+export function resetDemotions(userId: number, listKey: string): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.runAsync('DELETE FROM suggest_demotions WHERE user_id = ? AND list_key = ?', [userId, listKey]);
+  });
+}
+
+// ── Buy mode's learning engine (suggest-swipe-scope.md) ───────────────────────
+// One row per user, global across scenarios (unlike suggest_demotions above — this is meant to
+// generalize). avoid_* is a running centroid (EMA) of the flight numbers of discs swiped away
+// in Buy mode; avoid_strength governs how hard that centroid penalizes similar discs and decays
+// fast between app launches (session-local, "aggressive this session, less next time");
+// brand_aversion decays slowly ("long term memory" on brand). See suggestScore.ts
+// learningPenalty(), which reads this shape but never imports db.ts (kept a pure function).
+interface LearningRow {
+  avoid_speed: number;
+  avoid_glide: number;
+  avoid_turn: number;
+  avoid_fade: number;
+  avoid_strength: number;
+  brand_aversion: string;
+  engine_enabled: number;
+  decayed_at: string | null;
+}
+
+// Session-local flight-number aversion fades hard between launches (35% carries over); brand
+// aversion fades slowly (70% carries over) — the two decay rates are the whole "aggressive this
+// session, softer long-term memory on brand" behavior Logan asked for.
+const AVOID_STRENGTH_DECAY = 0.35;
+const BRAND_AVERSION_DECAY = 0.7;
+// How fast a new swipe pulls the centroid toward the swiped disc, and how fast avoidStrength
+// ramps back up toward 1 within a session.
+const AVOID_EMA_ALPHA = 0.35;
+const AVOID_STRENGTH_RAMP = 0.3;
+const BRAND_AVERSION_STEP = 0.25;
+
+function parseBrandAversion(json: string): Record<string, number> {
+  try {
+    const v: unknown = JSON.parse(json);
+    return v && typeof v === 'object' ? (v as Record<string, number>) : {};
+  } catch {
+    return {};
+  }
+}
+
+async function ensureLearningRow(db: SQLiteDatabase, userId: number): Promise<void> {
+  await db.runAsync('INSERT OR IGNORE INTO suggest_learning (user_id) VALUES (?)', [userId]);
+}
+
+// Decays the persisted state at most once per userId per app process — a module-level guard,
+// not a timestamp comparison against "now," since the whole point is "once per launch," and the
+// process naturally restarts between real sessions. Re-running this on every getLearningState
+// call within one launch would erase the very aggression it's supposed to preserve.
+const learningDecayedThisProcess = new Set<number>();
+
+export function getLearningState(userId: number): Promise<LearningState> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await ensureLearningRow(db, userId);
+    if (!learningDecayedThisProcess.has(userId)) {
+      learningDecayedThisProcess.add(userId);
+      const today = new Date().toISOString().slice(0, 10);
+      const row = await db.getFirstAsync<LearningRow>('SELECT * FROM suggest_learning WHERE user_id = ?', [userId]);
+      if (row && row.decayed_at !== today) {
+        const brand = parseBrandAversion(row.brand_aversion);
+        for (const k of Object.keys(brand)) brand[k] *= BRAND_AVERSION_DECAY;
+        await db.runAsync('UPDATE suggest_learning SET avoid_strength = ?, brand_aversion = ?, decayed_at = ? WHERE user_id = ?', [
+          row.avoid_strength * AVOID_STRENGTH_DECAY,
+          JSON.stringify(brand),
+          today,
+          userId,
+        ]);
+      }
+    }
+    const row = await db.getFirstAsync<LearningRow>('SELECT * FROM suggest_learning WHERE user_id = ?', [userId]);
+    if (!row) return { avoidSpeed: 0, avoidGlide: 0, avoidTurn: 0, avoidFade: 0, avoidStrength: 0, brandAversion: {}, engineEnabled: true };
+    return {
+      avoidSpeed: row.avoid_speed,
+      avoidGlide: row.avoid_glide,
+      avoidTurn: row.avoid_turn,
+      avoidFade: row.avoid_fade,
+      avoidStrength: row.avoid_strength,
+      brandAversion: parseBrandAversion(row.brand_aversion),
+      engineEnabled: !!row.engine_enabled,
+    };
+  });
+}
+
+export function recordSwipeAway(userId: number, disc: { speed: number; glide: number; turn: number; fade: number; mfr: string }): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await ensureLearningRow(db, userId);
+    const row = await db.getFirstAsync<LearningRow>('SELECT * FROM suggest_learning WHERE user_id = ?', [userId]);
+    const a = AVOID_EMA_ALPHA;
+    const nextSpeed = (row?.avoid_speed ?? 0) * (1 - a) + disc.speed * a;
+    const nextGlide = (row?.avoid_glide ?? 0) * (1 - a) + disc.glide * a;
+    const nextTurn = (row?.avoid_turn ?? 0) * (1 - a) + disc.turn * a;
+    const nextFade = (row?.avoid_fade ?? 0) * (1 - a) + disc.fade * a;
+    const nextStrength = Math.min(1, (row?.avoid_strength ?? 0) + AVOID_STRENGTH_RAMP);
+    const brand = parseBrandAversion(row?.brand_aversion ?? '{}');
+    const key = disc.mfr.trim().toLowerCase();
+    if (key) brand[key] = Math.min(1, (brand[key] ?? 0) + BRAND_AVERSION_STEP);
+    await db.runAsync(
+      'UPDATE suggest_learning SET avoid_speed=?, avoid_glide=?, avoid_turn=?, avoid_fade=?, avoid_strength=?, brand_aversion=? WHERE user_id=?',
+      [nextSpeed, nextGlide, nextTurn, nextFade, nextStrength, JSON.stringify(brand), userId]
+    );
+  });
+}
+
+export function setLearningEngineEnabled(userId: number, enabled: boolean): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await ensureLearningRow(db, userId);
+    await db.runAsync('UPDATE suggest_learning SET engine_enabled = ? WHERE user_id = ?', [enabled ? 1 : 0, userId]);
+  });
+}
+
+// Test-only: clears the per-process decay guard so a test can simulate a fresh app launch.
+export function __resetLearningDecayGuardForTests(): void {
+  learningDecayedThisProcess.clear();
 }
 
 export function deleteUser(userId: number): Promise<void> {

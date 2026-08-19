@@ -170,3 +170,37 @@ export function rankDiscs(
   });
   return scored.slice(0, limit);
 }
+
+// ── Buy mode's learning engine (suggest-swipe-scope.md) ───────────────────────
+// The persisted-state shape lives here (not db.ts) so this stays a pure, DB-free module — db.ts
+// imports this type the same way it already imports SkillPreset/ThrowStyle above.
+export interface LearningState {
+  avoidSpeed: number;
+  avoidGlide: number;
+  avoidTurn: number;
+  avoidFade: number;
+  avoidStrength: number; // 0..1 — how hard the centroid below is applied
+  brandAversion: Record<string, number>; // mfr (lowercase) -> 0..1
+  engineEnabled: boolean;
+}
+
+// learningPenalty() is purely additive on top of rankDiscs()'s output — it never changes score()
+// or band classification, only the *display order* a caller applies afterward (disc-suggest.tsx
+// sorts Buy-mode results by `score - learningPenalty` instead of `score` when the engine is on).
+// A disc's band always reflects its true, unpenalized fit — the engine reorders, it doesn't lie.
+export function learningPenalty(disc: ScenarioDisc, state: LearningState): number {
+  if (state.avoidStrength <= 0) return 0;
+  // Fixed tolerances (not scenario-specific) — this is "how close is this disc to what got
+  // swiped away," not "how well does it fit the scenario." Magnitudes match the typical `tol`
+  // values already authored into PROFILES above.
+  const flightSim =
+    0.3 * fieldScore(disc.speed, { target: state.avoidSpeed, tol: 3, wt: 1 }) +
+    0.2 * fieldScore(disc.glide, { target: state.avoidGlide, tol: 1.5, wt: 1 }) +
+    0.3 * fieldScore(disc.turn, { target: state.avoidTurn, tol: 1.5, wt: 1 }) +
+    0.2 * fieldScore(disc.fade, { target: state.avoidFade, tol: 1.5, wt: 1 });
+  const brandSim = state.brandAversion[disc.mfr.trim().toLowerCase()] ?? 0;
+  // 0.7/0.3 split: "aggressive on flight characteristics ... maybe long term memory on brand" —
+  // flight-profile similarity dominates, brand is a smaller, slower-moving signal (db.ts decays
+  // brand_aversion at 70%/launch vs. avoid_strength's 35%, so brand naturally persists longer).
+  return state.avoidStrength * (0.7 * flightSim + 0.3 * brandSim);
+}

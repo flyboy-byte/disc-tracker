@@ -1,7 +1,7 @@
 // B1 step 3 — unit tests for the unified scorer, and step 6 — validation vs. the step-1 baseline.
 // Pure/offline, no device. Run with `npm test`.
 
-import { bandFor, PROFILES, PRESETS, rankDiscs, score, type SkillPreset, type ThrowStyle } from './suggestScore';
+import { bandFor, learningPenalty, PROFILES, PRESETS, rankDiscs, score, type LearningState, type SkillPreset, type ThrowStyle } from './suggestScore';
 import { masterDiscs } from './masterLibrary';
 import type { ScenarioDisc } from './disc';
 import baseline from './__fixtures__/suggest-baseline.json';
@@ -36,6 +36,38 @@ describe('scorer basics', () => {
     expect(bandFor(0.6)).toBe('good');
     expect(bandFor(0.4)).toBe('marginal');
     expect(bandFor(0.2)).toBeNull();
+  });
+});
+
+describe('learningPenalty (suggest-swipe-scope.md Buy-mode engine)', () => {
+  function state(partial: Partial<LearningState>): LearningState {
+    return { avoidSpeed: 0, avoidGlide: 0, avoidTurn: 0, avoidFade: 0, avoidStrength: 0, brandAversion: {}, engineEnabled: true, ...partial };
+  }
+
+  it('is zero when nothing has been learned yet (avoidStrength 0)', () => {
+    const d = disc({ speed: 12, glide: 5, turn: -2, fade: 2 });
+    expect(learningPenalty(d, state({}))).toBe(0);
+  });
+
+  it('penalizes a disc whose flight numbers closely match the avoided centroid', () => {
+    const s = state({ avoidSpeed: 12, avoidGlide: 5, avoidTurn: -2, avoidFade: 2, avoidStrength: 1 });
+    const closeMatch = disc({ speed: 12, glide: 5, turn: -2, fade: 2 });
+    const farOff = disc({ speed: 3, glide: 3, turn: 0, fade: 1 });
+    expect(learningPenalty(closeMatch, s)).toBeGreaterThan(learningPenalty(farOff, s));
+  });
+
+  it('scales down with avoidStrength (session decay)', () => {
+    const closeMatch = disc({ speed: 12, glide: 5, turn: -2, fade: 2 });
+    const strong = state({ avoidSpeed: 12, avoidGlide: 5, avoidTurn: -2, avoidFade: 2, avoidStrength: 1 });
+    const decayed = state({ avoidSpeed: 12, avoidGlide: 5, avoidTurn: -2, avoidFade: 2, avoidStrength: 0.35 });
+    expect(learningPenalty(closeMatch, decayed)).toBeLessThan(learningPenalty(closeMatch, strong));
+  });
+
+  it('adds a brand penalty for an averse brand even with a non-matching flight profile', () => {
+    const s = state({ avoidStrength: 1, brandAversion: { innova: 1 } });
+    const innovaDisc = { ...disc({ speed: 3, glide: 3, turn: 0, fade: 1 }), mfr: 'Innova' };
+    const otherDisc = { ...disc({ speed: 3, glide: 3, turn: 0, fade: 1 }), mfr: 'Discraft' };
+    expect(learningPenalty(innovaDisc, s)).toBeGreaterThan(learningPenalty(otherDisc, s));
   });
 });
 

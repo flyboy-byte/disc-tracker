@@ -14,12 +14,41 @@ import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, T
 import { useFocusEffect } from 'expo-router';
 import ScenarioGrid from '../../src/components/ScenarioGrid';
 import SuggestResultCard from '../../src/components/SuggestResultCard';
-import { getDiscs, getMeta, getOrCreateDefaultUser, setMeta, type SuggestMode } from '../../src/db/db';
+import SwipeableSuggestCard from '../../src/components/SwipeableSuggestCard';
+import {
+  demoteDisc,
+  getDemotions,
+  getDiscs,
+  getLearningState,
+  getMeta,
+  getOrCreateDefaultUser,
+  recordSwipeAway,
+  resetDemotions,
+  setLearningEngineEnabled,
+  setMeta,
+  type SuggestMode,
+} from '../../src/db/db';
 import { colors } from '../../src/theme';
 import { bagToDisc, discType, stab, TYPE_META, type Disc, type DiscType, type ScenarioDisc, type Stability } from '../../src/utils/disc';
 import { getCatalog } from '../../src/catalog/catalogLoader';
 import { SCENARIOS, type Scenario } from '../../src/utils/scenarios';
-import { PROFILES, rankDiscs, type Scored, type SkillPreset, type ThrowStyle } from '../../src/utils/suggestScore';
+import { learningPenalty, PROFILES, rankDiscs, type LearningState, type Scored, type SkillPreset, type ThrowStyle } from '../../src/utils/suggestScore';
+
+// suggest-swipe-scope.md: same disc-identity convention already used for the bag/library dedupe
+// sets below (bagNames/ownedNames) — mfr+name, lowercased.
+function discKey(d: Pick<ScenarioDisc, 'name' | 'mfr'>): string {
+  return `${d.mfr}|${d.name}`.toLowerCase();
+}
+
+// Swiped-away discs move to the end, in the order they were swiped — everything else keeps its
+// ranked order. Demotion always wins over the Buy-mode learning re-sort (applied before this).
+function applyManualOrder(scored: Scored[], demotedKeys: string[]): Scored[] {
+  if (demotedKeys.length === 0) return scored;
+  const demotedSet = new Set(demotedKeys);
+  const kept = scored.filter((s) => !demotedSet.has(discKey(s.disc)));
+  const demoted = demotedKeys.map((k) => scored.find((s) => discKey(s.disc) === k)).filter((s): s is Scored => !!s);
+  return [...kept, ...demoted];
+}
 
 // Same shape check the website applies to the raw master JSON before treating a row as a
 // valid ScenarioDisc — bundled discs_master.json already satisfies this, but stay defensive
@@ -61,6 +90,11 @@ export default function DiscSuggestScreen() {
   const [stabilityFilter, setStabilityFilter] = useState<Stability | 'all'>('all');
   const [brandFilter, setBrandFilter] = useState('');
   const [libraryDiscs, setLibraryDiscs] = useState<ScenarioDisc[]>(() => libraryDiscsFromCatalog());
+  // suggest-swipe-scope.md: per-scenario manual reorder (Throw and Buy each get their own
+  // list_key, so a swipe never crosses scenarios or modes) + Buy mode's learning engine state.
+  const [demotedThrow, setDemotedThrow] = useState<string[]>([]);
+  const [demotedBuy, setDemotedBuy] = useState<string[]>([]);
+  const [learning, setLearning] = useState<LearningState | null>(null);
   // Resolve the user once and hold it in a ref so the focus effect below has stable ([])
   // deps — depending on a `userId` state instead caused a double-fetch on cold open (the
   // first run set the state, whose change re-fired the still-focused effect).
@@ -73,12 +107,17 @@ export default function DiscSuggestScreen() {
     useCallback(() => {
       (async () => {
         if (userIdRef.current == null) userIdRef.current = await getOrCreateDefaultUser();
-        const [discs, meta] = await Promise.all([getDiscs(userIdRef.current), getMeta(userIdRef.current)]);
+        const [discs, meta, learningState] = await Promise.all([
+          getDiscs(userIdRef.current),
+          getMeta(userIdRef.current),
+          getLearningState(userIdRef.current),
+        ]);
         setBagDiscs(discs);
         setSkill(meta.skill);
         setThrowStyle(meta.throwStyle);
         setMode(meta.suggestMode);
         setLibraryDiscs(libraryDiscsFromCatalog());
+        setLearning(learningState);
         setLoading(false);
       })();
     }, [])
@@ -91,6 +130,19 @@ export default function DiscSuggestScreen() {
 
   const activeScenario = useMemo(() => SCENARIOS.find((s) => s.id === activeId) ?? null, [activeId]);
 
+  // suggest-swipe-scope.md: (re)load this scenario's manual order whenever the scenario changes
+  // (or on first load, once the user is resolved). Reset immediately so a stale prior scenario's
+  // order never flashes before the fetch resolves.
+  useEffect(() => {
+    setDemotedThrow([]);
+    setDemotedBuy([]);
+    if (loading || userIdRef.current == null || !activeScenario) return;
+    const uid = userIdRef.current;
+    const scenarioId = activeScenario.id;
+    getDemotions(uid, `throw:${scenarioId}`).then(setDemotedThrow);
+    getDemotions(uid, `buy:${scenarioId}`).then(setDemotedBuy);
+  }, [activeId, loading]);
+
   const { bagMatches, libOnly } = useMemo(() => {
     if (!activeScenario) return { bagMatches: [] as Scored[], libOnly: [] as Scored[] };
     // ONE scorer for both. Bag discs converted to the library shape first so they're scored
@@ -98,19 +150,78 @@ export default function DiscSuggestScreen() {
     // capped inside rankDiscs.
     const bag = rankDiscs(bagDiscs.map(bagToDisc), activeScenario.id, skill, bagDiscs.length || undefined, throwStyle);
     const lib = rankDiscs(libraryDiscs, activeScenario.id, skill, 15, throwStyle);
-    const bagNames = new Set(bag.map((s) => `${s.disc.name}|${s.disc.mfr}`.toLowerCase()));
-    const libOnly = lib.filter((s) => !bagNames.has(`${s.disc.name}|${s.disc.mfr}`.toLowerCase()));
-    return { bagMatches: bag, libOnly };
-  }, [activeScenario, bagDiscs, skill, throwStyle, libraryDiscs]);
+    const bagNames = new Set(bag.map((s) => discKey(s.disc)));
+    const libOnly = lib.filter((s) => !bagNames.has(discKey(s.disc)));
+    // Same list_key for both sections — a swipe demotes a disc within this scenario's Throw
+    // results regardless of which section it appeared in.
+    return { bagMatches: applyManualOrder(bag, demotedThrow), libOnly: applyManualOrder(libOnly, demotedThrow) };
+  }, [activeScenario, bagDiscs, skill, throwStyle, libraryDiscs, demotedThrow]);
 
   // Buying mode: same scorer, wider net (every qualifying library disc, not just top 15), minus
-  // whatever's already owned — filters below narrow it down, not the scorer itself.
+  // whatever's already owned — filters below narrow it down, not the scorer itself. When the
+  // learning engine is on, re-sort by score minus the learned aversion penalty first — band
+  // labels below are still computed from the untouched score, so a disc's stated fit never lies,
+  // only its position does. Manual per-disc demotions (explicit swipes) always win over that.
   const buyResults = useMemo(() => {
     if (!activeScenario || mode !== 'buying') return [] as Scored[];
-    const ownedNames = new Set(bagDiscs.map((d) => `${d.mold}|${d.mfr}`.toLowerCase()));
-    const notOwned = libraryDiscs.filter((d) => !ownedNames.has(`${d.name}|${d.mfr}`.toLowerCase()));
-    return rankDiscs(notOwned, activeScenario.id, skill, notOwned.length, throwStyle);
-  }, [activeScenario, mode, bagDiscs, skill, throwStyle, libraryDiscs]);
+    const ownedNames = new Set(bagDiscs.map((d) => discKey({ name: d.mold, mfr: d.mfr })));
+    const notOwned = libraryDiscs.filter((d) => !ownedNames.has(discKey(d)));
+    let ranked = rankDiscs(notOwned, activeScenario.id, skill, notOwned.length, throwStyle);
+    if (learning?.engineEnabled && learning.avoidStrength > 0) {
+      ranked = [...ranked].sort(
+        (a, b) => b.score - learningPenalty(b.disc, learning) - (a.score - learningPenalty(a.disc, learning))
+      );
+    }
+    return applyManualOrder(ranked, demotedBuy);
+  }, [activeScenario, mode, bagDiscs, skill, throwStyle, libraryDiscs, learning, demotedBuy]);
+
+  const onSwipeThrow = useCallback(
+    (disc: ScenarioDisc) => {
+      if (userIdRef.current == null || !activeScenario) return;
+      const key = discKey(disc);
+      const listKey = `throw:${activeScenario.id}`;
+      setDemotedThrow((prev) => (prev.includes(key) ? prev : [...prev, key]));
+      demoteDisc(userIdRef.current, listKey, key);
+    },
+    [activeScenario]
+  );
+
+  const onSwipeBuy = useCallback(
+    (disc: ScenarioDisc) => {
+      const uid = userIdRef.current;
+      if (uid == null || !activeScenario) return;
+      const key = discKey(disc);
+      const listKey = `buy:${activeScenario.id}`;
+      setDemotedBuy((prev) => (prev.includes(key) ? prev : [...prev, key]));
+      demoteDisc(uid, listKey, key);
+      // Engine-off Buy mode is deliberately identical to Throw mode's plain reorder above — no
+      // learning write, matches Logan's explicit fallback spec.
+      if (learning?.engineEnabled) {
+        recordSwipeAway(uid, disc).then(() => getLearningState(uid).then(setLearning));
+      }
+    },
+    [activeScenario, learning?.engineEnabled]
+  );
+
+  const resetOrder = useCallback(
+    (m: SuggestMode) => {
+      const uid = userIdRef.current;
+      if (uid == null || !activeScenario) return;
+      const listKey = `${m === 'throwing' ? 'throw' : 'buy'}:${activeScenario.id}`;
+      if (m === 'throwing') setDemotedThrow([]);
+      else setDemotedBuy([]);
+      resetDemotions(uid, listKey);
+    },
+    [activeScenario]
+  );
+
+  const toggleEngine = useCallback(() => {
+    const uid = userIdRef.current;
+    if (uid == null || !learning) return;
+    const next = !learning.engineEnabled;
+    setLearning({ ...learning, engineEnabled: next });
+    setLearningEngineEnabled(uid, next);
+  }, [learning]);
 
   const filteredBuyResults = useMemo(() => {
     const brand = brandFilter.trim().toLowerCase();
@@ -223,7 +334,11 @@ export default function DiscSuggestScreen() {
         contentContainerStyle={styles.content}
         data={activeScenario ? pagedBuyResults : []}
         keyExtractor={(s) => `buy-${s.disc.name}-${s.disc.mfr}`}
-        renderItem={({ item: s }) => <SuggestResultCard disc={s.disc} inBag={false} band={s.band} />}
+        renderItem={({ item: s }) => (
+          <SwipeableSuggestCard testID={`swipe-buy-${discKey(s.disc)}`} onSwipe={() => onSwipeBuy(s.disc)}>
+            <SuggestResultCard disc={s.disc} inBag={false} band={s.band} />
+          </SwipeableSuggestCard>
+        )}
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         windowSize={7}
@@ -276,6 +391,28 @@ export default function DiscSuggestScreen() {
                   placeholderTextColor={colors.muted}
                 />
 
+                {/* suggest-swipe-scope.md: swipe a disc away to drop it to the bottom of this
+                    scenario's results; with Learning on, swiping also teaches the engine which
+                    flight numbers/brands to steer the rest of the list away from this session. */}
+                <View style={styles.engineRow}>
+                  <Pressable
+                    testID="suggest-engine-toggle"
+                    style={[styles.enginePill, learning?.engineEnabled && styles.enginePillActive]}
+                    onPress={toggleEngine}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: !!learning?.engineEnabled }}
+                  >
+                    <Text style={[styles.enginePillText, learning?.engineEnabled && styles.enginePillTextActive]}>
+                      Learning: {learning?.engineEnabled ? 'On' : 'Off'}
+                    </Text>
+                  </Pressable>
+                  {demotedBuy.length > 0 && (
+                    <Pressable testID="buy-reset-order" onPress={() => resetOrder('buying')} accessibilityRole="button">
+                      <Text style={styles.resetLink}>Reset order</Text>
+                    </Pressable>
+                  )}
+                </View>
+
                 <View style={styles.resultsHeader}>
                   <Text style={styles.resultsHeaderText}>Discs to consider</Text>
                   <View style={styles.countPill}>
@@ -326,6 +463,15 @@ export default function DiscSuggestScreen() {
 
       {activeScenario && (
         <View style={styles.results}>
+          {/* suggest-swipe-scope.md: swipe a disc away to drop it to the bottom of this
+              scenario's list (shared across both sections below) — persists across restarts,
+              never touches any other scenario. */}
+          {demotedThrow.length > 0 && (
+            <Pressable testID="throw-reset-order" style={styles.resetLinkRow} onPress={() => resetOrder('throwing')} accessibilityRole="button">
+              <Text style={styles.resetLink}>Reset order for this scenario</Text>
+            </Pressable>
+          )}
+
           <View style={styles.resultsHeader}>
             <Text style={styles.resultsHeaderText}>From your bag</Text>
             <View style={styles.countPill}>
@@ -336,7 +482,13 @@ export default function DiscSuggestScreen() {
             <Text style={styles.emptyBag}>No matches in your bag for this scenario.</Text>
           ) : (
             bagMatches.map((s) => (
-              <SuggestResultCard key={`bag-${s.disc.id ?? `${s.disc.name}-${s.disc.mfr}`}`} disc={s.disc} inBag band={s.band} />
+              <SwipeableSuggestCard
+                key={`bag-${s.disc.id ?? discKey(s.disc)}`}
+                testID={`swipe-bag-${discKey(s.disc)}`}
+                onSwipe={() => onSwipeThrow(s.disc)}
+              >
+                <SuggestResultCard disc={s.disc} inBag band={s.band} />
+              </SwipeableSuggestCard>
             ))
           )}
 
@@ -349,7 +501,9 @@ export default function DiscSuggestScreen() {
             </View>
           </View>
           {libOnly.map((s) => (
-            <SuggestResultCard key={`lib-${s.disc.name}-${s.disc.mfr}`} disc={s.disc} inBag={false} band={s.band} />
+            <SwipeableSuggestCard key={`lib-${discKey(s.disc)}`} testID={`swipe-lib-${discKey(s.disc)}`} onSwipe={() => onSwipeThrow(s.disc)}>
+              <SuggestResultCard disc={s.disc} inBag={false} band={s.band} />
+            </SwipeableSuggestCard>
           ))}
         </View>
       )}
@@ -381,6 +535,14 @@ const styles = StyleSheet.create({
   modeHalf: { flex: 1, alignItems: 'center', paddingVertical: 14, backgroundColor: colors.card },
   modeHalfLeft: { borderRightWidth: 1, borderRightColor: colors.border },
   modeHalfRight: {},
+  // suggest-swipe-scope.md — Buy mode's Learning toggle + the "Reset order" link (both modes).
+  engineRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
+  enginePill: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: colors.border },
+  enginePillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.15)' },
+  enginePillText: { color: colors.muted, fontSize: 11, fontWeight: '600' },
+  enginePillTextActive: { color: colors.accent },
+  resetLink: { color: colors.accent, fontSize: 12, fontWeight: '600' },
+  resetLinkRow: { alignSelf: 'flex-start', marginBottom: 10 },
   modeHalfActive: { backgroundColor: 'rgba(145,94,255,0.16)' },
   modeText: { color: colors.muted, fontSize: 15, fontWeight: '700' },
   modeTextActive: { color: colors.accent },

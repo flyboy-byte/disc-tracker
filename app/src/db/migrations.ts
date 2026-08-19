@@ -92,6 +92,35 @@ CREATE TABLE IF NOT EXISTS custom_discs (
   type       TEXT DEFAULT '',
   created_at TEXT
 );
+-- suggest-swipe-scope.md — Gmail-style swipe-to-dismiss on Disc Suggest result cards. A swipe
+-- always does this: drop the disc to the bottom of *this scenario's* list (list_key namespaces
+-- by mode so a Throw-mode swipe never touches Buy mode's ordering or vice versa, and a swipe on
+-- one scenario never touches another). Nothing is ever deleted — just reordered client-side on
+-- top of rankDiscs()'s output. position increases monotonically per (user_id, list_key), so the
+-- most recently swiped disc always lands at the very bottom, below earlier swipes.
+CREATE TABLE IF NOT EXISTS suggest_demotions (
+  user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  list_key TEXT NOT NULL,
+  disc_key TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  PRIMARY KEY (user_id, list_key, disc_key)
+);
+-- suggest-swipe-scope.md — Buy mode's learning engine, one row per user (global across
+-- scenarios, unlike suggest_demotions above). avoid_* is a running centroid of the flight
+-- numbers of discs swiped away; avoid_strength governs how hard that centroid is applied and
+-- decays fast (session-local, "aggressive this session"); brand_aversion decays slowly ("long
+-- term memory" on brand). See suggestScore.ts learningPenalty() and db.ts getLearningState().
+CREATE TABLE IF NOT EXISTS suggest_learning (
+  user_id        INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  avoid_speed    REAL DEFAULT 0,
+  avoid_glide    REAL DEFAULT 0,
+  avoid_turn     REAL DEFAULT 0,
+  avoid_fade     REAL DEFAULT 0,
+  avoid_strength REAL DEFAULT 0,
+  brand_aversion TEXT DEFAULT '{}',
+  engine_enabled INTEGER DEFAULT 1,
+  decayed_at     TEXT
+);
 `;
 
 // Same three columns app.py has actually migrated in, in the same order, including the
