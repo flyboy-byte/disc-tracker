@@ -3,7 +3,7 @@
     "name": "Disc Tracker",
     "slug": "disc-tracker",
     "scheme": "disctracker",
-    "version": "0.23.0",
+    "version": "0.24.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
