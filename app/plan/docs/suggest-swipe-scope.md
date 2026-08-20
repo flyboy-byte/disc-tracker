@@ -1,7 +1,21 @@
 # Disc Suggest: swipe-to-reorder (Throw) + learning engine (Buy) — scope
 
-**Status:** BUILT 2026-08-19, not yet verified on-device. `tsc --noEmit` clean, full Jest suite
-passing (added `learningPenalty` unit tests in `suggestScore.test.ts`).
+**Status:** BUILT and VERIFIED on-device 2026-08-19, on a real Pixel 7. `tsc --noEmit` clean,
+151/151 Jest passing. Shipping as `v0.23`.
+
+**On-device findings (2026-08-19):**
+- Confirmed: swipe-dismiss (either direction) demotes a disc to the bottom of its scenario's
+  list; the demotion **persists across a full app force-stop + relaunch**; per-scenario isolation
+  holds (a demotion made under "Dead Straight" didn't touch other scenarios); "Reset order"
+  correctly clears it and the disc reappears at its original ranked position; the Buy-mode
+  "Learning: On/Off" toggle flips and **persists across restart**; Buy mode rendered against the
+  live 1,329-disc-filtered Try Discs catalog with no perf issues.
+- **Real bug found and fixed same session**: starting a vertical scroll gesture directly on top
+  of a `SwipeableSuggestCard` got captured by the card's `Gesture.Pan()` instead of reaching the
+  parent ScrollView/FlatList — scrolling only worked if the drag started in the gap between
+  cards. Fixed by adding `.activeOffsetX([-10, 10]).failOffsetY([-10, 10])` to the pan gesture, so
+  anything more vertical than horizontal releases to the list. Re-verified after the fix: both
+  scrolling-from-a-card and the horizontal dismiss gesture work correctly together.
 
 ## What this is
 

@@ -36,6 +36,14 @@ export default function SwipeableSuggestCard({ onSwipe, children, testID }: Prop
   const fireSwipe = () => onSwipe();
 
   const pan = Gesture.Pan()
+    // Without these, a vertical drag that happens to start on top of a card gets claimed by
+    // this Pan gesture instead of the parent ScrollView/FlatList — confirmed on-device
+    // (2026-08-19): scrolling a long Buy-mode result list stalled whenever the drag began on a
+    // card instead of the gap between them. Releasing anything more vertical than horizontal to
+    // the list is what VerticalSlider.tsx didn't need (it isn't nested in a scrollable list of
+    // its own siblings), but this component is.
+    .activeOffsetX([-10, 10])
+    .failOffsetY([-10, 10])
     .onUpdate((e) => {
       translateX.value = e.translationX;
     })
