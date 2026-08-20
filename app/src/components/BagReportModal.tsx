@@ -3,7 +3,7 @@
 // exports. Deliberately excludes location/notes/plastic/weight/wear (privacy + "not interesting
 // to a viewer" — see the scope doc's Non-goals) — only mfr/mold, flight numbers, and color.
 import { useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 import { Directory, File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -52,7 +52,7 @@ export default function BagReportModal({ visible, discs, onCancel }: Props) {
           </Text>
 
           {discs.length > 0 && (
-            <View style={styles.previewWrap}>
+            <ScrollView style={styles.previewScroll} contentContainerStyle={styles.previewWrap} showsVerticalScrollIndicator>
               <View ref={cardRef} collapsable={false} style={styles.card}>
                 <Text style={styles.cardTitle}>My Bag</Text>
                 {discs.map((d, i) => (
@@ -64,7 +64,7 @@ export default function BagReportModal({ visible, discs, onCancel }: Props) {
                   </Text>
                 </View>
               </View>
-            </View>
+            </ScrollView>
           )}
 
           <View style={styles.btnRow}>
@@ -114,7 +114,10 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: colors.card, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, maxHeight: '85%' },
   title: { color: colors.text, fontSize: 20, fontWeight: '700', marginBottom: 4 },
   hint: { color: colors.muted, fontSize: 12, marginBottom: 12 },
-  previewWrap: { borderRadius: 12, overflow: 'hidden', marginBottom: 12 },
+  // Fixed cap (not a % of the sheet) so a big bag scrolls *inside* this box instead of pushing
+  // the Close/Share buttons off the bottom of the modal — the bug this box exists to fix.
+  previewScroll: { maxHeight: 380, borderRadius: 12, marginBottom: 12 },
+  previewWrap: { flexGrow: 1 },
   card: { backgroundColor: colors.bg, padding: 18 },
   cardTitle: { color: colors.text, fontSize: 22, fontWeight: '800', marginBottom: 12, textAlign: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border },

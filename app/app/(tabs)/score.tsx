@@ -84,6 +84,7 @@ export default function ScoreScreen() {
   if (mode === 'setup') {
     return (
       <SetupView
+        lastRound={rounds[0] ?? null}
         onCancel={() => setMode('list')}
         onCreate={async (input) => {
           const uid = userIdRef.current;
@@ -368,11 +369,31 @@ function RoundRow({
 }
 
 // ── Setup ──
-function SetupView({ onCancel, onCreate }: { onCancel: () => void; onCreate: (input: import('../../src/db/db').NewRoundInput) => void }) {
+// lastRound: the most recently created round (any status), used only to prefill course/players
+// for a repeat group at the same course — a real friction-reducer for casual leagues that play
+// the same layout weekly. Hole count is never carried over silently; it's always an explicit tap.
+function SetupView({
+  onCancel,
+  onCreate,
+  lastRound,
+}: {
+  onCancel: () => void;
+  onCreate: (input: import('../../src/db/db').NewRoundInput) => void;
+  lastRound: Round | null;
+}) {
   const [label, setLabel] = useState('');
-  const [course, setCourse] = useState('');
+  const [course, setCourse] = useState(lastRound?.course?.trim() ?? '');
   const [holeCount, setHoleCount] = useState(18);
-  const [players, setPlayers] = useState<string[]>(['Me']);
+  // Whether the hole count matches a quick-pick preset, or was hand-adjusted via the stepper.
+  const [customHoles, setCustomHoles] = useState(false);
+  const [players, setPlayers] = useState<string[]>(
+    lastRound?.players.length ? lastRound.players.map((p) => p.name) : ['Me']
+  );
+
+  const pickPreset = (n: number) => {
+    setHoleCount(n);
+    setCustomHoles(false);
+  };
 
   const start = () => {
     const names = players.map((p) => p.trim()).filter(Boolean);
@@ -397,10 +418,37 @@ function SetupView({ onCancel, onCreate }: { onCancel: () => void; onCreate: (in
       <TextInput style={styles.input} value={course} onChangeText={setCourse} placeholder="Maple Hill" placeholderTextColor={colors.muted} />
 
       <Text style={styles.fieldLabel}>Holes</Text>
-      <View style={styles.stepperRow}>
-        <Stepper value={holeCount} min={1} max={36} onChange={setHoleCount} />
-        <Text style={styles.stepperHint}>default 18</Text>
+      <View style={styles.holePresetRow}>
+        {[9, 18].map((n) => {
+          const active = !customHoles && holeCount === n;
+          return (
+            <Pressable
+              key={n}
+              testID={`holes-preset-${n}`}
+              style={[styles.holePresetPill, active && styles.holePresetPillActive]}
+              onPress={() => pickPreset(n)}
+              accessibilityRole="button"
+              accessibilityLabel={`${n} holes`}
+            >
+              <Text style={[styles.holePresetPillText, active && styles.holePresetPillTextActive]}>{n}</Text>
+            </Pressable>
+          );
+        })}
+        <Pressable
+          testID="holes-preset-custom"
+          style={[styles.holePresetPill, customHoles && styles.holePresetPillActive]}
+          onPress={() => setCustomHoles(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Custom hole count"
+        >
+          <Text style={[styles.holePresetPillText, customHoles && styles.holePresetPillTextActive]}>Custom</Text>
+        </Pressable>
       </View>
+      {customHoles && (
+        <View style={styles.stepperRow}>
+          <Stepper value={holeCount} min={1} max={36} onChange={setHoleCount} />
+        </View>
+      )}
 
       <Text style={styles.fieldLabel}>Players</Text>
       {players.map((name, i) => (
@@ -717,6 +765,11 @@ const styles = StyleSheet.create({
   input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10, color: colors.text, fontSize: 15, paddingHorizontal: 12, paddingVertical: 10 },
   stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   stepperHint: { color: colors.muted, fontSize: 12 },
+  holePresetRow: { flexDirection: 'row', gap: 8 },
+  holePresetPill: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: 10, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card },
+  holePresetPillActive: { borderColor: colors.accent, backgroundColor: colors.accent },
+  holePresetPillText: { color: colors.muted, fontSize: 14, fontWeight: '700' },
+  holePresetPillTextActive: { color: '#fff' },
   playerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   playerInput: { flex: 1 },
   removePlayer: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 10, borderWidth: 1, borderColor: colors.border },
