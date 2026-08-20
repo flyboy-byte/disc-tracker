@@ -446,6 +446,8 @@ export default function DiscSuggestScreen() {
                   )}
                 </View>
 
+                <Text style={styles.swipeHint}>↔ Swipe a disc to reorder</Text>
+
                 <View style={styles.resultsHeader}>
                   <Text style={styles.resultsHeaderText}>Discs to consider</Text>
                   <View style={styles.countPill}>
@@ -499,6 +501,7 @@ export default function DiscSuggestScreen() {
           {/* suggest-swipe-scope.md: swipe a disc away to drop it to the bottom of this
               scenario's list (shared across both sections below) — persists across restarts,
               never touches any other scenario. */}
+          <Text style={styles.swipeHint}>↔ Swipe a disc to reorder</Text>
           {demotedThrow.length > 0 && (
             <Pressable testID="throw-reset-order" style={styles.resetLinkRow} onPress={() => resetOrder('throwing')} accessibilityRole="button">
               <Text style={styles.resetLink}>Reset order for this scenario</Text>
@@ -576,6 +579,9 @@ const styles = StyleSheet.create({
   enginePillTextActive: { color: colors.accent },
   resetLink: { color: colors.accent, fontSize: 12, fontWeight: '600' },
   resetLinkRow: { alignSelf: 'flex-start', marginBottom: 10 },
+  // Swipe-to-reorder isn't a discoverable gesture on its own — a first-time user has no reason
+  // to try it. One quiet line above the result cards, both modes.
+  swipeHint: { color: colors.muted, fontSize: 11, fontStyle: 'italic', marginBottom: 8 },
   modeHalfActive: { backgroundColor: 'rgba(145,94,255,0.16)' },
   modeText: { color: colors.muted, fontSize: 15, fontWeight: '700' },
   modeTextActive: { color: colors.accent },

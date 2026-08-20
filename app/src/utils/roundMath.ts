@@ -91,6 +91,18 @@ export function strokesAt(scores: RoundScore[], playerId: number, hole: number):
   return scores.find((s) => s.playerId === playerId && s.hole === hole)?.strokes;
 }
 
+// UDisc-style scoring tier relative to par, for color-coding a stored score. Pure/testable —
+// score.tsx maps each tier to a theme color rather than hardcoding colors here.
+export type ScoreTier = 'eagle' | 'birdie' | 'par' | 'bogey' | 'double';
+export function scoreTier(strokes: number, par: number): ScoreTier {
+  const diff = strokes - par;
+  if (diff <= -2) return 'eagle';
+  if (diff === -1) return 'birdie';
+  if (diff === 0) return 'par';
+  if (diff === 1) return 'bogey';
+  return 'double';
+}
+
 // Is every hole scored for every player? (drives the "round complete" hint / finish prompt.)
 export function isRoundComplete(round: Round): boolean {
   if (round.players.length === 0 || round.holeCount === 0) return false;

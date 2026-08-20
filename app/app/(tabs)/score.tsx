@@ -26,8 +26,20 @@ import {
   standings,
   strokesAt,
   isRoundComplete,
+  scoreTier,
   type Round,
+  type ScoreTier,
 } from '../../src/utils/roundMath';
+
+// UDisc-style color for a scored hole, tier -> theme token. Unscored holes never call this
+// (ghost/dash rendering stays neutral) — only applied once a real strokes value exists.
+const TIER_COLOR: Record<ScoreTier, string> = {
+  eagle: colors.os,
+  birdie: colors.st,
+  par: colors.text,
+  bogey: colors.us,
+  double: colors.danger,
+};
 
 type Mode = 'list' | 'setup' | 'active' | 'summary';
 // Casual-group cap. Bigger groups than this are rare on one card; the hole-by-hole view scrolls
@@ -510,6 +522,15 @@ function ActiveView({
   const [hole, setHole] = useState(() => firstUnfinishedHole(round));
   const par = parForHole(round.holes, hole);
   const board = standings(round);
+  // Quick-pick strip: tapping the big stroke number opens a row of exact-score chips for that
+  // player, so a common score is one tap instead of several +/- taps. Only one open at a time;
+  // switching holes closes it (a stale open picker pointed at the wrong hole would be a real
+  // mis-tap risk).
+  const [quickPickPlayer, setQuickPickPlayer] = useState<number | null>(null);
+  const goHole = (h: number) => {
+    setQuickPickPlayer(null);
+    setHole(h);
+  };
 
   return (
     <View style={styles.container}>
@@ -528,7 +549,7 @@ function ActiveView({
           <Pressable
             style={[styles.holeNavBtn, hole <= 1 && styles.holeNavBtnDisabled]}
             disabled={hole <= 1}
-            onPress={() => setHole((h) => Math.max(1, h - 1))}
+            onPress={() => goHole(Math.max(1, hole - 1))}
             accessibilityRole="button"
             accessibilityLabel="Previous hole"
           >
@@ -544,7 +565,7 @@ function ActiveView({
           <Pressable
             style={[styles.holeNavBtn, hole >= round.holeCount && styles.holeNavBtnDisabled]}
             disabled={hole >= round.holeCount}
-            onPress={() => setHole((h) => Math.min(round.holeCount, h + 1))}
+            onPress={() => goHole(Math.min(round.holeCount, hole + 1))}
             accessibilityRole="button"
             accessibilityLabel="Next hole"
           >
@@ -556,6 +577,11 @@ function ActiveView({
           const stored = strokesAt(round.scores, p.id, hole);
           const shown = stored ?? par; // unscored holes preview par (dimmed) until you commit one
           const st = board.find((s) => s.player.id === p.id);
+          const tierColor = stored != null ? TIER_COLOR[scoreTier(stored, par)] : colors.muted;
+          const pickerOpen = quickPickPlayer === p.id;
+          // 1..(par+4), floor 6, cap 12 — covers everything from an ace to a real blowup hole
+          // without the chip row scrolling on a normal phone width.
+          const chips = Array.from({ length: Math.min(12, Math.max(6, par + 4)) }, (_, i) => i + 1);
           return (
             <View key={p.id} style={styles.scoreCard}>
               <View style={styles.scoreCardHead}>
@@ -578,7 +604,13 @@ function ActiveView({
                 >
                   <Text style={styles.strokeBtnText}>−</Text>
                 </Pressable>
-                <Text style={[styles.strokeValue, stored == null && styles.strokeValueGhost]}>{shown}</Text>
+                <Pressable
+                  onPress={() => setQuickPickPlayer(pickerOpen ? null : p.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Pick ${p.name}'s exact score`}
+                >
+                  <Text style={[styles.strokeValue, { color: tierColor }, stored == null && styles.strokeValueGhost]}>{shown}</Text>
+                </Pressable>
                 <Pressable
                   style={styles.strokeBtn}
                   onPress={() => onSetScore(p.id, hole, stored == null ? par : shown + 1)}
@@ -588,6 +620,25 @@ function ActiveView({
                   <Text style={styles.strokeBtnText}>+</Text>
                 </Pressable>
               </View>
+              {pickerOpen && (
+                <View style={styles.quickPickRow}>
+                  {chips.map((n) => (
+                    <Pressable
+                      key={n}
+                      testID={`quickpick-${p.id}-${n}`}
+                      style={[styles.quickPickChip, n === stored && styles.quickPickChipActive]}
+                      onPress={() => {
+                        onSetScore(p.id, hole, n);
+                        setQuickPickPlayer(null);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Set ${p.name}'s score to ${n}`}
+                    >
+                      <Text style={[styles.quickPickChipText, n === stored && styles.quickPickChipTextActive]}>{n}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
             </View>
           );
         })}
@@ -659,8 +710,9 @@ function SummaryView({ round, onResume, onBack, onDelete }: { round: Round; onRe
                   <Text style={[styles.gridCell, styles.gridNameCell]} numberOfLines={1}>{p.name}</Text>
                   {holes.map((h) => {
                     const v = strokesAt(round.scores, p.id, h);
+                    const color = v != null ? TIER_COLOR[scoreTier(v, parForHole(round.holes, h))] : colors.muted;
                     return (
-                      <Text key={h} style={styles.gridCell}>{v ?? '–'}</Text>
+                      <Text key={h} style={[styles.gridCell, { color }]}>{v ?? '–'}</Text>
                     );
                   })}
                   <Text style={[styles.gridCell, styles.gridTotalCell]}>{st?.total ?? 0}</Text>
@@ -809,6 +861,11 @@ const styles = StyleSheet.create({
   strokeBtnText: { color: colors.accent, fontSize: 28, fontWeight: '700' },
   strokeValue: { color: colors.text, fontSize: 34, fontWeight: '800', minWidth: 48, textAlign: 'center', fontVariant: ['tabular-nums'] },
   strokeValueGhost: { color: colors.muted, opacity: 0.55 },
+  quickPickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border },
+  quickPickChip: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg },
+  quickPickChipActive: { borderColor: colors.accent, backgroundColor: colors.accent },
+  quickPickChipText: { color: colors.text, fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  quickPickChipTextActive: { color: '#fff' },
 
   standingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 14 },
   standingRank: { color: colors.accent, fontSize: 15, fontWeight: '800', width: 18 },

@@ -6,6 +6,7 @@ import {
   formatVsPar,
   strokesAt,
   isRoundComplete,
+  scoreTier,
   type Round,
 } from './roundMath';
 
@@ -117,5 +118,16 @@ describe('isRoundComplete', () => {
       ],
     });
     expect(isRoundComplete(full)).toBe(true);
+  });
+});
+
+describe('scoreTier', () => {
+  it('classifies relative to par', () => {
+    expect(scoreTier(1, 3)).toBe('eagle'); // -2
+    expect(scoreTier(2, 3)).toBe('birdie'); // -1
+    expect(scoreTier(3, 3)).toBe('par'); // E
+    expect(scoreTier(4, 3)).toBe('bogey'); // +1
+    expect(scoreTier(5, 3)).toBe('double'); // +2
+    expect(scoreTier(8, 3)).toBe('double'); // +5, still just "double or worse"
   });
 });
