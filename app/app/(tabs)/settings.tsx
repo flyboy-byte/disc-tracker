@@ -3,7 +3,7 @@
 // hence the disabled placeholder below.
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import Constants from 'expo-constants';
 import { Directory, File, Paths } from 'expo-file-system';
 import { StorageAccessFramework } from 'expo-file-system/legacy';
@@ -672,6 +672,17 @@ export default function SettingsScreen() {
       {/* About */}
       <View style={styles.card}>
         <Text style={styles.sectionLabel}>ABOUT</Text>
+        <Pressable
+          testID="settings-tutorial"
+          style={styles.row}
+          onPress={() => router.push('/tutorial')}
+          accessibilityRole="button"
+          accessibilityLabel="How to use Disc Tracker"
+        >
+          <Text style={[styles.rowText, styles.link]}>How to use Disc Tracker</Text>
+          <Text style={[styles.rowChevron, styles.link]}>›</Text>
+        </Pressable>
+        <View style={styles.divider} />
         <View style={styles.aboutRow}>
           <Text style={styles.rowText}>Version</Text>
           <Text style={styles.rowValue}>{version}</Text>
