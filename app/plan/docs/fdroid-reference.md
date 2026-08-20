@@ -4,13 +4,29 @@
 > (F-Droid self-hosted repo) or D3 (official F-Droid index) · **Use when:** actually
 > submitting to F-Droid — not needed for D1 (Play Store) or earlier build phases.
 
-This distills the developer's real, completed F-Droid submission for **DragTree** (same
+This distills the developer's real F-Droid submission for **DragTree** (same
 stack: Expo/React Native, local Gradle, no EAS) — full source at
-`/home/logan/projects/drag-tree/FDROID_AI_CONTEXT.md` and `FDROID.md` on this machine.
-DragTree got merged into F-Droid's official index (MR #41671) with a fully reproducible
-build (`Binaries:` byte comparison passing) and per-ABI splits. That took ~2 weeks of
-reviewer iteration — this doc exists so this project's D2/D3 doesn't repeat the same
-discovery process from zero.
+`/home/logan/projects/drag-tree/FDROID_AI_CONTEXT.md`, `FDROID.md`,
+`FDROID_MR_ACTIVITY.md`, and `FDROID_REPRO_EXECUTION.md` on this machine.
+
+**Status as of 2026-08-20 (confirmed against the drag-tree repo directly, not memory):**
+DragTree is **not yet merged** — MR #41671 has a fully reproducible build (`Binaries:`
+byte comparison passing all 4 ABIs, Run 2 pipeline `2728036212`, 2026-08-03), reviewer
+(linsui) satisfied, a second community tester (MiggiV2) passed it on real hardware
+(functional/policy/language/VirusTotal 0/75), and it's rebased on upstream/master awaiting
+a merger's merge. (An earlier version of this doc incorrectly said "got merged" — that was
+wrong; corrected here.) That took ~2 weeks of reviewer iteration — this doc exists so this
+project's D2/D3 doesn't repeat the same discovery process from zero.
+
+**2026-08-20 refresh — what's new since this doc was last written (2026-08-01):** the
+`SYSTEM_ALERT_WINDOW` finding below (config-plugin durability) was cross-confirmed
+independently — DragTree's reviewer flagged the exact same permission as a real MR test
+finding, and disc-tracker's own 2026-08-20 audit found it independently too, before this
+cross-check happened. Also pulled in: the `blockedPermissions`/config-plugin durability
+lesson (new, generalized from both apps' experience), `$VERCODE$` templating, YAML
+rewritemeta trailing-space gotchas, the `buildFromSource` requirement (previously
+missing from this doc entirely), and confirmation that the Play/F-Droid signing-key
+alignment required zero F-Droid pipeline changes.
 
 ## Dependency reproducibility — done vs. DEFERRED (revisit before D2/D3)
 
@@ -76,6 +92,59 @@ APK rebuild (release-track work). As of 2026-07-31 `npx expo install --check` re
 7. `tsc --noEmit` clean, `jest` green, then proceed to the two-run reproducible-build workflow.
 
 Keep this section in sync if the SDK drifts further before R7.
+
+## Config-plugin durability — manual `android/` edits do NOT survive F-Droid's build
+
+**Confirmed directly on disc-tracker, 2026-08-20:** ran `npx expo prebuild -p android
+--clean` (the exact step the F-Droid recipe always runs, non-negotiable per the reviewer —
+see "The reviewer's actual requirements" below) against the committed `android/` tree, and
+watched it silently wipe out hand-edited fixes that had only ever been made directly in
+`android/app/src/main/AndroidManifest.xml` — a `SYSTEM_ALERT_WINDOW` permission removal and
+an `allowBackup="false"` change both reverted straight back to the Expo/RN defaults. Same
+regeneration also reset `versionCode` to `1`, dropped the release-signing null-guard block,
+the `minifyEnabled`/`shrinkResources` flags, and the tuned JVM args in `gradle.properties`
+— none of that is expressed anywhere `expo prebuild` reads from (app.json, config plugins,
+root-level gradle files), it only ever existed as hand-maintained edits layered onto a
+prior prebuild output.
+
+**The lesson, stated generally:** the committed `android/` folder is real and correct for
+*local* Gradle builds (sideload, Play, direct `./gradlew`) — nothing here changes that,
+and this project's own convention of committing it and hand-tuning it is fine for that
+path. But F-Droid's from-source build starts from `app.json`/`package.json`/config plugins
+and regenerates `android/` from scratch every time — so **anything that must survive an
+actual F-Droid build has to be expressed at that layer, not as a one-off native-file
+edit**, or it silently reverts on F-Droid's server even though it's sitting right there in
+the committed tree looking correct.
+
+**The fix pattern (both now applied to disc-tracker, verified to survive a second
+`prebuild --clean`):**
+- Unwanted merged permission → `android.blockedPermissions` in `app.json` (Expo's
+  built-in mechanism — produces a `tools:node="remove"` line in the manifest, which
+  actively cancels the permission even if some other merged manifest re-requests it,
+  stronger than a plain deletion).
+- Any other manifest attribute (e.g. `allowBackup`) → a small local Expo **config
+  plugin** using `withAndroidManifest` from `expo/config-plugins`, referenced by relative
+  path in `app.json`'s `plugins` array (`app/plugins/withAllowBackupDisabled.js` here).
+- **Not yet solved for this project** (out of scope for the 2026-08-20 pass, flagged for
+  whoever runs D2/D3): `versionCode`, release-signing config, and the minify/shrink/JVM
+  flags will all need an equivalent durable mechanism (or a documented "F-Droid's recipe
+  sed-patches this at build time" answer, matching how DragTree's own YAML sets
+  `versionCode` via `$VERCODE$` and signing is stripped entirely — see below) before an
+  actual F-Droid build of this app would behave correctly. This is genuinely open, not
+  hand-waved — don't assume the committed `android/` folder is what F-Droid will build
+  until this is checked for real.
+
+**DragTree independently found the identical permission issue** — its reviewer (MiggiV2,
+F-Droid MR #41671 test review, 2026-08-02) flagged unused merged permissions including
+`SYSTEM_ALERT_WINDOW`, `RECORD_AUDIO`, `INTERNET`, `READ_EXTERNAL_STORAGE`, and
+`WRITE_EXTERNAL_STORAGE` (DragTree doesn't use any of those — a reaction-timer app has no
+reason to). DragTree's fix (`cc5bafd`, 2026-08-03) used the same `blockedPermissions`
+mechanism now applied here. disc-tracker found its own `SYSTEM_ALERT_WINDOW` case
+independently (`fdroid-privacy-audit-2026-08-20.md`, same day, before this cross-check) —
+worth noting disc-tracker legitimately needs `INTERNET` and the storage permissions
+(opt-in Marshall Street images, CSV/backup export), unlike DragTree, so DragTree's
+blocklist isn't a template to copy wholesale — only `SYSTEM_ALERT_WINDOW` was actually
+unused here.
 
 ## What transfers directly to any Expo/RN F-Droid submission
 
@@ -157,6 +226,42 @@ lib/` check before assuming it's something else**, and fall back to
 — DragTree's reviewer (linsui) called per-ABI splits "highly encouraged" for RN apps
 even once the universal build passed, so budget for it as likely reviewer feedback.
 
+**If splits are ever added here, use `$VERCODE$`, not hardcoded versionCodes per block.**
+DragTree's YAML originally hardcoded each ABI block's versionCode
+(`sed -i 's/versionCode 14$/versionCode 141/' android/app/build.gradle`); linsui's inline
+suggestion (2026-07-23) changed every block to
+`sed -i 's/versionCode .*/versionCode $VERCODE$/' android/app/build.gradle` — `$VERCODE$`
+is an fdroidserver template variable substituted per-block from the YAML's own
+`VercodeOperation` (`10 * %c + 1` through `+4` for the 4 ABIs), so the YAML never needs a
+manual versionCode edit when the app version bumps. Apply this from the start rather than
+hardcoding and fixing it later.
+
+## `buildFromSource` — required, injected by the F-Droid recipe itself (not a repo change)
+
+DragTree's fdroiddata YAML `prebuild:` step includes (`FDROID_MR_ACTIVITY.md` commit
+`167ed55c`):
+```bash
+sed -i -e '1a "expo":{"autolinking":{"android":{"buildFromSource":[".*"]}}},' package.json
+```
+This forces Expo's autolinking to compile every native module **from source** during the
+F-Droid build, rather than pulling any prebuilt AAR — required for F-Droid's own
+build-from-source policy, not optional. This is a **recipe-side sed**, not something to
+add to disc-tracker's own `package.json` now — it only needs to exist in the fdroiddata
+YAML written when D2/D3 actually starts. Noted here so it isn't missed when that YAML gets
+written (this doc didn't mention it at all before 2026-08-20).
+
+## YAML formatting gotchas (rewritemeta canonical format)
+
+CI's `rewritemeta` job is strict about trailing whitespace on specific lines — these trip
+up every iteration according to DragTree's own experience:
+- `binary:` alone on a line needs a trailing space (block scalar indicator): `binary: `
+- `sed -i` alone on a continuation line needs a trailing space: `sed -i `
+- The IP-address sed's closing needs a trailing space: `{ false }/' `
+
+**Never run `rewritemeta` locally to pre-fix this** — the local version and CI's version
+produce different output. Push with the format as-is, let CI's rewritemeta job fail and
+output the exact diff it wants, copy that diff in verbatim. One iteration, not several.
+
 ## Signing-key strategy — make Play App Signing == the upload key (DragTree, solved 2026-08-01)
 
 The trap: with **Play App Signing** on, Google re-signs every Play release with a key you
@@ -174,6 +279,20 @@ certificate" fingerprints are **identical** (DragTree: SHA-256
 same MD5/SHA-1/SHA-256 in both blocks). Now **one keystore signs everything** — Play,
 F-Droid reference APK, and sideload — so `AllowedAPKSigningKeys` matches all channels and
 users move between Play and F-Droid installs without a reinstall.
+
+**Confirmed after the fact: this change required zero F-Droid pipeline changes.**
+`AllowedAPKSigningKeys` in the fdroiddata YAML was already the developer's own key
+fingerprint (`ff739cf5...`), so aligning Play's signing key to match it didn't touch
+anything F-Droid-side — the two systems were already pointed at the same cert, Play was
+just the one that needed to catch up.
+
+**versionCode scheme, Play vs. F-Droid, so they never collide:** DragTree uses
+`10 * versionCode + 0` for Play uploads (e.g. base versionCode 16 → Play versionCode 160)
+against F-Droid's per-ABI `10 * %c + 1` through `+4` (161–164) — Play's `+0` always sorts
+below every F-Droid ABI variant for the same release, so a device could never see a
+same-version Play build "update" over a same-version F-Droid build or vice versa in a way
+that looks like a downgrade. Worth adopting the same `+0`/`+1..+4` convention here if/when
+disc-tracker ships to both Play (R6) and F-Droid ABI splits (R7).
 
 **For disc-tracker (R6, before D1):**
 - The upload keystore lives in `android/local.properties` (null-guard pattern, never

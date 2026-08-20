@@ -18,6 +18,18 @@ that stays true forever.
 decided: Logan said remove it. `android:allowBackup` is now `false`. See the entry below
 (moved out of "noted, not acted on").
 
+**Update 2 (same day, cross-checked against drag-tree):** both fixes below were originally
+made as direct edits to `android/app/src/main/AndroidManifest.xml`. Testing against the
+`drag-tree` repo's F-Droid docs revealed that's not durable — F-Droid's build recipe always
+runs `npx expo prebuild -p android --clean`, which regenerates `android/` from `app.json`
+and confirmed, on a real local test, silently reverts hand-edited manifest changes back to
+Expo/RN defaults. Both fixes have been re-implemented at the `app.json`/config-plugin
+layer instead (`android.blockedPermissions` for the permission,
+`app/plugins/withAllowBackupDisabled.js` for `allowBackup`) and verified to survive a
+second `prebuild --clean`. Full writeup in `fdroid-reference.md`'s new "Config-plugin
+durability" section — that's also where the broader, still-open finding lives (versionCode/
+signing/minify flags have the same durability gap and aren't fixed yet).
+
 ## Fixed this pass
 
 **`SYSTEM_ALERT_WINDOW` permission was shipping in every release build, undisclosed.**
