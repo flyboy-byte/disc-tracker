@@ -14,7 +14,22 @@ import CsvImportModal from '../../src/components/CsvImportModal';
 import DataAuditModal from '../../src/components/DataAuditModal';
 import GradientButton from '../../src/components/GradientButton';
 import { useToast } from '../../src/components/Toast';
-import { getDiscs, getMeta, getOrCreateDefaultUser, listRounds, replaceRounds, saveDiscs, setMeta, getCustomDiscs, replaceCustomDiscs, type SuggestMode } from '../../src/db/db';
+import {
+  getDiscs,
+  getMeta,
+  getOrCreateDefaultUser,
+  listRounds,
+  replaceRounds,
+  saveDiscs,
+  setMeta,
+  getCustomDiscs,
+  replaceCustomDiscs,
+  getAllDemotions,
+  replaceDemotions,
+  getLearningState,
+  replaceLearningState,
+  type SuggestMode,
+} from '../../src/db/db';
 import { colors } from '../../src/theme';
 import type { Disc } from '../../src/utils/disc';
 import type { SkillPreset, ThrowStyle } from '../../src/utils/suggestScore';
@@ -196,8 +211,22 @@ export default function SettingsScreen() {
   const buildBackupPayload = async () => {
     const uid = userIdRef.current;
     if (uid == null) return null;
-    const [allDiscs, meta, rounds, custom] = await Promise.all([getDiscs(uid), getMeta(uid), listRounds(uid), getCustomDiscs(uid)]);
-    const json = buildBackup(allDiscs, { sortMode: meta.sortMode, arcView: meta.arcView, skill: meta.skill, throwStyle: meta.throwStyle, suggestMode: meta.suggestMode, msRefEnabled: meta.msRefEnabled, fieldShowAll: meta.fieldShowAll }, rounds, custom);
+    const [allDiscs, meta, rounds, custom, demotions, learning] = await Promise.all([
+      getDiscs(uid),
+      getMeta(uid),
+      listRounds(uid),
+      getCustomDiscs(uid),
+      getAllDemotions(uid),
+      getLearningState(uid),
+    ]);
+    const json = buildBackup(
+      allDiscs,
+      { sortMode: meta.sortMode, arcView: meta.arcView, skill: meta.skill, throwStyle: meta.throwStyle, suggestMode: meta.suggestMode, msRefEnabled: meta.msRefEnabled, fieldShowAll: meta.fieldShowAll },
+      rounds,
+      custom,
+      demotions,
+      learning
+    );
     const summary = `${allDiscs.length} disc${allDiscs.length === 1 ? '' : 's'}${rounds.length ? ` · ${rounds.length} round${rounds.length === 1 ? '' : 's'}` : ''}`;
     return { json, summary };
   };
@@ -282,6 +311,8 @@ export default function SettingsScreen() {
                 });
                 await replaceRounds(uid, backup.rounds);
                 await replaceCustomDiscs(uid, backup.customDiscs);
+                await replaceDemotions(uid, backup.suggestDemotions);
+                await replaceLearningState(uid, backup.suggestLearning);
                 setDiscs(await getDiscs(uid));
                 toast(`Restored ${backupSummary(backup)}`);
               } catch (e) {

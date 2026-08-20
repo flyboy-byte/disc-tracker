@@ -89,6 +89,9 @@ export default function DiscSuggestScreen() {
   const [categoryFilter, setCategoryFilter] = useState<DiscType | 'all'>('all');
   const [stabilityFilter, setStabilityFilter] = useState<Stability | 'all'>('all');
   const [brandFilter, setBrandFilter] = useState('');
+  // Browsing aid for Buy mode's large result sets (hundreds of near-tied "great fit" discs for
+  // a common scenario) — an alternate primary sort, alongside the free-text brand filter above.
+  const [buySortMode, setBuySortMode] = useState<'fit' | 'brand'>('fit');
   const [libraryDiscs, setLibraryDiscs] = useState<ScenarioDisc[]>(() => libraryDiscsFromCatalog());
   // suggest-swipe-scope.md: per-scenario manual reorder (Throw and Buy each get their own
   // list_key, so a swipe never crosses scenarios or modes) + Buy mode's learning engine state.
@@ -167,13 +170,19 @@ export default function DiscSuggestScreen() {
     const ownedNames = new Set(bagDiscs.map((d) => discKey({ name: d.mold, mfr: d.mfr })));
     const notOwned = libraryDiscs.filter((d) => !ownedNames.has(discKey(d)));
     let ranked = rankDiscs(notOwned, activeScenario.id, skill, notOwned.length, throwStyle);
-    if (learning?.engineEnabled && learning.avoidStrength > 0) {
+    if (buySortMode === 'brand') {
+      // Browsing-by-brand: same scenario-qualifying candidate pool as "Best fit", just
+      // reordered alphabetically so a big result set (hundreds of near-tied discs) is scannable
+      // by manufacturer instead of by score, which is how Logan actually wants to shop for a
+      // new disc — the engine's aversion penalty is irrelevant to this ordering, so it's skipped.
+      ranked = [...ranked].sort((a, b) => a.disc.mfr.localeCompare(b.disc.mfr) || a.disc.name.localeCompare(b.disc.name));
+    } else if (learning?.engineEnabled && learning.avoidStrength > 0) {
       ranked = [...ranked].sort(
         (a, b) => b.score - learningPenalty(b.disc, learning) - (a.score - learningPenalty(a.disc, learning))
       );
     }
     return applyManualOrder(ranked, demotedBuy);
-  }, [activeScenario, mode, bagDiscs, skill, throwStyle, libraryDiscs, learning, demotedBuy]);
+  }, [activeScenario, mode, bagDiscs, skill, throwStyle, libraryDiscs, learning, demotedBuy, buySortMode]);
 
   const onSwipeThrow = useCallback(
     (disc: ScenarioDisc) => {
@@ -250,7 +259,7 @@ export default function DiscSuggestScreen() {
   // Any change to what's shown resets to the first page — a stale page index would show nothing.
   useEffect(() => {
     setBuyPage(0);
-  }, [activeId, mode, categoryFilter, stabilityFilter, brandFilter]);
+  }, [activeId, mode, categoryFilter, stabilityFilter, brandFilter, buySortMode]);
 
   // Bag-gap summary — the actual differentiator vs. just re-filtering the library
   // (buying-mode-scope.md decision 5). Derives the active scenario's ideal category+stability
@@ -390,6 +399,30 @@ export default function DiscSuggestScreen() {
                   placeholder="Filter by brand…"
                   placeholderTextColor={colors.muted}
                 />
+
+                {/* Alternate primary sort for browsing a big result set by manufacturer instead
+                    of fit score — the "Filter by brand" field above narrows the list; this just
+                    reorders it. */}
+                <View style={styles.filterRow}>
+                  <Pressable
+                    testID="buy-sort-fit"
+                    onPress={() => setBuySortMode('fit')}
+                    style={[styles.filterPill, buySortMode === 'fit' && styles.filterPillActive]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: buySortMode === 'fit' }}
+                  >
+                    <Text style={[styles.filterPillText, buySortMode === 'fit' && styles.filterPillTextActive]}>Best fit</Text>
+                  </Pressable>
+                  <Pressable
+                    testID="buy-sort-brand"
+                    onPress={() => setBuySortMode('brand')}
+                    style={[styles.filterPill, buySortMode === 'brand' && styles.filterPillActive]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: buySortMode === 'brand' }}
+                  >
+                    <Text style={[styles.filterPillText, buySortMode === 'brand' && styles.filterPillTextActive]}>Brand A–Z</Text>
+                  </Pressable>
+                </View>
 
                 {/* suggest-swipe-scope.md: swipe a disc away to drop it to the bottom of this
                     scenario's results; with Learning on, swiping also teaches the engine which

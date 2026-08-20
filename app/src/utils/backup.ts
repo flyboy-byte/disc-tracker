@@ -6,6 +6,25 @@
 import type { Disc } from './disc';
 import type { Round } from './roundMath';
 import type { CustomMasterDisc } from './masterLibrary';
+import type { LearningState } from './suggestScore';
+
+// suggest-swipe-scope.md's per-scenario manual reorder — kept as a plain shape here (not
+// imported from db.ts) so this module stays DB-agnostic, same as every other type above.
+export interface BackupDemotion {
+  listKey: string;
+  discKey: string;
+  position: number;
+}
+
+const DEFAULT_LEARNING: LearningState = {
+  avoidSpeed: 0,
+  avoidGlide: 0,
+  avoidTurn: 0,
+  avoidFade: 0,
+  avoidStrength: 0,
+  brandAversion: {},
+  engineEnabled: true,
+};
 
 export interface BackupMeta {
   sortMode: string;
@@ -30,6 +49,11 @@ export interface BackupData {
   // Optional + additive: the personal custom-disc library. Absent in pre-2026-08 backups, which
   // parse to [] — so old files restore cleanly and never wipe an existing library by surprise.
   customDiscs: CustomMasterDisc[];
+  // Optional + additive (suggest-swipe-scope.md, 2026-08-19): Disc Suggest's swipe-to-dismiss
+  // state. Absent in older backups, which parse to "nothing swiped/learned yet" — restoring an
+  // old backup never wipes a device's existing swipe history, it just doesn't carry any over.
+  suggestDemotions: BackupDemotion[];
+  suggestLearning: LearningState;
 }
 
 const DEFAULT_META: BackupMeta = {
@@ -42,8 +66,15 @@ const DEFAULT_META: BackupMeta = {
   fieldShowAll: false,
 };
 
-export function buildBackup(discs: Disc[], meta: BackupMeta, rounds: Round[], customDiscs: CustomMasterDisc[] = []): string {
-  const data: BackupData = { version: 1, exportedAt: new Date().toISOString(), discs, meta, rounds, customDiscs };
+export function buildBackup(
+  discs: Disc[],
+  meta: BackupMeta,
+  rounds: Round[],
+  customDiscs: CustomMasterDisc[] = [],
+  suggestDemotions: BackupDemotion[] = [],
+  suggestLearning: LearningState = DEFAULT_LEARNING
+): string {
+  const data: BackupData = { version: 1, exportedAt: new Date().toISOString(), discs, meta, rounds, customDiscs, suggestDemotions, suggestLearning };
   return JSON.stringify(data, null, 2);
 }
 
@@ -76,6 +107,8 @@ export function parseBackup(text: string): BackupData {
     },
     rounds: Array.isArray(o.rounds) ? (o.rounds as Round[]) : [],
     customDiscs: Array.isArray(o.customDiscs) ? (o.customDiscs as CustomMasterDisc[]) : [],
+    suggestDemotions: Array.isArray(o.suggestDemotions) ? (o.suggestDemotions as BackupDemotion[]) : [],
+    suggestLearning: o.suggestLearning && typeof o.suggestLearning === 'object' ? { ...DEFAULT_LEARNING, ...(o.suggestLearning as Partial<LearningState>) } : DEFAULT_LEARNING,
   };
 }
 

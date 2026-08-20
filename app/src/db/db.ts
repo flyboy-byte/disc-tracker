@@ -664,6 +664,45 @@ export function resetDemotions(userId: number, listKey: string): Promise<void> {
   });
 }
 
+// Bulk export/import for full-device backup (B4) — same "everything, full replace" contract as
+// saveDiscs/replaceRounds/replaceCustomDiscs. Backup files predating suggest-swipe-scope.md
+// (2026-08-19) have no demotions to restore, which is fine — an empty array here is just "no
+// swipe history yet," not a wipe of anything the destination device already had, since restore
+// always fully replaces every user-scoped table.
+export interface DemotionRow {
+  listKey: string;
+  discKey: string;
+  position: number;
+}
+
+export function getAllDemotions(userId: number): Promise<DemotionRow[]> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    const rows = await db.getAllAsync<{ list_key: string; disc_key: string; position: number }>(
+      'SELECT list_key, disc_key, position FROM suggest_demotions WHERE user_id = ? ORDER BY list_key, position ASC',
+      [userId]
+    );
+    return rows.map((r) => ({ listKey: r.list_key, discKey: r.disc_key, position: r.position }));
+  });
+}
+
+export function replaceDemotions(userId: number, rows: DemotionRow[]): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await db.withExclusiveTransactionAsync(async (txn) => {
+      await txn.runAsync('DELETE FROM suggest_demotions WHERE user_id = ?', [userId]);
+      for (const r of rows) {
+        await txn.runAsync('INSERT INTO suggest_demotions (user_id, list_key, disc_key, position) VALUES (?, ?, ?, ?)', [
+          userId,
+          r.listKey,
+          r.discKey,
+          r.position,
+        ]);
+      }
+    });
+  });
+}
+
 // ── Buy mode's learning engine (suggest-swipe-scope.md) ───────────────────────
 // One row per user, global across scenarios (unlike suggest_demotions above — this is meant to
 // generalize). avoid_* is a running centroid (EMA) of the flight numbers of discs swiped away
@@ -771,6 +810,20 @@ export function setLearningEngineEnabled(userId: number, enabled: boolean): Prom
     const db = await openDatabase();
     await ensureLearningRow(db, userId);
     await db.runAsync('UPDATE suggest_learning SET engine_enabled = ? WHERE user_id = ?', [enabled ? 1 : 0, userId]);
+  });
+}
+
+// Full-state overwrite for restoring from a backup (unlike recordSwipeAway's incremental EMA
+// update) — writes exactly what the backup file had, doesn't blend with whatever's already on
+// this device, matching the "restore is a full replace" contract everywhere else in backup.ts.
+export function replaceLearningState(userId: number, state: LearningState): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    await ensureLearningRow(db, userId);
+    await db.runAsync(
+      'UPDATE suggest_learning SET avoid_speed=?, avoid_glide=?, avoid_turn=?, avoid_fade=?, avoid_strength=?, brand_aversion=?, engine_enabled=? WHERE user_id=?',
+      [state.avoidSpeed, state.avoidGlide, state.avoidTurn, state.avoidFade, state.avoidStrength, JSON.stringify(state.brandAversion), state.engineEnabled ? 1 : 0, userId]
+    );
   });
 }
 

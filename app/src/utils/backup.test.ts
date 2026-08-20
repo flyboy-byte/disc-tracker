@@ -1,6 +1,7 @@
-import { buildBackup, parseBackup, backupSummary, type BackupMeta } from './backup';
+import { buildBackup, parseBackup, backupSummary, type BackupDemotion, type BackupMeta } from './backup';
 import type { Disc } from './disc';
 import type { Round } from './roundMath';
+import type { LearningState } from './suggestScore';
 
 const meta: BackupMeta = { sortMode: 'name', arcView: 'RHFH', skill: 'advanced', throwStyle: 'forehand', suggestMode: 'buying', msRefEnabled: true, fieldShowAll: true };
 const discs: Disc[] = [
@@ -29,6 +30,31 @@ describe('buildBackup / parseBackup round-trip', () => {
     expect(back.meta).toEqual(meta);
     expect(back.rounds).toEqual(rounds);
     expect(typeof back.exportedAt).toBe('string');
+  });
+
+  it('preserves suggest-swipe demotions and learning state (suggest-swipe-scope.md)', () => {
+    const demotions: BackupDemotion[] = [{ listKey: 'buy:straight', discKey: 'innova|firebird', position: 1 }];
+    const learning: LearningState = {
+      avoidSpeed: 12,
+      avoidGlide: 5,
+      avoidTurn: -2,
+      avoidFade: 2,
+      avoidStrength: 0.6,
+      brandAversion: { innova: 0.5 },
+      engineEnabled: false,
+    };
+    const json = buildBackup(discs, meta, rounds, [], demotions, learning);
+    const back = parseBackup(json);
+    expect(back.suggestDemotions).toEqual(demotions);
+    expect(back.suggestLearning).toEqual(learning);
+  });
+
+  it('defaults suggest-swipe fields to empty/zeroed for backups predating the feature', () => {
+    const back = parseBackup(JSON.stringify({ discs: [] }));
+    expect(back.suggestDemotions).toEqual([]);
+    expect(back.suggestLearning.avoidStrength).toBe(0);
+    expect(back.suggestLearning.engineEnabled).toBe(true);
+    expect(back.suggestLearning.brandAversion).toEqual({});
   });
 });
 

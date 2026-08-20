@@ -47,6 +47,9 @@ This is the whole point, so it goes first.
   outside service either surface will ever touch — and only if you ask it to.
 - **Your data moves the way you move it.** Export to CSV, or use the app's full backup file, and
   carry it to a new phone yourself. Nothing leaves a device unless you send it.
+- **Even the "learning" is local.** Disc Suggest's swipe-away preferences (Buy mode's sense of
+  which flight numbers and brands you're passing on) are derived and stored entirely on-device,
+  never transmitted anywhere, and reset anytime from the Disc Suggest screen.
 - **Open source (GPLv3).** The code is here to read. The Android app is built to be
   [F-Droid](https://f-droid.org)-reproducible — no proprietary blobs, a pinned toolchain, and a
   clean dependency tree — so the binary can be verified against this source.
