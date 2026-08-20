@@ -8,11 +8,15 @@
 > manifest hygiene, declared permissions vs. reality, dependency/license cleanliness,
 > and whether `docs/privacy.html` is still telling the truth.
 
-**Status: not blocking, nothing found here should slow D2/D3 down.** One real bug fixed
+**Status: not blocking, nothing found here should slow D2/D3 down.** Two real fixes
 (below); everything else is either already solid or a documented, deliberate judgment
 call left for Logan. Re-run this same pass again before R7 actually starts — dependencies
 and manifest content drift over 10+ feature releases, this doc is a snapshot, not a gate
 that stays true forever.
+
+**Update (same day):** `allowBackup` — originally logged below as a judgment call — was
+decided: Logan said remove it. `android:allowBackup` is now `false`. See the entry below
+(moved out of "noted, not acted on").
 
 ## Fixed this pass
 
@@ -43,6 +47,22 @@ are untouched (that's the correct, expected, debug-only use), and no app code an
 references `SYSTEM_ALERT_WINDOW` (confirmed via grep), so nothing broke. Release builds
 now request exactly the 4 permissions `docs/privacy.html` already promised.
 
+**`allowBackup` disabled — matches the "no cloud, ever" claim literally, not just in
+spirit.** It defaulted to Android's standard extraction rules (no `dataExtractionRules`/
+`fullBackupContent` override), enabling the OS's own Auto Backup to the user's Google
+Account. That's not a third-party server this app talks to — it's Google backing up the
+device on the user's behalf, under the user's own account, same as it would for any app —
+so it never actually contradicted the privacy claims. Still, this app's whole pitch is
+"nothing about your data leaves this device unless you explicitly do it," and Auto Backup
+is the one path where that wasn't strictly true (a phone-level cloud sync the user
+enabled once, system-wide, could silently carry the SQLite DB to Google Drive without a
+separate per-app decision). Logan's call: remove it. `android:allowBackup="false"` in
+`main/AndroidManifest.xml` — restoring the app now always means the in-app Backup &
+Restore feature (a file the user explicitly creates and moves themselves), nothing
+implicit. Trade-off, stated plainly: a phone swap without using in-app backup first now
+loses local data, same as before this app existed at all — the explicit backup path
+already exists and is the one this app actually wants people using.
+
 ## Confirmed already solid
 
 - **EAS is fully dropped, not just documented as dropped.** No `eas.json` anywhere in
@@ -65,15 +85,6 @@ now request exactly the 4 permissions `docs/privacy.html` already promised.
   documented in `app/CLAUDE.md`/`.gitignore` are actually holding.
 - **No leftover Play-services placeholders.** Checked for the classic Expo-template
   gotcha (`com.google.android.geo.API_KEY` meta-data with a dummy value) — not present.
-- **`allowBackup="true"` uses Android's default extraction rules** (no custom
-  `dataExtractionRules`/`fullBackupContent` override) — this is the user's *own* Google
-  Account Auto Backup (encrypted, Google-account-scoped, entirely under the user's
-  control via their own Android Settings → Backup), not a third-party server this app
-  talks to, so it doesn't contradict the "no cloud" claim the way an SDK phoning home
-  would. Worth a conscious call before D1/D2/D3 rather than silently changing it here —
-  disabling it trades away a real user-facing convenience (restore after a phone swap)
-  for a stricter reading of "no cloud, ever." Flagging as a judgment call, not fixing
-  unilaterally.
 - **`vendor/shotshaper/`-derived code has proper GPLv3 provenance on both platforms.**
   The website side already had `vendor/shotshaper/NOTICE.md`; the on-device TypeScript
   port (`app/src/physics/sim/`) had inline comments crediting shotshaper but no
