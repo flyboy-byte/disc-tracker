@@ -6,7 +6,14 @@ Two things in one repo:
 
 1. **A live Flask web app** — personal disc golf bag tracker running on a VPS at `51.81.80.126`. Multi-user, local SQLite, no cloud, no accounts. The website is the canonical version and the spec for everything else.
 
-2. **An Android app port — v1 feature-complete, actively growing** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest tagged release is **`v0.22`** (2026-08-18, backup "Save to device" on Android via Storage Access Framework, alongside the existing share-sheet path). `v0.21` (same day) shipped the catalog UI reworked into a three-way **Built-in / Try Discs / Custom** source picker with a first-run download prompt (`app/plan/docs/catalog-v2-scope.md`'s "Three-way source picker" section) — verified end-to-end on a real Pixel 7 — plus a same-session compliance fix (Try Discs credit now keys off the manifest's own `provider` field, not which UI slot the data landed in, closing a gap where importing Try Discs' data through the new "Custom" URL path would've silently dropped the required credit) and 2,147-vs-1,874 disclosure copy added to Settings, the website, and `README.md`. `v0.20` shipped Try Discs catalog-v2 (live, real data since 2026-08-18) + C7 Shareable Bag Report + the GH Pages fix + nginx rate-limit. Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **DONE:** R1–R4.5, B1 disc-suggest rewrite (`0.10`), B2 big-collection support (`0.11`), B3 offline scorekeeper + B4 full backup/restore (`0.12`), mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker (`0.13`), UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`), production signing (`0.15`), the Disc Suggest suggest-engine plan **Phases 1-3** — Flex Shot scenario (13th), Throw Style modifier, personal stability adjustment, role tags, data audit/wear level, all **verified on-device** (`plan/docs/suggest-engine-plan.md`, shipped across `v0.16`–`v0.17`) — the **website-parity track** (CSV Both scope, `stability_adj`/`role_tag` on the website, backup-file import; `plan/docs/archive/website-parity-scope.md`, `v0.17`) — wear estimate (1–5, supersedes the 3-tier field) + Disc Suggest "buying mode" (`v0.19`, `plan/docs/archive/wear-estimate-scope.md` / `plan/docs/archive/buying-mode-scope.md`) — Try Discs catalog-v2 + C7 Shareable Bag Report (`v0.20`) — the three-way source picker + compliance fix (`v0.21`) — and, newest, backup "Save to device" (`v0.22`, `app/plan/docs/catalog-v2-scope.md` / `app/plan/docs/c7-shareable-report-scope.md`). **R5 VPS sync DROPPED** (superseded by B4 — Logan's call). C2 ("what should I throw?" free-form screen) **graveyarded** 2026-08-16, **C1 (named loadouts) graveyarded 2026-08-18** (storage-robustness gate cleared with no schema changes needed, but Logan passed on the feature itself) — both too speculative or too close to existing features (`app/plan/GRAVEYARD.md`). **Next = Phase 4 (parked behind C4), the C-series (see `plan/GRAVEYARD.md`), or stores (R6 Play → R7 F-Droid) when Logan's ready** ("not emotionally ready for store release" — building features first). See "Mobile app — current state" below.
+2. **An Android app port — v1 feature-complete, actively growing** — Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest tagged release is **`v0.23`** (2026-08-19, Disc Suggest **swipe-to-dismiss** —
+Gmail-style side swipe on result cards; Throw mode drops a disc to the bottom of that
+scenario's list, persisted; Buy mode adds a learning engine that re-sorts on flight-number/brand
+aversion learned from swipes, on/off toggle, nothing ever deleted — see
+`app/plan/docs/suggest-swipe-scope.md`, verified on a real Pixel 7 including a real gesture-vs-
+scroll conflict bug found and fixed same session). `v0.22` (2026-08-18) shipped backup "Save to
+device" on Android via Storage Access Framework, alongside the existing share-sheet path. `v0.21`
+(same day) shipped the catalog UI reworked into a three-way **Built-in / Try Discs / Custom** source picker with a first-run download prompt (`app/plan/docs/catalog-v2-scope.md`'s "Three-way source picker" section) — verified end-to-end on a real Pixel 7 — plus a same-session compliance fix (Try Discs credit now keys off the manifest's own `provider` field, not which UI slot the data landed in, closing a gap where importing Try Discs' data through the new "Custom" URL path would've silently dropped the required credit) and 2,147-vs-1,874 disclosure copy added to Settings, the website, and `README.md`. `v0.20` shipped Try Discs catalog-v2 (live, real data since 2026-08-18) + C7 Shareable Bag Report + the GH Pages fix + nginx rate-limit. Forward work follows the **Post-v1 Roadmap** in `app/PORT_PLAN.md`. **DONE:** R1–R4.5, B1 disc-suggest rewrite (`0.10`), B2 big-collection support (`0.11`), B3 offline scorekeeper + B4 full backup/restore (`0.12`), mobile-UX polish — tap-outside-to-close modals + interactive RGB color picker (`0.13`), UI "modern feel" polish pass + F-Droid-reproducible dependency tree (`0.14`), production signing (`0.15`), the Disc Suggest suggest-engine plan **Phases 1-3** — Flex Shot scenario (13th), Throw Style modifier, personal stability adjustment, role tags, data audit/wear level, all **verified on-device** (`plan/docs/suggest-engine-plan.md`, shipped across `v0.16`–`v0.17`) — the **website-parity track** (CSV Both scope, `stability_adj`/`role_tag` on the website, backup-file import; `plan/docs/archive/website-parity-scope.md`, `v0.17`) — wear estimate (1–5, supersedes the 3-tier field) + Disc Suggest "buying mode" (`v0.19`, `plan/docs/archive/wear-estimate-scope.md` / `plan/docs/archive/buying-mode-scope.md`) — Try Discs catalog-v2 + C7 Shareable Bag Report (`v0.20`) — the three-way source picker + compliance fix (`v0.21`) — backup "Save to device" (`v0.22`, `app/plan/docs/catalog-v2-scope.md` / `app/plan/docs/c7-shareable-report-scope.md`) — and, newest, Disc Suggest swipe-to-dismiss + Buy-mode learning engine (`v0.23`, `app/plan/docs/suggest-swipe-scope.md`). **R5 VPS sync DROPPED** (superseded by B4 — Logan's call). C2 ("what should I throw?" free-form screen) **graveyarded** 2026-08-16, **C1 (named loadouts) graveyarded 2026-08-18** (storage-robustness gate cleared with no schema changes needed, but Logan passed on the feature itself) — both too speculative or too close to existing features (`app/plan/GRAVEYARD.md`). **Next = Phase 4 (parked behind C4), the C-series (see `plan/GRAVEYARD.md`), or stores (R6 Play → R7 F-Droid) when Logan's ready** ("not emotionally ready for store release" — building features first). See "Mobile app — current state" below.
 
 ---
 
@@ -183,12 +190,18 @@ a real reason to keep checking model agreement over time rather than the one-tim
 ## Mobile app — current state
 
 **Phases 0-9 done; v1 first shipped as `mobile-preview-0.5`, confirmed on a real phone;
-latest tagged release `v0.22`** (2026-08-18 — backup "Save to device" on Android). `v0.21`
-(same day) shipped the catalog UI reworked into a three-way Built-in/Try Discs/Custom picker
-+ first-run prompt, verified on a real Pixel 7 — see "Three-way source picker" in
-`app/plan/docs/catalog-v2-scope.md`. `v0.20` shipped Try Discs catalog-v2 + C7 Shareable Bag
-Report + the GH Pages fix + nginx rate-limit; release naming moved from `mobile-preview-X`
-to bare `vX` at `v0.16`. **Disc Suggest suggest-engine Phases 1-3** (Flex Shot scenario, Throw Style,
+latest tagged release `v0.23`** (2026-08-19 — Disc Suggest swipe-to-dismiss: Gmail-style side
+swipe on result cards, per-scenario persisted reorder in Throw mode, a Buy-mode learning engine
+that re-sorts on learned flight-number/brand aversion without ever changing a disc's true fit
+label, on/off toggle. Verified on a real Pixel 7, including a real on-device bug fix — a
+vertical scroll starting on a card was getting captured by the card's own swipe gesture, fixed
+with directional gesture constraints. See `app/plan/docs/suggest-swipe-scope.md`). `v0.22`
+(2026-08-18) shipped backup "Save to device" on Android. `v0.21` (same day) shipped the catalog
+UI reworked into a three-way Built-in/Try Discs/Custom picker + first-run prompt, verified on a
+real Pixel 7 — see "Three-way source picker" in `app/plan/docs/catalog-v2-scope.md`. `v0.20`
+shipped Try Discs catalog-v2 + C7 Shareable Bag Report + the GH Pages fix + nginx rate-limit;
+release naming moved from `mobile-preview-X` to bare `vX` at `v0.16`. **Disc Suggest
+suggest-engine Phases 1-3** (Flex Shot scenario, Throw Style,
 personal stability adjustment, data audit, role tags) are all **verified on-device**
 (2026-08-15/16) — see `app/plan/docs/suggest-engine-plan.md`. All five tabs are real
 and working, verified on an Android emulator and sideloaded on hardware:
@@ -229,7 +242,7 @@ and working, verified on an Android emulator and sideloaded on hardware:
   share-sheet in/out (`src/utils/backup.ts`) — plus CSV disc-list export/import, delete-all, and
   About. (The old v1.1 sync placeholder is gone — R5 VPS sync was **dropped**, superseded by B4.)
 
-The SQLite CRUD layer is verified on-device. **147/147 Jest tests pass.** Several real
+The SQLite CRUD layer is verified on-device. **151/151 Jest tests pass.** Several real
 bugs were found and fixed by actually running the app (form-remount, native-slider/ScrollView
 gesture conflict, stale-bag-data on tab switch, document-picker re-entry crash) — all
 documented in `app/PORT_PLAN.md`.
@@ -282,8 +295,9 @@ Minimum Credible v1 Milestone is fully met. See `app/PORT_PLAN.md` Phase 9.
 ### Next immediate step:
 **v1 complete; R1–R4.5, B1–B4, production signing (R6 keystore step), Disc Suggest
 Phases 1-3, the website-parity track, wear estimate, Disc Suggest buying mode, Try Discs
-catalog-v2, C7 Shareable Bag Report, the three-way catalog picker + compliance fix, and
-backup "Save to device" all done and shipped as of `v0.22`** (2026-08-18 —
+catalog-v2, C7 Shareable Bag Report, the three-way catalog picker + compliance fix, backup
+"Save to device", and Disc Suggest swipe-to-dismiss + Buy-mode learning engine all done and
+shipped as of `v0.23`** (2026-08-19 —
 upload key = Play app signing key since `v0.15`, one keystore signs Play+F-Droid+sideload).
 Release naming moved from `mobile-preview-X` to bare `vX` at `v0.16` (2026-08-15). The
 suggest-engine plan's Phase 1 (Flex Shot, Throw Style, personal stability adjustment), Phase 2
@@ -312,7 +326,18 @@ instead, with a regression test. See `app/plan/docs/catalog-v2-scope.md`'s "Thre
 picker + first-run prompt" section — **read it before touching this, don't re-derive the
 design.** **Shipped in `v0.22`**: backup "Save to device" — an Android-only Storage Access
 Framework path alongside the existing share-sheet backup, so a full JSON backup can be written
-straight to a chosen folder without going through a share target. Forward priorities:
+straight to a chosen folder without going through a share target. **Shipped in `v0.23`**:
+Disc Suggest swipe-to-dismiss — Gmail-style side swipe on result cards. Throw mode drops a
+swiped disc to the bottom of that scenario's list only, persisted (new `suggest_demotions`
+table). Buy mode adds a learning engine (new `suggest_learning` table): swiping blends the
+disc's flight numbers into an "avoided" centroid that decays fast between app launches, and its
+brand into a slower-decaying aversion map, re-sorting (never re-labeling — band/fit stays true
+to the real score) the rest of the list; an on/off toggle degrades Buy mode to Throw's plain
+reorder. Verified on a real Pixel 7, including a real on-device bug found and fixed same
+session: a vertical scroll starting directly on a swipeable card got captured by the card's own
+gesture instead of the list, fixed with `activeOffsetX`/`failOffsetY` constraints. See
+`app/plan/docs/suggest-swipe-scope.md` — **read it before touching this, don't re-derive the
+design.** Forward priorities:
 - **Suggest-engine Phase 4** — intentionally parked behind C4 (fieldwork data), which doesn't
   exist yet. Not being pursued. See `app/plan/GRAVEYARD.md`.
 - **C-series (C3 parked, C2 graveyarded)** — **C7 shipped in `v0.20`**, done. **C1 (named
