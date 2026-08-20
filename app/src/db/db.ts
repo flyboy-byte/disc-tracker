@@ -730,7 +730,10 @@ const BRAND_AVERSION_DECAY = 0.7;
 // ramps back up toward 1 within a session.
 const AVOID_EMA_ALPHA = 0.35;
 const AVOID_STRENGTH_RAMP = 0.3;
-const BRAND_AVERSION_STEP = 0.25;
+// 0.4 (up from 0.25, 2026-08-20) — a brand swiped away 2-3 times in a session should already sit
+// near max aversion, not need 4+ swipes; pairs with learningPenalty()'s 0.5/0.5 flight/brand
+// split so brand pressure is felt quickly, not just eventually.
+const BRAND_AVERSION_STEP = 0.4;
 
 function parseBrandAversion(json: string): Record<string, number> {
   try {

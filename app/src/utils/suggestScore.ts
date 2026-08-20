@@ -199,8 +199,10 @@ export function learningPenalty(disc: ScenarioDisc, state: LearningState): numbe
     0.3 * fieldScore(disc.turn, { target: state.avoidTurn, tol: 1.5, wt: 1 }) +
     0.2 * fieldScore(disc.fade, { target: state.avoidFade, tol: 1.5, wt: 1 });
   const brandSim = state.brandAversion[disc.mfr.trim().toLowerCase()] ?? 0;
-  // 0.7/0.3 split: "aggressive on flight characteristics ... maybe long term memory on brand" —
-  // flight-profile similarity dominates, brand is a smaller, slower-moving signal (db.ts decays
-  // brand_aversion at 70%/launch vs. avoid_strength's 35%, so brand naturally persists longer).
-  return state.avoidStrength * (0.7 * flightSim + 0.3 * brandSim);
+  // 0.5/0.5 split — Logan's "sort more by brand" ask (2026-08-20): a brand you keep swiping away
+  // should visibly sink, not just nudge, even before its flight numbers alone would justify it.
+  // Brand is still the slower-moving signal overall (db.ts decays brand_aversion at 70%/launch
+  // vs. avoid_strength's 35%, so it persists longer across sessions), but within a session it now
+  // pulls its full weight alongside flight-profile similarity instead of trailing it 0.7/0.3.
+  return state.avoidStrength * (0.5 * flightSim + 0.5 * brandSim);
 }
