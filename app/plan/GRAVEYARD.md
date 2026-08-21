@@ -9,6 +9,35 @@ or ever).
 
 ---
 
+### R6 — Play Store closed testing — HARD PAUSED 2026-08-21
+
+**What it was:** the next distribution step after production signing (`v0.15`, upload key =
+Play app signing key). Needs the actual Play Console submission — Data Safety form, privacy
+policy, content rating — all still undone.
+
+**Why paused, not graveyarded outright:** unlike the C-series entries above, this isn't "no
+driver" or "too speculative" — it's a values call. Logan, 2026-08-21: "not interested in play
+store very much honestly. google just sucks. but keep it in docs. maybe also graveyard hard
+pause for now." Distinct from the 2026-07-30 "not emotionally ready" framing (which read as
+timing) — this is closer to "don't really want to deal with Google," which could hold
+indefinitely. Kept as a hard pause rather than a full kill (like C3) since nothing about the
+technical readiness changed — signing is done, this is purely "do I want to open a Play Console
+account and go through their review," and that's worth leaving reversible.
+
+**Knock-on effect worth noting:** R7 (official F-Droid index, D3) was previously *sequenced*
+after R6, not because it depends on it, but because Play App Signing and F-Droid's own
+reproducible-build requirements conflict if pursued in parallel. With R6 hard-paused rather than
+active, R7 has no reason to keep waiting behind it — and D2 (the self-hosted F-Droid repo, live
+since 2026-08-21 at `~/projects/fdroid-repo`) is already exactly the practice run R7 needs. If
+Logan wants a next distribution step at all, R7 is the more aligned one now — FOSS-native, no
+Google account, and prep work already exists. Not started unilaterally; flagged here as the
+natural implication of this pause.
+
+**Status:** paused, not dead. Revisit only if Logan raises it — don't push distribution as a
+"you should really do this" item just because the app is trending toward primary deployment.
+
+---
+
 ### C3 — Fieldwork sessions (manual + rangefinder + GPS) — GRAVEYARDED 2026-08-21 (killed outright, was PARKED 2026-08-15)
 
 **What it was:** the recurring data-collection engine behind the whole C-series — pick discs,
