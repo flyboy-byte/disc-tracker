@@ -9,16 +9,16 @@ or ever).
 
 ---
 
-### C3 — Fieldwork sessions (manual + rangefinder + GPS) — PARKED 2026-08-15
+### C3 — Fieldwork sessions (manual + rangefinder + GPS) — GRAVEYARDED 2026-08-21 (killed outright, was PARKED 2026-08-15)
 
 **What it was:** the recurring data-collection engine behind the whole C-series — pick discs,
 throw a batch, walk the field once, log landings, feed that into C4's per-disc observed flight
 profiles. Called "highest effort, highest payoff" in `direction-2026-08-08.md`.
 
-**Why parked, not just "later":** flagged by Logan 2026-08-15 during a review of the C-series
-roadmap — the project is accumulating unscoped/half-scoped ideas faster than they're getting
-built or killed ("lots of branches and accelerated development," his words), and C3 is the
-heaviest of them:
+**Why parked (2026-08-15), then killed (2026-08-21):** flagged by Logan 2026-08-15 during a
+review of the C-series roadmap — the project is accumulating unscoped/half-scoped ideas faster
+than they're getting built or killed ("lots of branches and accelerated development," his
+words), and C3 is the heaviest of them:
 - Needs `ACCESS_FINE_LOCATION` — real friction against the F-Droid privacy bar this project has
   otherwise kept clean (opt-in everything, zero network by default).
 - The original review already flagged derived-only location storage as a prerequisite
@@ -28,10 +28,17 @@ heaviest of them:
   has no driver right now — nothing else is blocked waiting on it, since C4/C5/C6 are themselves
   unscoped.
 
-**Status:** not rejected, genuinely parked. If it comes back, start from
-`direction-2026-08-08.md`'s Decision 3 (derived-only storage) and the caution note about GPS
-precision (§"Cautions the review under-weights") — both already have real reasoning banked, no
-need to re-derive.
+Six days later, 2026-08-21, Logan closed it outright: "kill c3 fieldwork completely." No new
+reasoning beyond the park — the underlying tradeoff (location permission + unscoped
+prerequisite work for a feature with no active driver) didn't get more attractive with time, so
+rather than let it keep sitting as "maybe later," it's fully dead. **C4/C5/C6 die with it** —
+they were explicitly downstream of C3's data and have no independent scope of their own; nothing
+in the C-series remains open as of this date.
+
+**Status:** dead, not parked. If GPS-based fieldwork data ever becomes worth building, this
+entry (and `direction-2026-08-08.md`'s Decision 3 on derived-only storage, and the GPS-precision
+caution note) is where the prior reasoning lives — but treat it as a fresh pitch requiring a new
+driver, not a resume of this one.
 
 ---
 

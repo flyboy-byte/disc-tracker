@@ -1,5 +1,14 @@
 # Direction — 2026-08-08 (post-B4 strategy re-plan: "personal disc intelligence")
 
+> **Status update, 2026-08-21: the entire C-series this doc opened is now closed out.** C7
+> shipped. C1/C2 were graveyarded earlier; **C3 (fieldwork sessions) was graveyarded outright
+> 2026-08-21** ("kill c3 fieldwork completely" — no new reasoning beyond the 2026-08-15 park,
+> the tradeoff just didn't improve with time), which also kills C4/C5/C6 since they were
+> downstream of C3's data with no independent scope. See `app/plan/GRAVEYARD.md`'s C3 entry.
+> This doc's reasoning (Decision 2's dependency table, Decision 3's derived-only storage
+> prerequisite) stays here as banked context if fieldwork data ever comes back as a fresh pitch
+> — treat it as history, not an active roadmap.
+
 > Written after Logan commissioned a **product-strategy review** (web-researched,
 > competitor-grounded — the raw report is the source-of-record at
 > [`../research/strategy-review-2026-08-08.md`](../research/strategy-review-2026-08-08.md)).
