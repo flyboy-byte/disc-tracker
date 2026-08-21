@@ -115,7 +115,10 @@ in a field with no signal exactly as well as it does at home.
 
 Five tabs, all working offline. Confirmed on real hardware; preview APKs live on the
 [**Releases page**](https://github.com/flyboy-byte/disc-tracker/releases) for sideloading, now
-signed with the production release key. Play Store and F-Droid are the next step.
+signed with the production release key. Also installable via a
+[self-hosted F-Droid repo](https://fdroid.flyboybyte.com/fdroid/repo) — add that URL in
+an F-Droid client for update checks without the Play Store. The official F-Droid index
+and Play Store are still ahead.
 
 <table>
   <tr>

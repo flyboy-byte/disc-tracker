@@ -21,15 +21,3 @@ playwright-report/
 # TryDiscs catalog sync (tools/trydiscs-sync.js) — working cache + reports, never committed
 # per Try Discs' request to coordinate before any generated catalog data lands in the repo.
 tools/.trydiscs-cache/
-
-# F-Droid self-hosted repo (D2, app/plan/docs/d2-fdroid-portfolio-scope.md). config.yml and
-# KEYSTORE-INFO.txt both contain the repo signing key's passwords in plain text — never commit
-# either, or the keystore itself. fdroid/repo/ is fdroid update's generated output (index files +
-# built APKs) — not source, regenerated locally, never committed. fdroid/metadata/ (the actual
-# app listing YAML) is the only part of fdroid/ that IS meant to be committed.
-fdroid/config.yml
-fdroid/KEYSTORE-INFO.txt
-fdroid/keystore.p12
-fdroid/repo/
-fdroid/cache/
-fdroid/tmp/

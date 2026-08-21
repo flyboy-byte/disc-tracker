@@ -11,9 +11,10 @@ Buy-mode brand-aversion weighting, a compact bag-report grid for bags over 12 di
 tab 9/18/Custom hole presets + roster prefill + quick-pick score entry + color-coded scores,
 a new in-app "How to use Disc Tracker" tutorial linked from Settings, and two F-Droid
 privacy/manifest fixes — see `app/plan/docs/fdroid-privacy-audit-2026-08-20.md`). Same
-session also stood up **D2** (self-hosted F-Droid repo) — deployed to
-`fdroid.flyboybyte.com` on the VPS, one DNS record away from fully live; see
-`app/plan/docs/d2-fdroid-portfolio-scope.md` and `fdroid/README.md`. Previous release was
+session also stood up **D2**, a self-hosted F-Droid repo now live at
+`https://fdroid.flyboybyte.com/fdroid/repo` — a deploy target for the whole app
+portfolio, not this project's feature, so it lives in its own repo
+(`~/projects/fdroid-repo`), not here. Previous release was
 **`v0.24`** (2026-08-19, a same-day follow-up to `v0.23`: full backup
 now includes the swipe/learning state it was silently missing, a "Best fit"/"Brand A-Z" sort
 toggle on Buy mode for browsing large result sets, and privacy-policy/README disclosure of the
@@ -382,24 +383,12 @@ priorities:
   sequenced after Play, since Play App Signing and F-Droid reproducible builds conflict.
   D3 itself hasn't started; see the D2 status directly below — D2 is prep work for D3, not
   R7 itself.
-- **D2 — self-hosted F-Droid repo, LIVE since 2026-08-21.**
-  `https://fdroid.flyboybyte.com/fdroid/repo` — real Let's Encrypt cert (expires
-  2026-11-19, auto-renews), HTTP→HTTPS redirect, `com.disctracker.app` v0.25.0 indexed
-  with the `NonFreeNet` AntiFeature tag and downloadable. Built and deployed 2026-08-20:
-  a fresh repo signing key (`fdroid init`, deliberately separate from the app's own APK
-  signing key — compromising one doesn't let an attacker forge the other), `fdroid
-  deploy`'d to `/var/www/fdroid.flyboybyte.com` on the VPS via a new nginx vhost modeled
-  directly on the live `golf.flyboybyte.com` config (same static-root-outside-`~/`-
-  pattern, since `www-data` can't traverse `/home/ubuntu`'s `750` perms) — read from the
-  VPS's actual `~/security/` docs over SSH, not assumed. A `limit_req` zone (30r/s) was
-  added, matching the box's existing pattern for new public unauthenticated surfaces.
-  Logan added the DNS A record 2026-08-21; `sudo certbot --nginx -d
-  fdroid.flyboybyte.com` on the VPS issued the cert and rewrote the vhost in place —
-  identical mechanism to every other vhost on that box. Full detail:
-  `app/plan/docs/d2-fdroid-portfolio-scope.md`, `fdroid/README.md`,
-  `fdroid/nginx-fdroid.flyboybyte.com.conf` (pulled verbatim from the live VPS config).
-  The repo key itself never leaves this local machine — only what it signs (the index +
-  APKs) went to the VPS.
+- **D2 — self-hosted F-Droid repo, LIVE since 2026-08-21.** A deploy target, not a
+  feature of this app: `https://fdroid.flyboybyte.com/fdroid/repo` hosts signed release
+  builds for flyboy-byte's whole app portfolio (currently just `com.disctracker.app`
+  v0.25.0). Lives in its own repo, `~/projects/fdroid-repo` — not inside this one, since
+  it's shared infrastructure, not disc-tracker-specific. See that repo's own `README.md`
+  for setup/deploy details.
 - Both R6 and R7-the-official-index submission are **deliberately parked** — Logan's
   call, building features first (2026-08-08 strategy re-plan, C-series). D2 above is the
   one piece of F-Droid work that jumped ahead of that pause, since it doesn't require
