@@ -227,10 +227,13 @@ generated from `static/physics.js` by `static/generate-flight-arc-fixture.js`.
 side); `app/src/utils/legacyPhysics.fixture.test.ts` loads the same JSON and asserts
 `legacyPhysics.ts` + `disc.ts`'s `stab()` reproduce it within `1e-6` (264 assertions). Both
 verified to actually fail on a deliberately tampered fixture value, then confirmed clean again.
-**Sub-track 3 not started** — it's a real, already-confirmed divergence (the website's Disc
-Suggest is still the pre-B1 12-scenario threshold model; the app's is the full B1 rewrite), and
-per the note above it needs Logan's decision (backport vs. document-as-exception) before any
-fixture work can start there. Flagging again here rather than making that call unilaterally.
+**Sub-track 3 resolved 2026-08-21 — documented exception, not a backport.** Asked Logan;
+answer was "the split can be intentional, and if anything I'm moving more toward the app as
+main deployment" — a real signal, not a firm call. Leaving the website's Disc Suggest as-is for
+now (see `app/plan/docs/track-d-flight-arc-parity.md`'s "Sub-track 3" section for the full
+reasoning). Deliberately NOT touching `CLAUDE.md`'s "website is canonical" framing off this one
+aside — that's a bigger, whole-repo decision for its own conversation if/when Logan actually
+commits to it.
 
 ---
 

@@ -33,12 +33,20 @@ approach.
 Both CI workflows run their side: `website-ci.yml` runs `physics.fixture.test.js`; `app-ci.yml`'s
 plain `jest` run picks up `legacyPhysics.fixture.test.ts` automatically.
 
-## Sub-track 3 (Disc Suggest scoring) — deliberately NOT started
+## Sub-track 3 (Disc Suggest scoring) — resolved as a documented exception, 2026-08-21
 
-`PLAN.md` already flags this: `templates/discsuggestion.html`'s scoring is still the pre-B1
-12-scenario boolean-threshold model; `app/src/utils/suggestScore.ts` is the full B1-era rewrite
-(continuous scoring, bands, skill/throw-style modifiers, 13 scenarios including Flex Shot). This
-is a **real, confirmed divergence**, not a hypothetical gap — fixture-based parity testing can't
-apply until Logan decides whether to backport the unified scorer to the website (closing the gap)
-or explicitly document it as an intentional exception. Not implemented here; flagged for a
-separate decision.
+`templates/discsuggestion.html`'s scoring is still the pre-B1 12-scenario boolean-threshold
+model; `app/src/utils/suggestScore.ts` is the full B1-era rewrite (continuous scoring, bands,
+skill/throw-style modifiers, 13 scenarios including Flex Shot). Asked Logan whether to backport
+the unified scorer to the website or document the split as intentional. His answer: "the split
+can be intentional, and if anything, I'm moving more towards the app as main deployment" — not a
+firm decision, but enough to close this out for now without a backport.
+
+**Decision: leave the website's Disc Suggest on its current model. Not a bug, not scheduled
+for a parity fixture.** No code change. This does NOT (yet) touch `CLAUDE.md`'s "the website is
+the canonical version and the spec for everything else" framing — that's a bigger, project-wide
+claim spanning the whole repo's docs and deserves its own real conversation once Logan actually
+decides the app is primary, not a one-line edit inferred from an "if anything" aside. Treat that
+framing as still accurate until Logan says otherwise explicitly. If/when he does, the update
+isn't just this file — it's `CLAUDE.md`'s opening section, the physics-parity docs' "canonical"
+language, and probably `README.md`'s ordering of website vs. app.
