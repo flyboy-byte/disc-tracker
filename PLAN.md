@@ -227,13 +227,12 @@ generated from `static/physics.js` by `static/generate-flight-arc-fixture.js`.
 side); `app/src/utils/legacyPhysics.fixture.test.ts` loads the same JSON and asserts
 `legacyPhysics.ts` + `disc.ts`'s `stab()` reproduce it within `1e-6` (264 assertions). Both
 verified to actually fail on a deliberately tampered fixture value, then confirmed clean again.
-**Sub-track 3 resolved 2026-08-21 — documented exception, not a backport.** Asked Logan;
-answer was "the split can be intentional, and if anything I'm moving more toward the app as
-main deployment" — a real signal, not a firm call. Leaving the website's Disc Suggest as-is for
-now (see `app/plan/docs/track-d-flight-arc-parity.md`'s "Sub-track 3" section for the full
-reasoning). Deliberately NOT touching `CLAUDE.md`'s "website is canonical" framing off this one
-aside — that's a bigger, whole-repo decision for its own conversation if/when Logan actually
-commits to it.
+**Sub-track 3 resolved 2026-08-21 — documented exception, not a backport.** Leaving the
+website's Disc Suggest as-is (see `app/plan/docs/track-d-flight-arc-parity.md`'s "Sub-track 3"
+for the full reasoning and its same-day follow-up). Logan also clarified the deployment-primacy
+question this raised: the website **stays the canonical spec** ("its still the spec, wer just
+progressing") — what's actually shifting is which build he uses/deploys day to day, toward the
+app, gradually. `CLAUDE.md`'s opening section now states both halves explicitly.
 
 ---
 

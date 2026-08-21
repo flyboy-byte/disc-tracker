@@ -43,10 +43,15 @@ can be intentional, and if anything, I'm moving more towards the app as main dep
 firm decision, but enough to close this out for now without a backport.
 
 **Decision: leave the website's Disc Suggest on its current model. Not a bug, not scheduled
-for a parity fixture.** No code change. This does NOT (yet) touch `CLAUDE.md`'s "the website is
-the canonical version and the spec for everything else" framing — that's a bigger, project-wide
-claim spanning the whole repo's docs and deserves its own real conversation once Logan actually
-decides the app is primary, not a one-line edit inferred from an "if anything" aside. Treat that
-framing as still accurate until Logan says otherwise explicitly. If/when he does, the update
-isn't just this file — it's `CLAUDE.md`'s opening section, the physics-parity docs' "canonical"
-language, and probably `README.md`'s ordering of website vs. app.
+for a parity fixture.** No code change.
+
+**Follow-up, same day:** Logan clarified the "moving toward the app as main deployment" aside
+wasn't ambivalence about the spec question — "do it. its still the spec, wer just progressing."
+Two separate claims, and only one of them changed: the website **stays the canonical spec** —
+the reference implementation new behavior gets designed against, and "the website wins when
+they disagree" (this doc's own opening sentence) is still literally true. What's actually
+progressing is which build he *uses and deploys* day to day — that's the app, increasingly, and
+it's a spread-out-over-time shift, not a cutover with a date. `CLAUDE.md`'s "What this project
+is" section now states both halves of this explicitly. This sub-track's own resolution doesn't
+change either way: the website's Disc Suggest still isn't getting backported, and the split is
+still fine as a documented exception — spec-of-record was never the reason it needed fixing.
