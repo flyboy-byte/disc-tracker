@@ -5,7 +5,9 @@
 // replace of a bag shaped exactly like the server's, not a translation step.
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-const BASE_SCHEMA = `
+// Exported so persistence.test.ts can parse the live table list straight from the schema
+// itself, rather than a hand-copied list that can drift out of sync with what's actually here.
+export const BASE_SCHEMA = `
 CREATE TABLE IF NOT EXISTS users (
   id       INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT UNIQUE NOT NULL

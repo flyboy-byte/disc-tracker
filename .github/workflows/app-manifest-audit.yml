@@ -1,0 +1,54 @@
+name: App Manifest Audit
+
+# PLAN.md Track C. Regenerates android/ from app.json + config plugins exactly as F-Droid's own
+# build recipe does (expo prebuild -p android --clean always runs there), then checks the
+# resulting merged AndroidManifest.xml against an explicit permission allowlist. Catches the
+# exact class of bug that shipped SYSTEM_ALERT_WINDOW undisclosed for an unknown number of
+# releases — a stale committed android/ folder can drift from what app.json actually declares,
+# so this never trusts the committed copy, only a freshly regenerated one.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/app.json'
+      - 'app/plugins/**'
+      - 'app/package.json'
+      - 'app/scripts/check-manifest-permissions.js'
+      - '.github/workflows/app-manifest-audit.yml'
+  pull_request:
+    paths:
+      - 'app/app.json'
+      - 'app/plugins/**'
+      - 'app/package.json'
+      - 'app/scripts/check-manifest-permissions.js'
+      - '.github/workflows/app-manifest-audit.yml'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Regenerate android/ from app.json (same step F-Droid's build recipe runs)
+        run: npx expo prebuild -p android --clean
+
+      - name: Check merged manifest against the permission allowlist
+        run: node scripts/check-manifest-permissions.js

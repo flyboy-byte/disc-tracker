@@ -1,0 +1,41 @@
+name: Website CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app.py'
+      - 'requirements.txt'
+      - 'static/**'
+      - 'templates/**'
+      - '.github/workflows/website-ci.yml'
+  pull_request:
+    paths:
+      - 'app.py'
+      - 'requirements.txt'
+      - 'static/**'
+      - 'templates/**'
+      - '.github/workflows/website-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Physics regression tests
+        run: node static/physics.test.js
+
+      - name: Flight-arc fixture parity (Track D — vs. app's legacyPhysics.ts)
+        run: node static/physics.fixture.test.js
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Python syntax check
+        run: python3 -m py_compile app.py

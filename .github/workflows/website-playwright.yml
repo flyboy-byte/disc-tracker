@@ -1,0 +1,55 @@
+name: Website Playwright
+
+# PLAN.md Track E. Separate workflow from website-ci.yml (Track A) since this needs a browser
+# binary + a running Flask server, meaningfully heavier CI setup than a plain Node/Python job —
+# Track A deliberately excluded this for that reason.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app.py'
+      - 'templates/**'
+      - 'static/**'
+      - 'requirements.txt'
+      - 'tests/**'
+      - 'package.json'
+      - 'playwright.config.js'
+      - '.github/workflows/website-playwright.yml'
+  pull_request:
+    paths:
+      - 'app.py'
+      - 'templates/**'
+      - 'static/**'
+      - 'requirements.txt'
+      - 'tests/**'
+      - 'package.json'
+      - 'playwright.config.js'
+      - '.github/workflows/website-playwright.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        run: npx playwright test

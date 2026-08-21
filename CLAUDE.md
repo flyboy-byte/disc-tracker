@@ -1,5 +1,9 @@
 # Disc Tracker — Claude Context
 
+**Engineering hardening (CI, backup registry, manifest audit, cross-language test fixtures) is
+tracked in `PLAN.md` at the repo root** — separate from the feature-work plan docs in `app/plan/`.
+Tracks A–D done, Track E started, as of 2026-08-21.
+
 ## What this project is
 
 Two things in one repo:
@@ -85,6 +89,12 @@ node static/physics.test.js
 
 `static/physics.test.js` — pure-math regression tests, plain Node, no dependencies.
 
+`static/physics.fixture.test.js` — flight-arc/stability parity check against
+`fixtures/flight-arc-vectors.json`, the shared fixture the mobile app's
+`legacyPhysics.fixture.test.ts` also loads (`app/plan/docs/track-d-flight-arc-parity.md`).
+Regenerate the fixture after a deliberate `physics.js` change with
+`node static/generate-flight-arc-fixture.js > fixtures/flight-arc-vectors.json`.
+
 `tests/ui-smoke.spec.js` — Playwright browser smoke tests covering the JS-dependency-contract
 items most at risk from CSS/markup changes: card `data-id` + drag-reorder, filter pills,
 physics-sim crosswind/dir-hint sync, CSV export/import round-trip. Dev-only — the shipped Flask
@@ -92,6 +102,17 @@ app has no build step and doesn't depend on this. One-time setup: `npm install` 
 `package.json` at repo root), then `npx playwright install chromium`. Run with `npm run test:ui`
 (starts `python3 app.py` itself via `playwright.config.js`'s `webServer`, so have the Python venv
 active first). Each test run creates its own throwaway user, never touches real bag data.
+
+`tests/api-data-roundtrip.spec.js` — Playwright, same throwaway-user pattern: `/api/data`
+POST→GET round-trip fidelity, full-replace semantics, CSRF rejection, and multi-user isolation
+(`PLAN.md` Track E).
+
+**CI now runs all of this on every push/PR** (`.github/workflows/`): `app-ci.yml` (mobile app
+`tsc --noEmit` + Jest), `website-ci.yml` (the two Node scripts above + `py_compile`),
+`app-manifest-audit.yml` (regenerates `android/` via `expo prebuild --clean` and checks the
+merged manifest's permissions against an explicit allowlist — `app/scripts/check-manifest-
+permissions.js`), `website-playwright.yml` (both Playwright spec files against a live Flask
+server). See `PLAN.md` for the full engineering-hardening scope this came out of.
 
 ---
 

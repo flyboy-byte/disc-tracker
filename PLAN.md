@@ -1,6 +1,8 @@
 # Disc Tracker — Engineering Hardening Plan
 
-**Status: not started. Last updated 2026-08-21.**
+**Status: Tracks A–D done, Track E started (first 2 specs landed as a foundation, not
+exhaustive). Last updated 2026-08-21.** See the per-track "Done" notes below for what actually
+shipped and where.
 
 This is the project's first root-level `PLAN.md` — until now, planning lived entirely in
 `app/plan/` (mobile feature work) with nothing tracking cross-cutting engineering quality
@@ -79,6 +81,11 @@ test) shows a failing check in the GitHub UI before merge, not after.
 excluded here — it needs a running Flask server + browser binaries, meaningfully heavier
 CI setup than a plain `npm test`. That's Track E.
 
+**Done, 2026-08-21.** `.github/workflows/app-ci.yml` (npm ci, tsc --noEmit, jest --ci, on
+`app/**`) and `.github/workflows/website-ci.yml` (physics.test.js, physics.fixture.test.js,
+py_compile, on the root Python/JS files). Both verified locally against the exact commands
+before committing.
+
 ---
 
 ### Track B — Backup round-trip test + a persistence registry
@@ -107,6 +114,22 @@ place that enumerates "everything persistent" against "everything the backup cov
 
 **Definition of done.** Deliberately add a new SQLite table via a migration, don't touch
 `backup.ts` — the round-trip test fails, naming the table it doesn't know how to back up.
+
+**Done, 2026-08-21, with one honest scope note.** `expo-sqlite` has no working Jest harness in
+this codebase (no `jest-expo` preset, no native-module mock — confirmed while building this),
+so the round-trip couldn't be built exactly as speced (seeding via real `db.ts` insert
+functions against a live SQLite instance). Built instead: `src/db/persistence.ts` — a single
+registry of every table `migrations.ts`'s schema creates, each tagged `backedUp: true/false`
+with a required note on any `false`. `src/db/persistence.test.ts` parses the live schema out of
+`migrations.ts` (regex over the exported `BASE_SCHEMA` string, not a hand-copied list) and fails
+if a table exists without a registry entry, or vice versa — this is the mechanism that
+satisfies the DoD ("add a table via migration, don't touch the registry, a test fails naming
+it"). It also runs `buildBackup()`/`parseBackup()` (backup.ts) with one populated field per
+`backedUp: true` table and asserts every field survives. What this does NOT cover: an actual
+`INSERT`-through-`db.ts` round trip against real SQLite — that would need a real test-DB harness
+(e.g. a Jest environment change to `jest-expo`, or swapping in a Node-compatible SQLite for
+tests only), which is a bigger, separate piece of work than this track budgeted for. If that
+ever becomes worth doing, `persistence.ts`'s registry is already the right shape to drive it.
 
 ---
 
@@ -137,6 +160,16 @@ i.e. after Expo's config-plugin merge, on every build.
 **Definition of done.** Manually add `SYSTEM_ALERT_WINDOW` back to `main/AndroidManifest.xml`
 in a test branch — the CI job fails, naming the unapproved permission, without needing a
 human to think to check.
+
+**Done, 2026-08-21.** `.github/workflows/app-manifest-audit.yml` (Node 20 + JDK 21, `npx expo
+prebuild -p android --clean`, then a check script) and `app/scripts/check-manifest-permissions.js`
+— parses the merged manifest's `<uses-permission>` tags, skips any Expo emits with
+`tools:node="remove"` (that's how `blockedPermissions` actually suppresses one — the tag stays
+in the XML with that directive, the Android manifest merger strips it at build time; the script
+originally mismatched on this and had to be corrected). Verified three ways: ran against the
+real committed `android/` folder (clean pass, 4 permissions), ran a full `expo prebuild --clean`
+and re-checked (still clean), and injected a fake `CAMERA` permission into a copy of the
+manifest to confirm the script actually fails and names it before restoring the file untouched.
 
 ---
 
@@ -186,6 +219,19 @@ copy-pasted) by test files on both sides of the language boundary, and a deliber
 introduced discrepancy in one implementation fails that implementation's test — not the
 other one's.
 
+**Sub-tracks 1–2 done, 2026-08-21** — see `app/plan/docs/track-d-flight-arc-parity.md` for the
+full writeup. `fixtures/flight-arc-vectors.json` (529 vectors: `applyModifiers`/`arcPoints`
+across 8 disc archetypes × 8 slider combos × 4 arc views, plus a `stab()` case per archetype),
+generated from `static/physics.js` by `static/generate-flight-arc-fixture.js`.
+`static/physics.fixture.test.js` diffs a fresh regeneration against the checked-in file (website
+side); `app/src/utils/legacyPhysics.fixture.test.ts` loads the same JSON and asserts
+`legacyPhysics.ts` + `disc.ts`'s `stab()` reproduce it within `1e-6` (264 assertions). Both
+verified to actually fail on a deliberately tampered fixture value, then confirmed clean again.
+**Sub-track 3 not started** — it's a real, already-confirmed divergence (the website's Disc
+Suggest is still the pre-B1 12-scenario threshold model; the app's is the full B1 rewrite), and
+per the note above it needs Logan's decision (backport vs. document-as-exception) before any
+fixture work can start there. Flagging again here rather than making that call unilaterally.
+
 ---
 
 ### Track E — Website test coverage (`tests/` beyond one Playwright spec)
@@ -211,6 +257,19 @@ than covering everything uniformly):**
 
 **Definition of done.** No single fixed target — track progress as "specs added, each
 tied to a named risk it closes," reviewed periodically rather than checked off once.
+
+**Started, 2026-08-21 — foundation, not exhaustive (matches this track's own "ongoing"
+framing).** `tests/api-data-roundtrip.spec.js` — 4 new specs: `/api/data` POST→GET round-trip
+preserves every disc field byte-for-byte (this project's actual "backup" path for the website,
+the direct counterpart to Track B's app-side test), a full replace correctly drops discs no
+longer in the payload, an unauthenticated/no-CSRF-token POST is rejected (403), and two users'
+bags stay fully independent through the profile switcher. All 4 verified passing against a real
+local Flask server, alongside the existing 10-test `ui-smoke.spec.js` suite (14/14 total). Wired
+into CI as `.github/workflows/website-playwright.yml` (separate from Track A's `website-ci.yml`
+since it needs a browser binary + a live server — the exact reason this track's own scope note
+calls out heavier setup). Remaining candidates from this track's own list (Marshall Street
+image-proxy fallback, deeper CSRF-protected route coverage) intentionally left for a later pass,
+per this track's own "ongoing, not a checklist" framing.
 
 ---
 
