@@ -59,20 +59,17 @@ needs too.
 
 ## Candidate apps and current readiness
 
-### disc-tracker (this repo) — DEPLOYED (2026-08-20), pending DNS
+### disc-tracker (this repo) — D2 COMPLETE AND LIVE (2026-08-21)
 
-**D2 is done except for one step only Logan can take.** Repo key generated
-(`fdroid init`), `com.disctracker.app` v0.25.0 built/signed/indexed, `fdroid deploy`
-rsynced it to `/var/www/fdroid.flyboybyte.com/fdroid/repo` on the VPS, a matching nginx
-vhost is live and verified (real signed index + working APK download over plain HTTP,
-confirmed via `curl -H "Host: fdroid.flyboybyte.com" ...` against the VPS IP directly,
-since DNS isn't there yet). Full detail in `fdroid/README.md` and
-`fdroid/KEYSTORE-INFO.txt` (both in this repo — the latter gitignored).
+`https://fdroid.flyboybyte.com/fdroid/repo` — real Let's Encrypt cert (expires
+2026-11-19, auto-renews), HTTP→HTTPS redirect, `com.disctracker.app` v0.25.0 indexed and
+downloadable. Repo key generated (`fdroid init`), deployed via `fdroid deploy`, nginx
+vhost modeled on the live `golf.flyboybyte.com` config, DNS A record added by Logan
+2026-08-21, `sudo certbot --nginx -d fdroid.flyboybyte.com` issued the cert. Full detail
+in `fdroid/README.md` and `fdroid/KEYSTORE-INFO.txt` (gitignored).
 
-**Blocked only on:** `fdroid.flyboybyte.com`'s DNS A record (Spaceship registrar — no
-API/token reachable from this environment). Once added, `sudo certbot --nginx -d
-fdroid.flyboybyte.com` on the VPS finishes it (issues the cert, rewrites the vhost with
-the HTTPS block + redirect, identical to every other vhost on that box).
+This is D2, not D3 — a self-hosted repo Logan controls entirely, no reviewer, no
+official F-Droid index listing. R7 (D3, the official index) is still separately parked.
 
 - `com.disctracker.app` · GPLv3 · Expo/RN, no EAS.
 - A signed release APK already exists as a normal workflow (`./gradlew assembleRelease`

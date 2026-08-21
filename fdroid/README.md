@@ -4,21 +4,19 @@ Working directory for the self-hosted F-Droid repo described in
 `app/plan/docs/d2-fdroid-portfolio-scope.md`. Built with `fdroidserver`
 (`fdroid init` / `fdroid update`).
 
-**Status (2026-08-20): deployed to the VPS, reachable over plain HTTP, one step from
-done.** `fdroid deploy` rsynced `repo/` to `/var/www/fdroid.flyboybyte.com/fdroid/repo`
-(ubuntu:ubuntu, 755, outside `~/`, matching the `golf.flyboybyte.com` precedent — see
-`nginx-fdroid.flyboybyte.com.conf`'s header for the reasoning). The nginx vhost is live
-and verified working (`curl -H "Host: fdroid.flyboybyte.com" http://51.81.80.126/fdroid/repo/index-v2.json`
-returns the real signed index; the APK itself downloads correctly). A `limit_req` zone
-(30r/s, matching the box's `disc_catalog` precedent) is active.
+**Status (2026-08-21): LIVE.** `https://fdroid.flyboybyte.com/fdroid/repo` — real Let's
+Encrypt cert (issued 2026-08-21, expires 2026-11-19, auto-renews via Certbot's scheduled
+task), HTTP→HTTPS redirect working, `com.disctracker.app` v0.25.0 indexed and downloadable.
+Logan added the DNS A record, then `sudo certbot --nginx -d fdroid.flyboybyte.com` on the
+VPS issued the cert and rewrote the vhost in place — `nginx-fdroid.flyboybyte.com.conf` in
+this directory is that final file, pulled verbatim from the box.
 
-**The one remaining step is DNS, and only Logan can do it** — `fdroid.flyboybyte.com`
-has no A record yet (registrar is Spaceship, no API/token available in this
-environment). Once `fdroid.flyboybyte.com -> 51.81.80.126` is added and has propagated,
-run on the VPS: `sudo certbot --nginx -d fdroid.flyboybyte.com` — this both issues the
-real cert and rewrites the vhost file in place with the SSL block + 80->443 redirect,
-identical to how every other vhost on this box got its cert. Nothing else needs to
-change at that point.
+To add a real F-Droid client: add repo `https://fdroid.flyboybyte.com/fdroid/repo`, verify
+the fingerprint against `KEYSTORE-INFO.txt` (gitignored, this machine only).
+
+Deploy path for future updates: build+sign a release APK as usual, drop it in
+`fdroid/repo/<packageId>_<versionCode>.apk`, `fdroid update`, `fdroid deploy` — rsyncs to
+the VPS, no other steps needed (DNS/cert/nginx vhost are already done, one-time setup).
 
 See `KEYSTORE-INFO.txt` (gitignored) for the repo key's fingerprint and passwords.
 

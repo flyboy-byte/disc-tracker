@@ -206,8 +206,8 @@ latest tagged release `v0.25`** (2026-08-20 — swipe hint text, stronger Buy-mo
 weighting, bag-report compact grid, Score tab presets/prefill/quick-pick/color-coding, a
 new in-app tutorial, and two F-Droid privacy/manifest fixes; see
 `app/plan/docs/fdroid-privacy-audit-2026-08-20.md`). Also see "D2 — self-hosted F-Droid
-repo" below the R7 note further down: deployed to the VPS this same session, pending only
-a DNS record. Previous release **`v0.24`** (2026-08-19 — same-day follow-up to `v0.23`: full backup now
+repo" below the R7 note further down: **LIVE as of 2026-08-21** at
+`https://fdroid.flyboybyte.com/fdroid/repo`. Previous release **`v0.24`** (2026-08-19 — same-day follow-up to `v0.23`: full backup now
 carries swipe/learning state, a Brand A-Z sort for Buy mode, and privacy disclosure).
 `v0.23` shipped Disc Suggest swipe-to-dismiss: Gmail-style side
 swipe on result cards, per-scenario persisted reorder in Throw mode, a Buy-mode learning engine
@@ -382,24 +382,24 @@ priorities:
   sequenced after Play, since Play App Signing and F-Droid reproducible builds conflict.
   D3 itself hasn't started; see the D2 status directly below — D2 is prep work for D3, not
   R7 itself.
-- **D2 — self-hosted F-Droid repo, DEPLOYED 2026-08-20, pending one DNS record.** Built
-  and shipped in the same session as `v0.25`: a fresh repo signing key (`fdroid init`,
-  deliberately separate from the app's own APK signing key — compromising one doesn't let
-  an attacker forge the other), `com.disctracker.app` v0.25.0 indexed with the
-  `NonFreeNet` AntiFeature tag, and `fdroid deploy`'d to `/var/www/fdroid.flyboybyte.com`
-  on the VPS via a new nginx vhost modeled directly on the live `golf.flyboybyte.com`
-  config (same static-root-outside-`~/`-pattern, since `www-data` can't traverse
-  `/home/ubuntu`'s `750` perms) — read from the VPS's actual `~/security/` docs over SSH,
-  not assumed. Verified serving the real signed index and a working APK download over
-  plain HTTP (`curl -H "Host: fdroid.flyboybyte.com" http://51.81.80.126/...`). A
-  `limit_req` zone (30r/s) was added, matching the box's existing pattern for new public
-  unauthenticated surfaces. **Blocked only on:** `fdroid.flyboybyte.com` has no DNS A
-  record yet (Spaceship registrar, not reachable from a Claude session) — once Logan adds
-  it, `sudo certbot --nginx -d fdroid.flyboybyte.com` on the VPS finishes it (issues the
-  cert, adds the HTTPS block, identical to every other vhost on that box). Full detail:
-  `app/plan/docs/d2-fdroid-portfolio-scope.md` (now updated with the deployed status),
-  `fdroid/README.md`, `fdroid/nginx-fdroid.flyboybyte.com.conf`. The repo key itself
-  never leaves this local machine — only what it signs (the index + APKs) went to the VPS.
+- **D2 — self-hosted F-Droid repo, LIVE since 2026-08-21.**
+  `https://fdroid.flyboybyte.com/fdroid/repo` — real Let's Encrypt cert (expires
+  2026-11-19, auto-renews), HTTP→HTTPS redirect, `com.disctracker.app` v0.25.0 indexed
+  with the `NonFreeNet` AntiFeature tag and downloadable. Built and deployed 2026-08-20:
+  a fresh repo signing key (`fdroid init`, deliberately separate from the app's own APK
+  signing key — compromising one doesn't let an attacker forge the other), `fdroid
+  deploy`'d to `/var/www/fdroid.flyboybyte.com` on the VPS via a new nginx vhost modeled
+  directly on the live `golf.flyboybyte.com` config (same static-root-outside-`~/`-
+  pattern, since `www-data` can't traverse `/home/ubuntu`'s `750` perms) — read from the
+  VPS's actual `~/security/` docs over SSH, not assumed. A `limit_req` zone (30r/s) was
+  added, matching the box's existing pattern for new public unauthenticated surfaces.
+  Logan added the DNS A record 2026-08-21; `sudo certbot --nginx -d
+  fdroid.flyboybyte.com` on the VPS issued the cert and rewrote the vhost in place —
+  identical mechanism to every other vhost on that box. Full detail:
+  `app/plan/docs/d2-fdroid-portfolio-scope.md`, `fdroid/README.md`,
+  `fdroid/nginx-fdroid.flyboybyte.com.conf` (pulled verbatim from the live VPS config).
+  The repo key itself never leaves this local machine — only what it signs (the index +
+  APKs) went to the VPS.
 - Both R6 and R7-the-official-index submission are **deliberately parked** — Logan's
   call, building features first (2026-08-08 strategy re-plan, C-series). D2 above is the
   one piece of F-Droid work that jumped ahead of that pause, since it doesn't require
