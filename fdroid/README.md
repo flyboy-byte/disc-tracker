@@ -4,10 +4,23 @@ Working directory for the self-hosted F-Droid repo described in
 `app/plan/docs/d2-fdroid-portfolio-scope.md`. Built with `fdroidserver`
 (`fdroid init` / `fdroid update`).
 
-**Status (2026-08-20): generated locally, not deployed anywhere.** The repo key exists,
-`com.disctracker.app` v0.25.0 is indexed, but nothing is live on a public URL yet — that's
-a deliberate stopping point (new DNS + VPS hosting needs Logan's go-ahead, see the scope
-doc). See `KEYSTORE-INFO.txt` (gitignored) for the repo key's fingerprint and passwords.
+**Status (2026-08-20): deployed to the VPS, reachable over plain HTTP, one step from
+done.** `fdroid deploy` rsynced `repo/` to `/var/www/fdroid.flyboybyte.com/fdroid/repo`
+(ubuntu:ubuntu, 755, outside `~/`, matching the `golf.flyboybyte.com` precedent — see
+`nginx-fdroid.flyboybyte.com.conf`'s header for the reasoning). The nginx vhost is live
+and verified working (`curl -H "Host: fdroid.flyboybyte.com" http://51.81.80.126/fdroid/repo/index-v2.json`
+returns the real signed index; the APK itself downloads correctly). A `limit_req` zone
+(30r/s, matching the box's `disc_catalog` precedent) is active.
+
+**The one remaining step is DNS, and only Logan can do it** — `fdroid.flyboybyte.com`
+has no A record yet (registrar is Spaceship, no API/token available in this
+environment). Once `fdroid.flyboybyte.com -> 51.81.80.126` is added and has propagated,
+run on the VPS: `sudo certbot --nginx -d fdroid.flyboybyte.com` — this both issues the
+real cert and rewrites the vhost file in place with the SSL block + 80->443 redirect,
+identical to how every other vhost on this box got its cert. Nothing else needs to
+change at that point.
+
+See `KEYSTORE-INFO.txt` (gitignored) for the repo key's fingerprint and passwords.
 
 ## What's committed vs. gitignored
 

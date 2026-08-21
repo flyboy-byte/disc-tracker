@@ -59,7 +59,20 @@ needs too.
 
 ## Candidate apps and current readiness
 
-### disc-tracker (this repo) — readiest of the three
+### disc-tracker (this repo) — DEPLOYED (2026-08-20), pending DNS
+
+**D2 is done except for one step only Logan can take.** Repo key generated
+(`fdroid init`), `com.disctracker.app` v0.25.0 built/signed/indexed, `fdroid deploy`
+rsynced it to `/var/www/fdroid.flyboybyte.com/fdroid/repo` on the VPS, a matching nginx
+vhost is live and verified (real signed index + working APK download over plain HTTP,
+confirmed via `curl -H "Host: fdroid.flyboybyte.com" ...` against the VPS IP directly,
+since DNS isn't there yet). Full detail in `fdroid/README.md` and
+`fdroid/KEYSTORE-INFO.txt` (both in this repo — the latter gitignored).
+
+**Blocked only on:** `fdroid.flyboybyte.com`'s DNS A record (Spaceship registrar — no
+API/token reachable from this environment). Once added, `sudo certbot --nginx -d
+fdroid.flyboybyte.com` on the VPS finishes it (issues the cert, rewrites the vhost with
+the HTTPS block + redirect, identical to every other vhost on that box).
 
 - `com.disctracker.app` · GPLv3 · Expo/RN, no EAS.
 - A signed release APK already exists as a normal workflow (`./gradlew assembleRelease`
