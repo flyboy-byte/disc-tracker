@@ -262,7 +262,7 @@ and working, verified on an Android emulator and sideloaded on hardware:
   share-sheet in/out (`src/utils/backup.ts`) — plus CSV disc-list export/import, delete-all, and
   About. (The old v1.1 sync placeholder is gone — R5 VPS sync was **dropped**, superseded by B4.)
 
-The SQLite CRUD layer is verified on-device. **153/153 Jest tests pass.** Several real
+The SQLite CRUD layer is verified on-device. **154/154 Jest tests pass.** Several real
 bugs were found and fixed by actually running the app (form-remount, native-slider/ScrollView
 gesture conflict, stale-bag-data on tab switch, document-picker re-entry crash) — all
 documented in `app/PORT_PLAN.md`.
