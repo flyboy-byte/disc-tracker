@@ -1,8 +1,10 @@
 # UI audit — tracked plan
 
 **Status, 2026-09-01: Tier 1 code-complete, 5 of 5 (A2, E1, D3, A5, F2) — F2 still owes an
-on-device verification pass (no Pixel 7 connected this session). Tier 2 fully scoped, not
-started, opportunistic per-screen as planned.**
+on-device verification pass (no Pixel 7 connected this session). Tier 2 started: T2-1's shared
+components exist and one zero-risk call site is migrated; every remaining T2-1 migration is a
+real visual change and is parked until a device is available. T2-2/T2-4/T2-5 not started,
+T2-3 not started, both open decisions (T2-3, T2-4) still open.**
 Source: the Claude Design UX pass in
 `docs/app-ui-design.zip` (`UX_AUDIT.md`, 30 findings across all five tabs, severity-ranked
 P0/P1/P2). This doc narrows that audit to what's actually getting built and in what order —
@@ -273,6 +275,35 @@ Re-grep for exact call sites before starting — some may have moved since this 
 (or only changed where A2 already fixed it), `tsc --noEmit` clean, Jest passing, one on-device
 check that the control still responds correctly.
 
+**Progress, 2026-09-01 — foundation built, one call site migrated.** Deliberately split into a
+provably-safe half and a needs-eyes half, since no device was available:
+
+*Landed (nothing renders differently):*
+- `src/theme.ts` — new `tints` export (`accentTint` 0.16, `accentTintStrong` 0.28). Kept as its
+  own export rather than folded into `colors` because they're alpha fills for control states,
+  not palette entries.
+- `src/components/SegmentedControl.tsx` — the "pick one of N" component per the spec above,
+  `minHeight: 44` included. Generic over the option key type; takes `testIDPrefix` so existing
+  testIDs (`bag-scope-today` etc.) survive migration unchanged.
+- `src/components/FilterPill.tsx` (exports `FilterPillRow`) — the additive-narrowing
+  counterpart, values lifted verbatim from `index.tsx`'s `pill*` styles.
+- `src/components/Icon.tsx` — all nine glyphs (`chevron-{up,down,left,right}`, `close`, `check`,
+  `arrow-{up,down}`, `arrow-to-top`) as a `PATHS` record + one `<Svg>`, same `viewBox`/
+  `strokeWidth` as `TabBarIcon.tsx` so a 24px Icon matches a 24px TabBarIcon in weight.
+  Nothing imports it yet.
+- **First call site: `index.tsx`'s local `PillRow` → shared `FilterPillRow`** (all three uses:
+  STABILITY, TYPE, SORT). Local function and its five `pill*` styles deleted. Zero visual
+  change by construction — same values, same `hitSlop={8}`, same `counts` skip-`all` rule.
+  `tsc` clean, Jest 422/422.
+
+*Still owed (each is a real visual change — hold for on-device):* SORT's reclassification from
+pill row to `SegmentedControl` (it's single-select, per the two-roles split above — migrated to
+`FilterPillRow` for now only to keep rendering byte-identical, not as the end state);
+`segment` (Today's Bag/Collection); `arcViewPill` ×2 (`index.tsx` + `flight-shaper.tsx`, closes
+C1); `holePresetPill`; `settings.tsx`'s three preference pill rows. Plus every `Icon` call site
+— all of those swap a text glyph for an SVG, which is exactly the kind of thing that needs one
+look on hardware.
+
 ### T2-2. B1 — Bag actions: primary + overflow (⋮)
 
 **Priority: P1 · Effort: M**
@@ -340,8 +371,14 @@ View; whichever (a)/(b) was chosen works end-to-end.
 **Priority: P1 · Effort: M · Has an open decision, see below**
 
 `score.tsx`'s `ActiveView` (~line 509) uses `‹`/`›` only (`holeNavBtn`, 52×52, ~line 548) —
-hole 17 of 18 is sixteen taps from hole 1. `TIER_COLOR`/`scoreTier`/`parForHole` (already
-imported/defined in `score.tsx`) give per-hole scoring tier for free.
+hole 17 of 18 is sixteen taps from hole 1. ~~`TIER_COLOR`/`scoreTier`/`parForHole` (already
+imported/defined in `score.tsx`) give per-hole scoring tier for free.~~ **Stale as of
+2026-09-01:** A5 deleted `TIER_COLOR` and the `scoreTier`/`ScoreTier` imports from `score.tsx`.
+`scoreTier` still exists in `roundMath.ts` and `parForHole` is still imported, so a tier tint is
+still *available* — but it's no longer free, and option (b) below (no tier tint at all) is now
+also the option that stays consistent with A5's decision to drop tier color from this screen.
+That materially strengthens (b); treat (a)/(c) as needing a positive reason now, not just a
+preference.
 
 **Fix.** Replace the `‹`/`›` pair with a horizontally-scrollable row of hole chips (34×34,
 `borderRadius: 8`, per the design handoff): current hole filled `accentTint` with an accent
