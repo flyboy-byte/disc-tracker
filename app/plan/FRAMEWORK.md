@@ -18,6 +18,11 @@ it" framing this packet adds.
 Update the checkboxes below as things actually happen. This file is the honest answer to
 "where are we" at any point in the future.
 
+> **Note, 2026-08-31:** this status block is stale — `CLAUDE.md`'s "Mobile app — current state"
+> is the actively-kept-current summary (latest release, C-series closure, R6/R7 status). The
+> live next-up work is `app/plan/docs/ui-audit-plan.md` (Tier 1: touch targets, hardware Back
+> mid-round, swipe undo, catalog radio list, score-tier color-blind fix).
+
 > **STATUS (2026-08-18):** v1 shipped long ago; the app has grown well past this original
 > phase model. Latest release **`v0.22`** (release naming moved from `mobile-preview-X` to
 > bare `vX` at `v0.16`), now **5 tabs** (Bag / Flight Shaper / Disc Suggest / **Score** /

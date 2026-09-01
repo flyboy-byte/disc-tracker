@@ -4,6 +4,10 @@
 tracked in `PLAN.md` at the repo root** — separate from the feature-work plan docs in `app/plan/`.
 Tracks A–D done, Track E started, as of 2026-08-21.
 
+**A UI/UX audit pass is tracked in `app/plan/docs/ui-audit-plan.md`** (scoped 2026-08-31, not
+started as of that date). Scenario icons already shipped (`14def75`); Tier 1 (touch targets,
+hardware Back mid-round, swipe undo, catalog radio list, score-tier color-blind fix) is next.
+
 ## What this project is
 
 Two things in one repo:
