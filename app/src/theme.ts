@@ -15,6 +15,15 @@ export const colors = {
   sim: '#38bdf8',
 } as const;
 
+// Selected-state fills for the two "pick one of N" control families (ui-audit-plan.md T2-1).
+// Both are `accent` at a fixed alpha — written out longhand rather than composed at runtime so
+// they stay greppable and match what the five hand-rolled treatments they replace already used
+// (0.16 for segmented controls, 0.28 for the heavier filter pills).
+export const tints = {
+  accentTint: 'rgba(145,94,255,0.16)',
+  accentTintStrong: 'rgba(145,94,255,0.28)',
+} as const;
+
 export const opacity = {
   op1: 0.5,
   op2: 0.7,

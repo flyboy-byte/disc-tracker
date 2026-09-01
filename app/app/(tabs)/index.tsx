@@ -13,6 +13,7 @@ import DiscCard from '../../src/components/DiscCard';
 import DiscFormModal from '../../src/components/DiscFormModal';
 import DiscLibraryModal from '../../src/components/DiscLibraryModal';
 import FieldView from '../../src/components/FieldView';
+import FilterPillRow from '../../src/components/FilterPill';
 import GradientButton from '../../src/components/GradientButton';
 import EmptyStateIcon from '../../src/components/EmptyStateIcon';
 import { useToast } from '../../src/components/Toast';
@@ -575,11 +576,11 @@ export default function BagScreen() {
       {showFilters && (
         <View style={styles.filterPanel}>
           <Text style={styles.filterGroupLabel}>STABILITY</Text>
-          <PillRow items={STAB_PILLS} active={stabFilter} counts={stabCounts} onPress={setStabFilter} />
+          <FilterPillRow items={STAB_PILLS} active={stabFilter} counts={stabCounts} onPress={setStabFilter} />
           <Text style={styles.filterGroupLabel}>TYPE</Text>
-          <PillRow items={TYPE_PILLS} active={typeFilter} counts={typeCounts} onPress={setTypeFilter} />
+          <FilterPillRow items={TYPE_PILLS} active={typeFilter} counts={typeCounts} onPress={setTypeFilter} />
           <Text style={styles.filterGroupLabel}>SORT</Text>
-          <PillRow items={SORT_OPTIONS} active={sortMode} onPress={(m) => persistSortMode(m as SortMode)} />
+          <FilterPillRow items={SORT_OPTIONS} active={sortMode} onPress={(m) => persistSortMode(m as SortMode)} />
           <View style={styles.filterDivider} />
           <View style={styles.arcBar}>
             <View style={styles.legend}>
@@ -802,39 +803,6 @@ export default function BagScreen() {
   );
 }
 
-function PillRow<T extends string>({
-  items,
-  active,
-  counts,
-  onPress,
-}: {
-  items: { key: T; label: string }[];
-  active: T;
-  counts?: Record<T, number>;
-  onPress: (key: T) => void;
-}) {
-  return (
-    <View style={styles.pillRow}>
-      {items.map((it) => (
-        <Pressable
-          key={it.key}
-          onPress={() => onPress(it.key)}
-          style={[styles.pill, active === it.key && styles.pillActive]}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityState={{ selected: active === it.key }}
-          accessibilityLabel={it.label}
-        >
-          <Text style={[styles.pillText, active === it.key && styles.pillTextActive]}>
-            {it.label}
-            {counts && it.key !== 'all' ? ` ${counts[it.key]}` : ''}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, paddingTop: 56, paddingHorizontal: 14 },
   center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
@@ -864,11 +832,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 8,
   },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 6 },
-  pill: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
-  pillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.28)' },
-  pillText: { color: colors.muted, fontSize: 12 },
-  pillTextActive: { color: colors.text, fontWeight: '700' },
   // Filters expander
   filterToggle: {
     flexDirection: 'row',
