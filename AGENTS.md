@@ -4,13 +4,23 @@
 tracked in `PLAN.md` at the repo root** — separate from the feature-work plan docs in `app/plan/`.
 Tracks A–D done, Track E started, as of 2026-08-21.
 
-**A UI/UX audit pass is tracked in `app/plan/docs/ui-audit-plan.md`** — scoped 2026-08-31 and
-**fully delivered 2026-09-01: Tier 1 and Tier 2 are both complete (10 items), every one
-verified on a physical Pixel 9.** Shipped as `v0.26`. Read that doc before touching UI
-patterns — it records the two open design decisions that were resolved, and three places where
-the built solution deliberately differs from the scoped one (Flight Shaper's arc view kept its
-2×2 grid; Score lost tier colour rather than gaining a second channel; slider reset is a tap on
-the value, not a double-tap on the slider), each with the reason.
+**PROJECT PARKED 2026-09-01.** Nothing is queued. The last work was the UI/UX audit pass
+(`app/plan/docs/ui-audit-plan.md`), **fully delivered and shipped as `v0.26`** — Tier 1 and
+Tier 2 complete, 10 items, every one verified on a physical Pixel 9. Read that doc before
+touching UI patterns: it records the two open design decisions that were resolved and three
+places where the built solution deliberately differs from the scoped one (Flight Shaper's arc
+view kept its 2×2 grid; Score lost tier colour rather than gaining a second channel; slider
+reset is a tap on the value, not a double-tap on the slider), each with the reason.
+
+**The ~20 unpicked audit findings stay valuable as an audit — they're just not a work queue.**
+Logan, 2026-09-01: *"they are valuable as a[n] audit. but... we dont neccasarily need to just add
+them next feature adding session. with the exception of the fonts. that sounds like a good one."*
+So: consult them when you're next working in the relevant screen; don't open a session by
+proposing them as the next feature batch. **The one exception is `A4` — font scaling — which
+Logan agreed is worth doing.** It's the only remaining P0: RN's `allowFontScaling` defaults to
+`true`, so text already grows with the Android system font-size setting while fixed-height rows,
+the 34px hole chips and the 34px score-grid cells don't. Never tested at raised scale. Full
+scoping notes are in `app/plan/docs/ui-audit-plan.md`'s "Not in scope here" section.
 
 ## What this project is
 
@@ -346,6 +356,14 @@ Minimum Credible v1 Milestone is fully met. See `app/PORT_PLAN.md` Phase 9.
 - Never run D1/D2/D3 in parallel
 
 ### Next immediate step:
+**Nothing queued — the project is parked as of 2026-09-01, with a clean tree, everything pushed,
+and `v0.26` released.** Don't propose work unprompted; wait for Logan. If he does pick it back
+up, the honest state is: no open bugs, no queued features, the C-series closed, R6 hard-paused,
+and R7 (official F-Droid index) the only distribution step that was ever the natural next one.
+**The one named candidate is `A4` (font scaling)** — Logan called it "a good one" while parking
+everything else from the audit; see above and `app/plan/docs/ui-audit-plan.md`. Historical
+detail follows.
+
 **v1 complete; R1–R4.5, B1–B4, production signing (R6 keystore step), Disc Suggest
 Phases 1-3, the website-parity track, wear estimate, Disc Suggest buying mode, Try Discs
 catalog-v2, C7 Shareable Bag Report, the three-way catalog picker + compliance fix, backup

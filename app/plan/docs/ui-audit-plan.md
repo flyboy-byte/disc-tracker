@@ -1,11 +1,24 @@
 # UI audit — tracked plan
 
-**Status, 2026-09-01: Tier 1 done 5 of 5 (A2, E1, D3, A5, F2). Tier 2 done 4 of 5 — T2-1
-(closes A1, A3, C1-for-`index.tsx`), T2-2 (B1), T2-3 (F1 + F6), T2-4 (E3). Both open decisions
-resolved: T2-3 → (a) inline choice rows, T2-4 → (b) no tier tint on hole chips. **Tier 2 is
-complete 5 of 5 — T2-5 done, with piece 3 built as tap-to-reset rather than double-tap for a
-gesture-safety reason documented in its section.** Every item in both tiers is verified on a
-physical Pixel 9.**
+**Status, 2026-09-01 — DONE, 10 of 10, shipped as `v0.26`.**
+Tier 1 (5/5): A2, E1, D3, A5, F2. Tier 2 (5/5): T2-1 (closes A1, A3, C1-for-`index.tsx`),
+T2-2 (B1), T2-3 (F1 + F6), T2-4 (E3), T2-5 (C2). Both open decisions were resolved rather than
+re-asked — T2-3 → (a) inline choice rows, T2-4 → (b) no tier tint on hole chips — and three
+items were deliberately built differently from the scope (Flight Shaper's arc view kept its 2×2
+grid, Score lost tier colour instead of gaining a second channel, slider reset is a tap on the
+value not a double-tap), each with its reasoning in the relevant section. **Every item verified
+on a physical Pixel 9 against real data.**
+
+> **This plan is CLOSED, 2026-09-01 — but the audit itself stays valuable.** Logan, on the ~20
+> findings that weren't picked: *"they are valuable as a[n] audit. but... we dont neccasarily
+> need to just add them next feature adding session. with the exception of the fonts. that
+> sounds like a good one."*
+>
+> So: the leftover findings are **a good reference to consult when touching a screen**, not a
+> queue to work through by default. Don't open a future session by proposing them as the next
+> feature batch. **The one exception Logan named is A4 (font scaling)** — that one he agreed is
+> worth doing; see "Not in scope here" for its detail. **The project is parked as of
+> 2026-09-01** — see `CLAUDE.md`'s "Next immediate step".
 
 > **Verification debt: CLEARED 2026-09-01.** F2 and all of T2-1 were verified on a real
 > **Pixel 9 (Android 17)** — release-signed build installed over the existing v0.25.0 in place,
@@ -581,8 +594,40 @@ Re-run from the left margin scrolled fine.)
 
 Everything in `UX_AUDIT.md` Part 3 not listed above (B2–B6, C1/C3–C5, D1/D2/D4–D6 beyond what's
 already done, E2/E4–E7, F3/F4/F6, and the cross-cutting A4/A6) — real findings, just not picked
-for this pass. Re-check `UX_AUDIT.md` before starting anything not in Tier 1/2 above rather than
-assuming it's already been triaged.
+for this pass.
+
+**Status 2026-09-01: valuable as an audit, but not a work queue — with one named exception.**
+These are real observations worth consulting when you're next in the relevant screen. What they
+are *not* is a list to batch through at the start of a future session. Logan's framing: *"they
+are valuable as a[n] audit. but... we dont neccasarily need to just add them next feature adding
+session. with the exception of the fonts."*
+
+- **A4 · P0 — font scaling. ⭐ THE ONE LOGAN SINGLED OUT AS WORTH DOING.** Not started; the
+  highest-value remaining item and the only remaining P0. Every `fontSize` in the app is a fixed
+  number, and RN's `allowFontScaling` defaults to `true` — so text **already** grows with the
+  Android system setting (Settings → Display → Display size and text → Font size, ~85–200%,
+  non-linear above 100% on Android 14+) while the layout around it doesn't. Fixed-height rows,
+  the 34px hole chips (`HOLE_CHIP_SIZE`), the 34px summary-grid cells (`gridCell`), and the
+  dense pill rows will clip or overlap. **Never tested at raised scale.** Scoping notes for
+  whoever picks it up: it's not a new setting (the OS owns it) — the work is removing fixed
+  heights from anything wrapping text, applying `maxFontSizeMultiplier` only where growth
+  genuinely can't be absorbed (numeric chips, the score grid), letting rows wrap instead of
+  truncate, and then verifying at 130% and 200%. That last part is cheap to check on a connected
+  device: `adb shell settings put system font_scale 1.3` (restore with `1.0`).
+
+  The rest below are the lower-priority remainder:
+- **F5 · P1** — `Delete all discs` sits mid-list rather than last and isolated (the T2-3 flatten
+  made it more visible without moving it). **B2 · P1** — `Clear bag` is a neutral `ghostBtn`
+  despite being destructive (it does have the confirm `Alert`). **D4 · P1** — Buy-mode filters
+  stack ungrouped, where the Bag screen already solved the same problem with a collapsible
+  panel. **E2 · P1** — `Finish` ends a round with no confirmation.
+- Smaller: **B3** (pager vs. continuous scroll), **B4** (long-press multiselect has no
+  affordance), **B5/D5** (search fields lack a clear affordance + `returnKeyType`), **C3**
+  (Reset always enabled), **C4/F4** (explainer paragraphs inside control panels), **F3**
+  (state-echo lines), **A6** (two-word tab labels), **E4** (standings only post-round).
+- Deliberately left alone: **E5** (the audit itself says "not worth changing on theory alone"),
+  **D2** (Throw/Buy tabs-inside-tabs — needs its own design decision), and the
+  **B6/C5/D6/E7** "what's working, keep" sections.
 
 Also explicitly out: **2.1 Score redesign, 2.2 Settings-as-list, 2.3 Disc Suggest picker
 directions 1b/1c** from the handoff `README.md` — 2.1/2.2 overlap with Tier 2's E3/F1 above at a
