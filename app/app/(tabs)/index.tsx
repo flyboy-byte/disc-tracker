@@ -597,11 +597,8 @@ export default function BagScreen() {
                 </View>
               ))}
             </View>
-            {/* Was four 10sp pills needing hitSlop={11} to clear 44dp (UX_AUDIT.md A2/C1).
-                minWidth + flex means it takes the space left beside the legend, or wraps to its
-                own full-width line when the legend is wide — arcBar already flexWraps. */}
+            {/* Was four 10sp pills needing hitSlop={11} to clear 44dp (UX_AUDIT.md A2/C1). */}
             <SegmentedControl
-              style={styles.arcViewSegment}
               value={arcView}
               onChange={changeArcView}
               options={ARC_VIEWS.map((v) => ({ key: v, label: v }))}
@@ -857,19 +854,15 @@ const styles = StyleSheet.create({
   ghostBtnText: { color: colors.muted, fontWeight: '600', fontSize: 13 },
   ghostBtnTextActive: { color: colors.accent },
   dragHint: { color: colors.muted, fontSize: 12, flexShrink: 1, marginBottom: 6 },
-  arcBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 8,
-  },
+  // Was a wrapping row (legend | four small arc pills). Now that the arc-view control is a
+  // full-width SegmentedControl it never shares a line anyway, and leaving them as flex
+  // siblings squeezed the legend into an untidy 2-then-1 wrap. Explicit column instead: the
+  // legend gets the full width (fits on one line) and the control sits beneath it.
+  arcBar: { gap: 8, marginBottom: 8 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 9, height: 9, borderRadius: 5 },
   legendText: { color: colors.muted, fontSize: 11 },
-  arcViewSegment: { flexGrow: 1, flexShrink: 1, minWidth: 210 },
   emptyWrap: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 56, gap: 10 },
   emptyTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
   emptyBody: { color: colors.muted, fontSize: 14, textAlign: 'center', lineHeight: 20 },
