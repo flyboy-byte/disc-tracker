@@ -1,6 +1,9 @@
 # UI audit — tracked plan
 
-**Status: not started. Scoped 2026-08-31.** Source: the Claude Design UX pass in
+**Status: not started. Tier 1 and Tier 2 both fully scoped 2026-08-31 — Tier 2 to the same
+depth as Tier 1 (exact files/styles/values, open decisions flagged inline rather than
+pre-decided), so picking any item up later doesn't require re-deriving it from `UX_AUDIT.md`.**
+Source: the Claude Design UX pass in
 `docs/app-ui-design.zip` (`UX_AUDIT.md`, 30 findings across all five tabs, severity-ranked
 P0/P1/P2). This doc narrows that audit to what's actually getting built and in what order —
 `UX_AUDIT.md` itself stays the full record, this is the execution plan.
@@ -117,32 +120,192 @@ at a glance.
 
 ---
 
-## Tier 2 — real findings, opportunistic (not batched, not this pass)
+## Tier 2 — real findings, scoped 2026-08-31, opportunistic (not batched, not this pass)
 
 Pick these up individually, whenever the relevant screen is next being touched for another
-reason — not scheduled as a block of work.
+reason — not scheduled as a block of work. Each below is scoped to the same depth as Tier 1
+(exact files, exact styles/values, a real definition of done) so picking one up later doesn't
+require re-deriving the design from `UX_AUDIT.md` again. Two of them (F1, E3) hit a real
+open question along the way — flagged inline rather than silently decided, same as this
+project's usual practice (see `PLAN.md` Track D sub-track 3 for precedent).
 
-- **A1 + A3 — unify "pick one of N" + drawn icon vocabulary.** Five components / three tint
-  alphas (0.12/0.16/0.28) doing the same job (`segment`, `pill`, `arcViewPill`, `modeHalf`,
-  `holePresetPill`); text glyphs (`▾ ▴ ▸ › ‹ ✕ ⤒ ↑ ↓ ✓ Σ`) as icons throughout. Correct
-  diagnosis, but a component-extraction project touching every screen
-  (`<SegmentedControl>`/`<FilterPill>` + small `Icon` component extending `TabBarIcon.tsx`).
-  Do this the next time any one of the affected screens is being edited anyway — extract the
-  shared component then, don't do a standalone refactor pass first.
-- **B1 — Bag actions row → primary + overflow (⋮).** Up to seven `ghostBtn`s wrapping across
-  two rows in `index.tsx`'s `actionsRow`. Real layout change (`+ Add disc` stays primary,
-  `Field view` moves to the filter row as a toggle, everything else — Import/Export/Share/My
-  library/Clear bag — moves to an overflow menu with Clear bag styled `colors.danger` and
-  separated last). Needs on-device verification, not a quick patch.
-- **F1 — Settings cards → flat preference list.** Nine+ elevated cards flattened to grouped
-  rows (14sp sentence-case headers in `colors.accent`, `divider`/`row`/`rowText`/`rowValue`
-  already exist as the vocabulary). Touches the whole screen at once.
-- **E3 — Hole strip navigation.** Replace `‹ ›`-only nav in `score.tsx` with a horizontally
-  scrollable hole-chip row (current filled, scored tinted by tier, unscored outline-only).
-  Turns O(n) taps into one tap; also fills dead space on 2-player rounds.
-- **C2 — Slider labeling in Flight Shaper.** Value+unit on one line instead of split across
-  the control; min/max at track ends; tick at the neutral value; double-tap-to-reset per
-  slider.
+### T2-1. A1 + A3 — `<SegmentedControl>` / `<FilterPill>` + drawn `Icon` vocabulary
+
+**Priority: P1 · Effort: L (component extraction + N call-site migrations, do incrementally)**
+
+Confirmed five different "pick one of N" treatments, each with its own radius/tint:
+`segment`/`segmentBtn` (`index.tsx`, Today's Bag/Collection, 10/8 radius, `rgba(…,0.16)`),
+`pill` (`index.tsx` `PillRow` for STABILITY/TYPE/SORT, `settings.tsx` for Default Throw
+View/Skill Level/Throw Style, radius 12, `rgba(…,0.28)`), `arcViewPill` (`index.tsx` +
+`flight-shaper.tsx`, radius 6, `rgba(…,0.12)` — this is also `UX_AUDIT.md` finding **C1**,
+"arc-view selector as a 2×2 grid," so fixing it here closes that finding too), `modeHalf`
+(`disc-suggest.tsx` Throw/Buy, thick filled bar), `holePresetPill` (`score.tsx` 9/18/Custom,
+own values).
+
+**Two roles, not one — this matters for the migration list below:**
+- **`<SegmentedControl>`** — mutually exclusive, always shows every option (arc view,
+  Today's/Collection, hole preset, Default Throw View, Skill Level, Throw Style, and the
+  currently-a-`pill`-but-actually-single-select **SORT** row inside `PillRow`).
+- **`<FilterPill>`** — additive/optional narrowing (STABILITY, TYPE — the two `PillRow`s that
+  actually are multi-state filters, not single-select).
+
+**New theme tokens** (`src/theme.ts`): `accentTint: 'rgba(145,94,255,0.16)'` (SegmentedControl
+selected state), `accentTintStrong: 'rgba(145,94,255,0.28)'` (FilterPill selected state).
+
+**`<SegmentedControl>` spec** (from the design handoff's 1.2, already vetted): container
+`flexDirection: 'row'`, `backgroundColor: colors.card`, `borderWidth: 1`,
+`borderColor: colors.border`, `borderRadius: 999`, `padding: 3`, `minHeight: 44` (satisfies A2
+for free on every call site it replaces); segment `flex: 1`, `paddingVertical: 6`,
+`borderRadius: 999`, centered, `12/'600'/colors.muted`; selected `accentTint` background,
+`colors.accent` text, `fontWeight: '700'`.
+
+**`<FilterPill>` spec**: keep the existing `pill`/`pillActive`/`pillText`/`pillTextActive`
+values from `index.tsx` (radius 12, `accentTintStrong` selected) — they're already right, just
+promote to a shared component instead of duplicated `StyleSheet` blocks.
+
+**Explicitly not migrated:** `modeHalf` (Throw/Buy) — `UX_AUDIT.md` finding **D2** calls this
+out separately as a *navigation* control wearing segment-control clothing, not a "pick one of
+N" state control; don't fold it into this migration, it needs its own fix (Material secondary
+tabs) or none, Logan's call, out of scope here.
+
+**`Icon` component** — new `src/components/Icon.tsx`, extending `TabBarIcon.tsx`'s exact
+pattern (`react-native-svg`, `viewBox="0 0 24 24"`, tinted `color` prop) rather than modifying
+that file (it's tab-bar-specific). Glyphs to replace, by call site: `▾`/`▴` (`filterChevron` in
+`index.tsx` + `flight-shaper.tsx`) → `chevron-down`/`chevron-up`; `⤒`/`↑`/`↓` (`reorderBtn` in
+`DiscCard.tsx`) → `arrow-to-top`/`arrow-up`/`arrow-down`; `✕` (modal close buttons, multiple
+files) → `close`; `✓` (`bagCheck` pill, `DiscCard.tsx`) → `check`; `›`/`‹` (`rowChevron` in
+`settings.tsx`, `holeNavText` in `score.tsx`) → `chevron-right`/`chevron-left`. **`Σ` is not an
+icon fix** — per `UX_AUDIT.md` A3/E6, just replace the text with `Tot`, no glyph needed.
+Re-grep for exact call sites before starting — some may have moved since this was scoped.
+
+**Definition of done, per call site migrated:** visual size/position unchanged from before
+(or only changed where A2 already fixed it), `tsc --noEmit` clean, Jest passing, one on-device
+check that the control still responds correctly.
+
+### T2-2. B1 — Bag actions: primary + overflow (⋮)
+
+**Priority: P1 · Effort: M**
+
+`index.tsx`'s `actionsRow` (~line 610) renders `+ Add disc` (`GradientButton`) plus up to five
+more `ghostBtn`s — Import, Export, Share, My library (n, conditional), Clear bag (conditional),
+Field view (conditional) — wrapping across rows.
+
+**Fix.**
+- **Stays as-is:** `+ Add disc`, sole primary action in `actionsRow`.
+- **Moves to the filter row:** `Field view` toggle — relocate next to the existing
+  `Filters & sort` `Pressable` (~line 556) as an outlined pill (`borderColor: colors.border`,
+  `borderRadius: 8`), since it's a view-mode switch, not a screen action.
+- **New overflow ⋮ button:** in `styles.header` (~line 492, next to the `Bag` title/substat),
+  a 44×44 icon button (`borderRadius: 22`, `backgroundColor: 'rgba(145,94,255,0.12)'`) opening
+  a bottom-sheet `<Modal transparent animationType="slide">` — **reuse the exact pattern already
+  used everywhere else in this app** (`DiscLibraryModal.tsx`, `CsvImportModal.tsx`, etc.), not a
+  new anchored-popover component; this codebase has zero precedent for popovers and a bottom
+  sheet is the established vocabulary. List: Import CSV → Export CSV → Share bag report → My
+  library (n) [conditional] → divider → **Clear today's bag** in `colors.danger`, last,
+  conditional on `bagScope === 'today' && bagCount > 0` (matches the existing condition at
+  line 629).
+- Every action keeps its current handler (`setImportOpen`, `setExportOpen`, `setReportOpen`,
+  `setLibraryOpen`, `clearBag`) — this only moves *which control* triggers them. `clearBag`'s
+  existing confirm `Alert` (line 447) is untouched.
+
+**Definition of done.** Same five actions reachable, `+ Add disc` and Field view work exactly
+as before, overflow sheet opens/closes cleanly, Clear bag visually separated and red inside it.
+Verify on-device — this is a real layout change, not a style-only patch.
+
+### T2-3. F1 — Settings: flat preference list, not nine cards
+
+**Priority: P1 · Effort: M–L · Has an open decision, see below**
+
+Confirmed 10 separate `<View style={styles.card}>` sections in `settings.tsx` (Default Throw
+View, Skill Level, Throw Style, Field View, Reference Images, Backup & Restore, Data, Disc
+Catalog, About, Credits), each with equal visual weight regardless of actual importance. The
+`divider`/`row`/`rowText`/`rowValue`/`rowChevron` vocabulary already exists and is already used
+inside the Data and Disc Catalog cards (e.g. `Export discs (CSV)` at line 550) — just not
+applied to the whole screen.
+
+**Mechanical part (no open question):** drop the `card` background/border/radius wrapper
+between sections; replace `sectionLabel`'s all-caps 10-11px treatment with 14sp sentence-case
+in `colors.accent` (also closes `UX_AUDIT.md` **F6**); use `divider` between sections instead
+of card edges.
+
+**Open question — what happens to the three pill-choice sections (Default Throw View, Skill
+Level, Throw Style):**
+- **(a) Keep them as inline pill rows** under a plain (no-card) section header — smallest
+  change, fixes the "equal visual weight" complaint (the actual F1 finding) without adding new
+  screens. *(Recommended — the visual-weight problem is the real bug; converting to
+  tap-to-open dialogs is a bigger interaction change than the finding asked for.)*
+- **(b) Convert to single-line rows that open a picker dialog** (full Android
+  `androidx.Preference` convention, matching `F1`'s literal wording) — needs three new small
+  modals, more faithful to the audit's suggested end state, meaningfully more work.
+
+Decide when this is picked up, not now — doesn't block anything else in this doc.
+
+**Definition of done.** Screen reads as one flat list with section headers, not nine cards of
+equal weight; Backup & Restore and Data no longer read as equally important as Default Throw
+View; whichever (a)/(b) was chosen works end-to-end.
+
+### T2-4. E3 — Hole strip navigation
+
+**Priority: P1 · Effort: M · Has an open decision, see below**
+
+`score.tsx`'s `ActiveView` (~line 509) uses `‹`/`›` only (`holeNavBtn`, 52×52, ~line 548) —
+hole 17 of 18 is sixteen taps from hole 1. `TIER_COLOR`/`scoreTier`/`parForHole` (already
+imported/defined in `score.tsx`) give per-hole scoring tier for free.
+
+**Fix.** Replace the `‹`/`›` pair with a horizontally-scrollable row of hole chips (34×34,
+`borderRadius: 8`, per the design handoff): current hole filled `accentTint` with an accent
+border; unscored holes outline-only; auto-scroll (via a `ScrollView` ref) to keep the current
+hole in view on mount/hole-change.
+
+**Open question — how a scored hole's tint is decided with multiple players (1-8 supported):**
+the design handoff's spec ("scored holes tinted by tier") reads naturally for a single score
+per hole, but Score supports up to 8 players per round — whose tier wins the chip's color?
+- **(a) Tint by the active/first player's tier only** — simplest, but implies a "primary
+  player" concept that doesn't otherwise exist in this feature.
+- **(b) Drop the tier tint for multi-player rounds; scored holes just get a dot/fill,
+  unscored stay outline** — matches `UX_AUDIT.md`'s own (simpler) original E3 wording ("scored
+  ones with a dot"), sidesteps the ambiguity entirely. *(Recommended — the tier-tint idea reads
+  best for the common 1-2 player case scoped in the mockup, but silently picking "whoever's
+  first" for an 8-player round is the kind of thing that reads as a bug in the field.)*
+- **(c) Tier tint only appears for 1-player rounds; dot-only for 2+** — a middle ground, more
+  branching logic for a small visual payoff.
+
+Decide when this is picked up.
+
+**Definition of done.** Any hole reachable in one tap; the strip stays usable (readable,
+scrollable, current hole visible) at both 9 and 18 holes; whichever (a)/(b)/(c) was chosen is
+unambiguous in the code, not implicit.
+
+### T2-5. C2 — Flight Shaper slider labeling
+
+**Priority: P2 · Effort: M (touches `VerticalSlider.tsx`, a shared component with a known
+gesture-conflict history — see `flight-shaper.tsx`'s own comments before editing it)**
+
+`SliderCol` (`flight-shaper.tsx` ~line 437) renders label → value (`sliderValue`) → the
+`VerticalSlider` itself → unit (`sliderUnit`) as three separate `Text` elements, unit ~80dp
+from the value it qualifies, no visible min/max, no way back to neutral except the global
+Reset button.
+
+**Fix, three independent pieces (can land separately):**
+1. **Value + unit on one line** — combine `sliderValue`/`sliderUnit` into a single Text, unit
+   as a suffix at reduced opacity (e.g. `"+12°"` main weight, `"deg"` trailing at ~60%
+   opacity) instead of a separate line below the control.
+2. **Min/max at track ends** — `VerticalSlider.tsx` (131 lines, no existing tick/label
+   rendering) needs new optional label rendering at each end, ~11sp. `SliderCol` already has
+   `min`/`max` props (see the six call sites at ~line 325-332) to feed this.
+3. **Double-tap-to-reset** — `VerticalSlider.tsx` has no double-tap handling today (only
+   `onSlidingStart`/pan gesture per its existing props). Add a second `Gesture.Tap()` with
+   `numberOfTaps(2)`, composed with the existing pan gesture via `Gesture.Race` or
+   `Gesture.Exclusive` (check `VerticalSlider.tsx`'s current gesture composition before
+   picking — this file has a documented gesture-vs-ScrollView conflict history, see its own
+   comments and `UX_AUDIT.md` **C5**; a naive add risks reopening that). Resets that one
+   slider to its default (0 for Hyzer/Nose/Wind, 100 for Arm/Spin — matches `isDefault` logic
+   already in `SliderCol`).
+
+**Definition of done.** Each of the 6 sliders (Hyzer/Nose/Wind/Cross/Arm/Spin) shows value+unit
+on one line, visible min/max, and double-tap resets it without breaking the existing
+`onSlidingStart` → `setScrollEnabled(false)` scroll-lock behavior (verify on-device, per C5's
+own note that a cancelled gesture must never leave scroll permanently locked).
 
 ---
 
