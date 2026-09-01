@@ -1,7 +1,8 @@
 # UI audit — tracked plan
 
-**Status, 2026-09-01: Tier 1 4 of 5 done (A2, E1, D3, A5) — only F2 (catalog radio list)
-remains. Tier 2 fully scoped, not started, opportunistic per-screen as planned.**
+**Status, 2026-09-01: Tier 1 code-complete, 5 of 5 (A2, E1, D3, A5, F2) — F2 still owes an
+on-device verification pass (no Pixel 7 connected this session). Tier 2 fully scoped, not
+started, opportunistic per-screen as planned.**
 Source: the Claude Design UX pass in
 `docs/app-ui-design.zip` (`UX_AUDIT.md`, 30 findings across all five tabs, severity-ranked
 P0/P1/P2). This doc narrows that audit to what's actually getting built and in what order —
@@ -148,21 +149,33 @@ identical to `B`, confirming undo reverts exactly rather than merely not errorin
 
 ### 4. F2 — Catalog picker as a radio list
 
-**Priority: P1 · Effort: S–M**
+**Priority: P1 · Effort: S–M · Code done 2026-09-01 (`tsc`/Jest clean, 422/422) — not yet
+verified on-device, no Pixel 7 connected this session.**
 
-`settings.tsx`'s catalog section renders Built-in / Try Discs / Custom as three action rows;
-the active source shows `✓ Active` in the value slot while inactive rows say `Switch` /
-`Download` / `Import` — text reading as a button on rows that aren't purely buttons (the whole
-row selects the source; `Download`/`Import` is a secondary action nested inside).
+`settings.tsx`'s catalog section rendered Built-in / Try Discs / Custom as three action rows;
+the active source showed `✓ Active` in the value slot while inactive rows said `Switch` /
+`Download` / `Import` — text reading as a button on rows that weren't purely buttons (the whole
+row selected the source; `Download`/`Import` was a secondary action nested inside, and for
+Try Discs a bare row-tap on an undownloaded source silently triggered a network fetch).
 
-**Fix.** Render as a single-choice list: 20px radio (2px `colors.accent` border, 10px filled
-dot when selected) per source row. The secondary action (`Download` for Try Discs first-run,
-`Import` for Custom) becomes an explicit trailing button or sub-row, separate from the
-selection tap target.
+**What shipped.** Each source row is now a real single-choice radio (20px circle, 2px
+`colors.accent` border, 10px filled dot when selected — new `radio`/`radioSelected`/`radioDot`
+styles) wrapped in its own `Pressable` (`catalogSelectArea`) that only switches sources and is
+disabled (dimmed border, `radioUnavailable`) when that source has never been downloaded/
+imported — a source with nothing cached isn't a real choice yet, so it isn't selectable.
+`Download` (Try Discs, first run) and `Import` (Custom, first run) are now separate trailing
+`Pressable`s (`catalogActionBtn`, `hitSlop={8}` per the A2 44dp standard) that sit next to the
+disabled radio and are the only things that trigger a fetch/import — tapping the label/radio
+area of an undownloaded source does nothing. `Check for updates` (Try Discs, once active) and
+`Import a different file/URL` (Custom, once active) stay as their own sub-rows underneath,
+unchanged from before. No `testID`s referenced by any existing test (none existed for this
+section), so free to restructure without touching test coverage.
 
-**Definition of done.** Tapping a source row selects it (radio state updates, catalog switches
-— reuse whatever `switchCatalogSource`-equivalent already exists); `Download`/`Import` remain
-reachable as their own tap targets and don't also change selection as a side effect.
+**Definition of done.** Tapping an available source row selects it; `Download`/`Import` are
+reachable as their own tap targets and never fire as a side effect of tapping the row. Verified
+via `tsc --noEmit` + full Jest suite (422/422); on-device pass (all three sources, both
+directions of switching, both Custom-import paths — same rigor as the `v0.21` three-way-picker
+verification) still owed once a physical device is available again.
 
 ### 5. A5 — Score tier: second signal beyond color
 
