@@ -1,4 +1,4 @@
-# Disc Tracker — Claude Context
+# Disc Tracker — Codex Context
 
 **Engineering hardening (CI, backup registry, manifest audit, cross-language test fixtures) is
 tracked in `PLAN.md` at the repo root** — separate from the feature-work plan docs in `app/plan/`.
@@ -441,7 +441,7 @@ Drag/long-press gestures: `adb input motionevent` hold-then-move (not `draganddr
 Installing this app's debug build (83MB+, unminified, several native modules) can trip
 Android's own internal `system_server` Watchdog (a 60s thread-scheduling deadline — visible in
 `adb logcat` as `Watchdog timeout updated to 60000 millis` / `WAITED_UNTIL_PRE_WATCHDOG`) when
-the **host** is CPU-contended (e.g. multiple concurrent Claude Code sessions sharing the same
+the **host** is CPU-contended (e.g. multiple concurrent Codex sessions sharing the same
 cores) — confirmed this is host scheduling pressure, not a broken AVD, broken app, or app-size
 problem per se (reproduced identically on a brand-new standard AVD, and even a 16KB test APK
 stalled once the host was loaded). If `adb install`/`pm install` hangs or comes back with

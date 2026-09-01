@@ -14,14 +14,20 @@ FOSS, GPLv3). Single-user per device, no accounts, no cloud, no ads, no analytic
 Explicitly **not**: a cloud-synced multi-device app in v1 (local-only by design — the schema is
 shaped to allow an opt-in sync layer later without a rewrite, but nothing forces that path), an
 iOS app yet (Android-first; iOS stays possible on the same codebase, deferred behind Android +
-F-Droid), a monetized product, or a rewrite of the website's physics/scenario logic — the
-website is the canonical spec and every number matches it unless a real bug is proven.
+F-Droid), or a monetized product.
 
-Why this architecture, briefly: **port, don't redesign** (byte-for-byte parity fixtures against
-the live website, not a redesign excuse); **local SQLite, not calling the Flask server from a
+Why this architecture, briefly: **port, don't redesign, at first** (byte-for-byte parity fixtures
+against the live website drove v1, so the physics/scenario math started as a faithful reuse
+rather than a rewrite); **local SQLite, not calling the Flask server from a
 phone** (the VPS isn't hardened as a multi-client backend); **Expo + local Gradle, not EAS or a
 native rewrite** (reuses the developer's other live Expo/F-Droid app, DragTree, and keeps the
 JS/TS logic near-verbatim instead of rewriting physics/scenario math in another language).
+
+**As of 2026-08-31, the app is the canonical build** — it has grown past the website (Score tab,
+Disc Suggest's learning engine, full backup/restore, the larger Try Discs catalog) and is where
+new behavior gets designed first; the website is a secondary surface, no longer required to
+mirror it feature-for-feature. See `CLAUDE.md`'s "What this project is" for the current framing;
+this section is kept as the port's origin story, not a live rule.
 
 v1 shipped and is confirmed working on a real physical device (2026-07-24, `mobile-preview-0.5`)
 — the concrete bar was the "Minimum Credible v1 Milestone" in `../PORT_PLAN.md`, now long since

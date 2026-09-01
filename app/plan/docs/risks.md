@@ -10,11 +10,12 @@
 
 ## Scope / dependency risk
 
-- **Two codebases, one spec.** The website is the canonical source of truth for
-  behavior; every time disc logic, scenario rules, or the schema changes on the website
-  side, the mobile port needs a matching update or it silently drifts out of parity.
-  Nothing currently automates that check beyond the Phase 0 fixture tables, which are a
-  point-in-time snapshot, not a live sync.
+- **Two codebases, no shared spec.** As of 2026-08-31 the app is the canonical build and the
+  website is secondary, not required to mirror it — so this is no longer a parity-drift risk
+  in the old sense (the website falling behind is expected, not a bug). The remaining risk is
+  narrower: the flight-arc physics fixture (`fixtures/flight-arc-vectors.json`) still checks
+  both implementations' *math* stays identical where they do overlap, which is still worth
+  keeping since it's cheap and catches real regressions in either engine.
 - **`react-native-reanimated`'s hard dependency on `react-native-worklets`** already bit
   this project once — an `npm install --legacy-peer-deps` silently pruned it and broke
   every JS-pre-bundling path for the entire session without either Jest or the one

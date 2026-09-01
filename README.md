@@ -13,10 +13,11 @@
 
 Disc Tracker is two things that share one brain:
 
-- **A self-hosted web app** — the original, running on a small personal VPS. It's the canonical
-  version and the spec everything else follows.
-- **A local-first Android app** — a full port that keeps everything on your phone in an on-device
-  database. It never talks to a server to work.
+- **A local-first Android app** — now the primary, canonical build. Started as a port, has since
+  grown past the website (Score tab, Disc Suggest's swipe-to-learn engine, full backup/restore,
+  the larger Try Discs catalog) and is where new features land first.
+- **A self-hosted web app** — the original, running on a small personal VPS. Still maintained, but
+  secondary — a simpler surface that isn't required to mirror everything the app does.
 
 Both share the same 1,660-disc library, the same flight-arc math, and the same core idea: a fast,
 private place to manage your bag, understand how your discs fly, and figure out what to throw.
@@ -62,7 +63,7 @@ This is the whole point, so it goes first.
         ┌─────────────────────────────┐        ┌──────────────────────────────┐
         │        WEB APP (VPS)         │        │     ANDROID APP (on phone)    │
         │  Flask · SQLite · vanilla JS │        │  Expo / React Native · SQLite │
-        │  the canonical version       │        │  local-first, no server dep   │
+        │  secondary, simpler surface  │        │  primary · canonical build    │
         └──────────────┬──────────────┘        └───────────────┬──────────────┘
                        │                                        │
                        └──────────────┬─────────────────────────┘
@@ -74,13 +75,14 @@ This is the whole point, so it goes first.
                      └──────────────────────────────────┘
 ```
 
-**The web app** is deliberately boring in the best way: Flask, a single SQLite file, and
-vanilla JavaScript with no build step. It supports multiple local profiles (a picker on launch —
-still no passwords). It's the reference implementation; when the two disagree, the website wins.
+**The Android app** is the reference implementation now — every feature runs on-device against
+local SQLite, including a from-scratch TypeScript reimplementation of the flight physics, so it
+works in a field with no signal exactly as well as it does at home. New behavior is designed
+against the app first; the website isn't required to keep up feature-for-feature.
 
-**The Android app** is a faithful, standalone port. Every feature runs on-device against local
-SQLite, including a from-scratch TypeScript reimplementation of the flight physics — so it works
-in a field with no signal exactly as well as it does at home.
+**The web app** is deliberately boring in the best way: Flask, a single SQLite file, and vanilla
+JavaScript with no build step. It supports multiple local profiles (a picker on launch — still no
+passwords). It stays maintained as a lighter secondary surface.
 
 ---
 

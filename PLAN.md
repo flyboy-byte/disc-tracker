@@ -15,6 +15,12 @@ own history) — those keep tracking feature work exactly as they do today.
 **Read `app/plan/GRAVEYARD.md` before reviving anything below if it's been a while** — the
 usual disclaim-and-recheck rule applies here too.
 
+> **Superseded, 2026-08-31: the app is now the canonical build, the website is secondary** — see
+> `CLAUDE.md`'s "What this project is". Every "website is canonical" / "website wins" line in
+> this doc (mainly Track D) reflects the framing at the time it was written; it's historical, not
+> a live rule. Nothing shipped here needs redoing — Track D's fixture mechanism stays useful as a
+> cross-implementation math check regardless of which side is canonical.
+
 ## Why this exists
 
 The external review's core finding, and the one worth taking seriously: this project's

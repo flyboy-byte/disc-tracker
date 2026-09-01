@@ -2,6 +2,15 @@
 
 **Status: done, 2026-08-21.** Part of `PLAN.md`'s engineering-hardening track.
 
+> **Superseded, 2026-08-31: the app is now the canonical build, the website is secondary.**
+> Every "website = canonical / reference implementation" line below (including sub-track 3's
+> "stays the canonical spec" resolution) reflects the framing at the time it was written and is
+> now historical — see `CLAUDE.md`'s "What this project is". It doesn't change what actually
+> shipped here: the fixture mechanism itself is still live and still worth keeping (it now just
+> serves as a cross-check that the two engines' math stays identical, not a canonical-vs-port
+> parity gate), and sub-track 3's decision not to backport the scoring model to the website is
+> unaffected either way — if anything it's more clearly correct now that parity isn't required.
+
 ## What this closes
 
 `static/physics.js` (website, canonical per `CLAUDE.md`) and `app/src/utils/legacyPhysics.ts`
