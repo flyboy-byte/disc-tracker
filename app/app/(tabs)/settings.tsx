@@ -369,8 +369,8 @@ export default function SettingsScreen() {
       <Text style={styles.title}>Settings</Text>
 
       {/* Default throw view */}
-      <View style={styles.card}>
-        <Text style={styles.sectionLabel}>DEFAULT THROW VIEW</Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Default throw view</Text>
         <Text style={styles.sectionHint}>The hand/throw the Flight Shaper starts on.</Text>
         <SegmentedControl
           style={styles.prefSegment}
@@ -383,8 +383,8 @@ export default function SettingsScreen() {
 
       {/* Skill level — drives Disc Suggest ranking (B1). Caps recommended speed + nudges
           understable/overstable targets. */}
-      <View style={styles.card}>
-        <Text style={styles.sectionLabel}>SKILL LEVEL</Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Skill level</Text>
         <Text style={styles.sectionHint}>Tunes Disc Suggest — caps recommended speed and shifts stability to match your arm.</Text>
         <SegmentedControl
           style={styles.prefSegment}
@@ -400,8 +400,8 @@ export default function SettingsScreen() {
           scenario of its own. Forehand nudges targets toward overstable across every scenario
           (turnovers, hyzer flips, flex shots, power hyzers), instead of relying on one generic
           "Forehand" scenario card to stand in for all of them. */}
-      <View style={styles.card}>
-        <Text style={styles.sectionLabel}>THROW STYLE</Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Throw style</Text>
         <Text style={styles.sectionHint}>Also tunes Disc Suggest — forehand nudges every scenario toward overstable, since forehand power overpowers turn.</Text>
         <SegmentedControl
           style={styles.prefSegment}
@@ -415,10 +415,10 @@ export default function SettingsScreen() {
 
       {/* Field view scope — B2. Off by default: Field view plots today's bag (few discs, legible).
           On: it plots the whole filtered set instead, but only while it stays small enough to read. */}
-      <View style={styles.card}>
+      <View style={styles.section}>
         <View style={styles.row}>
           <View style={styles.msTextCol}>
-            <Text style={styles.sectionLabel}>FIELD VIEW</Text>
+            <Text style={styles.sectionLabel}>Field view</Text>
             <Text style={styles.sectionHint}>
               Plot all filtered discs, not just today&apos;s bag — kept on only while the set is small enough to stay readable.
             </Text>
@@ -441,10 +441,10 @@ export default function SettingsScreen() {
 
       {/* Marshall Street reference images — R4. Opt-in, off by default: the only feature that
           touches the network, and only when this is on and you open a disc in RHBH view. */}
-      <View style={styles.card}>
+      <View style={styles.section}>
         <View style={styles.row}>
           <View style={styles.msTextCol}>
-            <Text style={styles.sectionLabel}>REFERENCE IMAGES</Text>
+            <Text style={styles.sectionLabel}>Reference images</Text>
             <Text style={styles.sectionHint}>
               Show Marshall Street&apos;s real measured flight-path image on a disc&apos;s detail view (RHBH only).
             </Text>
@@ -468,8 +468,8 @@ export default function SettingsScreen() {
       {/* Backup & restore (B4) — the full-device move path (replaces the old VPS-sync idea).
           The note below is deliberate: this is the FOSS answer to cloud sync / accounts, and the
           card has to say so or it reads like a redundant second CSV export. */}
-      <View style={styles.card}>
-        <Text style={styles.sectionLabel}>BACKUP &amp; RESTORE</Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Backup & restore</Text>
         <Text style={styles.sectionHint}>
           A full snapshot of the whole app in one file — every disc (with color, order and
           today&apos;s-bag flags), your settings, and all your scorecards. Restore it on any phone to pick
@@ -526,8 +526,8 @@ export default function SettingsScreen() {
       </View>
 
       {/* Data — CSV disc-list interop (spreadsheets / other apps) + delete-all. */}
-      <View style={styles.card}>
-        <Text style={styles.sectionLabel}>DATA</Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Data</Text>
         <Text style={styles.sectionHint}>{discs.length} disc{discs.length === 1 ? '' : 's'} stored on this device.</Text>
         <Pressable testID="settings-data-audit" style={styles.row} onPress={() => setAuditOpen(true)} accessibilityRole="button" accessibilityLabel="Data audit">
           <Text style={styles.rowText}>Data audit</Text>
@@ -561,8 +561,8 @@ export default function SettingsScreen() {
           source is an explicit, user-initiated switch/download/import, never automatic. Whichever
           source isn't active stays cached on disk (if it's ever been fetched) so switching back
           doesn't require re-downloading. */}
-      <View style={styles.card}>
-        <Text style={styles.sectionLabel}>DISC CATALOG</Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Disc catalog</Text>
         <Text style={styles.sectionHint}>{getCatalog().length} discs in the active catalog. Switch sources anytime — nothing downloads until you ask.</Text>
 
         {/* Radio list, not action rows (UX_AUDIT.md F2, app/plan/docs/ui-audit-plan.md Tier 1
@@ -707,8 +707,8 @@ export default function SettingsScreen() {
       <CustomCatalogModal visible={customImportOpen} onCancel={() => setCustomImportOpen(false)} onImported={handleCustomImported} />
 
       {/* About */}
-      <View style={styles.card}>
-        <Text style={styles.sectionLabel}>ABOUT</Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>About</Text>
         <Pressable
           testID="settings-tutorial"
           style={styles.row}
@@ -746,8 +746,8 @@ export default function SettingsScreen() {
       </View>
 
       {/* Credits */}
-      <View style={styles.card}>
-        <Text style={styles.sectionLabel}>CREDITS</Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Credits</Text>
         <Text style={styles.aboutBlurb}>
           The Physics sim in Flight Shaper is a port of shotshaper, a rigid-body disc-flight
           simulator by Knut Erik Teigen Giljarhus, used under the GPLv3.
@@ -786,10 +786,15 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
-  content: { padding: 14, paddingTop: 56, paddingBottom: 40, gap: 12 },
+  content: { padding: 14, paddingTop: 56, paddingBottom: 40 },
   title: { color: colors.text, fontSize: 26, fontWeight: '800', marginBottom: 2 },
-  card: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 14, padding: 16 },
-  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, color: colors.muted, textTransform: 'uppercase' },
+  // UX_AUDIT.md F1: was `card` — a bordered, filled, rounded box per section, which gave
+  // Backup & Restore exactly as much visual weight as Default Throw View. Now a flat list:
+  // a hairline rule separates sections, and the accent header carries the hierarchy.
+  section: { paddingVertical: 16, borderTopWidth: 1, borderTopColor: colors.border },
+  // UX_AUDIT.md F6: 11px all-caps muted was the least readable text on the screen and made
+  // every section shout equally. 14sp sentence-case accent reads as a heading instead.
+  sectionLabel: { fontSize: 14, fontWeight: '700', color: colors.accent },
   sectionHint: { color: colors.muted, fontSize: 12, marginTop: 4 },
   prefSegment: { marginTop: 12 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
