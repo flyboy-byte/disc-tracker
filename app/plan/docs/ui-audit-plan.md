@@ -54,7 +54,7 @@ relying on it in the field.
 
 ### 2. E1 — Hardware Back button mid-round
 
-**Priority: P0 · Effort: S · Depends on: an on-device check first**
+**Priority: P0 · Effort: S · Depends on: an on-device check first · Done, 2026-08-31 (`867d83c`)**
 
 `ActiveView`/`SummaryView` in `score.tsx` render a custom `‹ Rounds` header while staying
 inside the Score tab — a mode switch, not a router destination — so the system Back
@@ -70,6 +70,20 @@ Remove the listener on unmount / mode change back to `'list'`.
 **Definition of done.** Back from `ActiveView`/`SummaryView` returns to the rounds list, never
 exits the tab or the app, verified on-device (not emulator — this needs a real gesture-nav or
 3-button-nav device to be meaningful).
+
+**What happened.** Confirmed on a real Pixel 7 (release-config APK, Metro wasn't reliably
+reachable over USB so a throwaway signed-with-debug-key release build was used instead — see
+`CLAUDE.md`'s build pipeline notes): hardware Back from `ActiveView` at Hole 1 of 18 jumped
+straight to the **Bag tab**, not the rounds list — round data itself was untouched, just the
+navigation was wrong, exactly as predicted. Fixed with one `BackHandler` listener in
+`ScoreScreen` (not per-view) added/removed via `useFocusEffect` so it never intercepts Back
+for another tab; routes `setup`/`active`/`summary` to the same list-return action their
+existing `onCancel`/`onExit`/`onBack` handlers already implement, `list` mode falls through to
+default Back behavior unchanged. Verified on-device after the fix for both `active` and `setup`
+modes — both correctly return to the rounds list, round data preserved. `tsc --noEmit` clean,
+422/422 Jest. `summary` mode uses the identical listener path but wasn't separately verified
+on-device (would need finishing a round first) — same code, low risk, but flagging the gap
+rather than claiming full coverage.
 
 ### 3. D3 — Snackbar UNDO for swipe-to-demote
 
