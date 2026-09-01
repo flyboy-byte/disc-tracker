@@ -135,10 +135,17 @@ component: the transform is transient gesture state, so it resets once the card 
 
 **Verified on a real Pixel 7**, Throw and Buy: swipe → toast → UNDO restores the exact prior
 list order with the card rendering correctly; auto-dismiss confirmed (a late UNDO tap does
-nothing). `tsc --noEmit` clean, 422/422 Jest. **Gap, stated honestly:** the learning-state
-restore runs without error but isn't independently observable on screen, and there's no
-`expo-sqlite` Jest harness to assert it directly (`PLAN.md` Track B) — it's verified by code
-inspection plus the list-level round trip, not by reading back the stored row.
+nothing). `tsc --noEmit` clean, 422/422 Jest.
+
+**Learning-state restore verified 2026-08-31, closing the gap above.** No `expo-sqlite` Jest
+harness exists to assert this directly (`PLAN.md` Track B), so verified instead through the
+shipped "Save to device" backup feature, which already dumps `suggestLearning`/
+`suggestDemotions` to JSON — a real read-back, not inference. Three backups pulled via `adb`:
+**A** (baseline, engine on, real accumulated state from prior sessions) → swiped a Buy-mode
+disc with **no** undo → **B** (`avoidStrength` 0.21→0.51, a new `latitude 64` brand-aversion
+entry appeared, demotions 5→6 — confirms the write is real, not a no-op) → swiped another disc
+and tapped **UNDO** → **C**. `C`'s `suggestLearning` and `suggestDemotions` are byte-for-byte
+identical to `B`, confirming undo reverts exactly rather than merely not erroring.
 
 ### 4. F2 — Catalog picker as a radio list
 
