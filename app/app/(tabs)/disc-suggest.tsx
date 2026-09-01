@@ -23,12 +23,15 @@ import {
   getMeta,
   getOrCreateDefaultUser,
   recordSwipeAway,
+  replaceLearningState,
   resetDemotions,
   setLearningEngineEnabled,
   setMeta,
+  undemoteDisc,
   type SuggestMode,
 } from '../../src/db/db';
 import { colors } from '../../src/theme';
+import { useToast } from '../../src/components/Toast';
 import { bagToDisc, discType, stab, TYPE_META, type Disc, type DiscType, type ScenarioDisc, type Stability } from '../../src/utils/disc';
 import { getCatalog } from '../../src/catalog/catalogLoader';
 import { SCENARIOS, type Scenario } from '../../src/utils/scenarios';
@@ -80,6 +83,7 @@ const CATEGORY_LABEL: Record<DiscType, string> = {
 };
 
 export default function DiscSuggestScreen() {
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [bagDiscs, setBagDiscs] = useState<Disc[]>([]);
   const [skill, setSkill] = useState<SkillPreset>('intermediate');
@@ -184,15 +188,31 @@ export default function DiscSuggestScreen() {
     return applyManualOrder(ranked, demotedBuy);
   }, [activeScenario, mode, bagDiscs, skill, throwStyle, libraryDiscs, learning, demotedBuy, buySortMode]);
 
+  // UX_AUDIT.md D3: a swipe is invisible until performed, irreversible per-item, and in Buy mode
+  // silently teaches the recommender — so every swipe offers an undo (one toast, auto-dismissing,
+  // never stacking; see Toast.tsx for why it's built to stay out of the way during a swipe run).
   const onSwipeThrow = useCallback(
     (disc: ScenarioDisc) => {
-      if (userIdRef.current == null || !activeScenario) return;
+      const uid = userIdRef.current;
+      if (uid == null || !activeScenario) return;
       const key = discKey(disc);
       const listKey = `throw:${activeScenario.id}`;
+      const wasDemoted = demotedThrow.includes(key);
       setDemotedThrow((prev) => (prev.includes(key) ? prev : [...prev, key]));
-      demoteDisc(userIdRef.current, listKey, key);
+      demoteDisc(uid, listKey, key).then((priorPosition) => {
+        toast(`${disc.name} moved down`, {
+          label: 'UNDO',
+          onPress: () => {
+            // Only drop it from the on-screen list if this swipe is what put it there; a disc
+            // that was already demoted just moved further down, so undo restores its position
+            // in the DB and leaves the rendered order alone.
+            if (!wasDemoted) setDemotedThrow((prev) => prev.filter((k) => k !== key));
+            undemoteDisc(uid, listKey, key, priorPosition);
+          },
+        });
+      });
     },
-    [activeScenario]
+    [activeScenario, demotedThrow, toast]
   );
 
   const onSwipeBuy = useCallback(
@@ -201,15 +221,48 @@ export default function DiscSuggestScreen() {
       if (uid == null || !activeScenario) return;
       const key = discKey(disc);
       const listKey = `buy:${activeScenario.id}`;
+      const wasDemoted = demotedBuy.includes(key);
+      const engineOn = !!learning?.engineEnabled;
+      // Optimistic, synchronous so the card moves the instant the gesture completes.
       setDemotedBuy((prev) => (prev.includes(key) ? prev : [...prev, key]));
-      demoteDisc(uid, listKey, key);
-      // Engine-off Buy mode is deliberately identical to Throw mode's plain reorder above — no
-      // learning write, matches Logan's explicit fallback spec.
-      if (learning?.engineEnabled) {
-        recordSwipeAway(uid, disc).then(() => getLearningState(uid).then(setLearning));
-      }
+      // One sequential chain rather than firing the demote and the learning write in parallel:
+      // db.ts's serialize() runs queued ops in call order, so reading the learning row first
+      // guarantees the snapshot is the true pre-swipe state even when swipes come fast. Taking
+      // it from React state instead would capture a stale value mid-spree (state lags the
+      // write), and undo would then over-revert into an earlier swipe's contribution.
+      (async () => {
+        // The EMA blend can't be inverted reliably — avoid_strength and each brand score clamp
+        // at 1, so a saturated value has lost what it was. replaceLearningState already exists
+        // for exactly this "write this state verbatim" job, so snapshot-and-restore beats
+        // computing an inverse update.
+        const learningBefore = engineOn ? await getLearningState(uid) : null;
+        const priorPosition = await demoteDisc(uid, listKey, key);
+        // Engine-off Buy mode is deliberately identical to Throw mode's plain reorder — no
+        // learning write, matches Logan's explicit fallback spec.
+        if (engineOn) {
+          await recordSwipeAway(uid, disc);
+          setLearning(await getLearningState(uid));
+        }
+        toast(`${disc.name} moved down`, {
+          label: 'UNDO',
+          onPress: () => {
+            if (!wasDemoted) setDemotedBuy((prev) => prev.filter((k) => k !== key));
+            undemoteDisc(uid, listKey, key, priorPosition);
+            if (learningBefore) {
+              // Restore only what the swipe changed. engine_enabled lives in the same row but
+              // isn't part of this action, so it's taken fresh — otherwise toggling the engine
+              // off during the undo window and then tapping UNDO would silently switch it
+              // back on.
+              getLearningState(uid).then((current) => {
+                const restored = { ...learningBefore, engineEnabled: current.engineEnabled };
+                replaceLearningState(uid, restored).then(() => setLearning(restored));
+              });
+            }
+          },
+        });
+      })();
     },
-    [activeScenario, learning?.engineEnabled]
+    [activeScenario, demotedBuy, learning?.engineEnabled, toast]
   );
 
   const resetOrder = useCallback(

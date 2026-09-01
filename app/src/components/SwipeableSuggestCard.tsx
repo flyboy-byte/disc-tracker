@@ -51,7 +51,19 @@ export default function SwipeableSuggestCard({ onSwipe, children, testID }: Prop
       if (Math.abs(e.translationX) > threshold) {
         const dir = e.translationX > 0 ? 1 : -1;
         translateX.value = withTiming(dir * width * 1.2, { duration: 200 }, (finished) => {
-          if (finished) runOnJS(fireSwipe)();
+          if (finished) {
+            runOnJS(fireSwipe)();
+            // Snap the offset back once the card has left the screen. The transform is
+            // transient gesture state — what persists is whatever the caller does with the
+            // swipe (reorder, or undo) — so leaving it parked off-screen means this instance
+            // renders as nothing but the reveal panel wherever it lands next. That was
+            // invisible while the only outcome was demote-to-bottom (the list virtualizes, so
+            // the row usually remounted fresh before it scrolled back into view), but undo
+            // (UX_AUDIT.md D3) restores the card in place while it's still mounted, which
+            // makes it obvious: a red "SKIP" band where the card should be. Found on-device
+            // 2026-08-31. fireSwipe() runs first so the reorder is already queued.
+            translateX.value = 0;
+          }
         });
       } else {
         translateX.value = withSpring(0, { damping: 18, stiffness: 220 });

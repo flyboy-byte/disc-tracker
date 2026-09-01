@@ -641,9 +641,17 @@ export function getDemotions(userId: number, listKey: string): Promise<string[]>
   });
 }
 
-export function demoteDisc(userId: number, listKey: string, discKey: string): Promise<void> {
+// Returns the disc's PRIOR position, or null if it wasn't demoted in this list before — the
+// exact input undemoteDisc() needs to reverse this write (UX_AUDIT.md D3's undo). Read and
+// write happen inside the one serialize() block, so the prior value can't go stale between
+// them the way a separate read-then-write from the caller could.
+export function demoteDisc(userId: number, listKey: string, discKey: string): Promise<number | null> {
   return serialize(async () => {
     const db = await openDatabase();
+    const existing = await db.getFirstAsync<{ position: number }>(
+      'SELECT position FROM suggest_demotions WHERE user_id = ? AND list_key = ? AND disc_key = ?',
+      [userId, listKey, discKey]
+    );
     const row = await db.getFirstAsync<{ maxPos: number | null }>(
       'SELECT MAX(position) as maxPos FROM suggest_demotions WHERE user_id = ? AND list_key = ?',
       [userId, listKey]
@@ -653,6 +661,33 @@ export function demoteDisc(userId: number, listKey: string, discKey: string): Pr
       'INSERT INTO suggest_demotions (user_id, list_key, disc_key, position) VALUES (?, ?, ?, ?) ' +
         'ON CONFLICT(user_id, list_key, disc_key) DO UPDATE SET position = excluded.position',
       [userId, listKey, discKey, nextPos]
+    );
+    return existing?.position ?? null;
+  });
+}
+
+// Reverses one demoteDisc() call. priorPosition === null means the disc had no demotion row
+// before the swipe, so undo removes it entirely; a number means it was already demoted and
+// only moved further down, so undo puts it back at that position rather than un-demoting it.
+export function undemoteDisc(
+  userId: number,
+  listKey: string,
+  discKey: string,
+  priorPosition: number | null
+): Promise<void> {
+  return serialize(async () => {
+    const db = await openDatabase();
+    if (priorPosition == null) {
+      await db.runAsync('DELETE FROM suggest_demotions WHERE user_id = ? AND list_key = ? AND disc_key = ?', [
+        userId,
+        listKey,
+        discKey,
+      ]);
+      return;
+    }
+    await db.runAsync(
+      'UPDATE suggest_demotions SET position = ? WHERE user_id = ? AND list_key = ? AND disc_key = ?',
+      [priorPosition, userId, listKey, discKey]
     );
   });
 }
