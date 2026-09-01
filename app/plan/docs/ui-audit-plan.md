@@ -2,9 +2,10 @@
 
 **Status, 2026-09-01: Tier 1 done 5 of 5 (A2, E1, D3, A5, F2). Tier 2 done 4 of 5 — T2-1
 (closes A1, A3, C1-for-`index.tsx`), T2-2 (B1), T2-3 (F1 + F6), T2-4 (E3). Both open decisions
-resolved: T2-3 → (a) inline choice rows, T2-4 → (b) no tier tint on hole chips. **T2-5 (Flight
-Shaper slider labelling) is the only item left.** Everything above is verified on a physical
-Pixel 9.**
+resolved: T2-3 → (a) inline choice rows, T2-4 → (b) no tier tint on hole chips. **Tier 2 is
+complete 5 of 5 — T2-5 done, with piece 3 built as tap-to-reset rather than double-tap for a
+gesture-safety reason documented in its section.** Every item in both tiers is verified on a
+physical Pixel 9.**
 
 > **Verification debt: CLEARED 2026-09-01.** F2 and all of T2-1 were verified on a real
 > **Pixel 9 (Android 17)** — release-signed build installed over the existing v0.25.0 in place,
@@ -519,8 +520,7 @@ the strip is a small change.
 
 ### T2-5. C2 — Flight Shaper slider labeling
 
-**Priority: P2 · Effort: M (touches `VerticalSlider.tsx`, a shared component with a known
-gesture-conflict history — see `flight-shaper.tsx`'s own comments before editing it)**
+**Priority: P2 · Effort: M · Done, 2026-09-01 — piece 3 deliberately built differently, see below**
 
 `SliderCol` (`flight-shaper.tsx` ~line 437) renders label → value (`sliderValue`) → the
 `VerticalSlider` itself → unit (`sliderUnit`) as three separate `Text` elements, unit ~80dp
@@ -547,6 +547,33 @@ Reset button.
 on one line, visible min/max, and double-tap resets it without breaking the existing
 `onSlidingStart` → `setScrollEnabled(false)` scroll-lock behavior (verify on-device, per C5's
 own note that a cancelled gesture must never leave scroll permanently locked).
+
+**Done, 2026-09-01 — verified on the Pixel 9.**
+- **Piece 1 (value + unit on one line):** `sliderValue` and `sliderUnit` are now siblings in a
+  single baseline-aligned row, unit dimmed. Reads "0° DEGREES", "calm MPH", "100% POWER"
+  instead of the value sitting ~80dp above the unit with the whole slider between them.
+- **Piece 2 (min/max at track ends):** new optional `maxLabel`/`minLabel` props on
+  `VerticalSlider`, rendered `position: absolute` at the track ends so they add **zero** layout
+  height — the column spacing is byte-identical to before. On-device: Hyzer 30/−30, Nose 15/−15,
+  Wind 20/−20, Arm & Spin 100/50.
+- **Piece 3 — built as tap-the-value-to-reset, NOT double-tap-the-slider.** The plan said to
+  check the existing gesture composition before picking `Race` vs `Exclusive`; checking it
+  showed **neither works here**. `VerticalSlider`'s Pan commits a value in `.onBegin` — that's
+  the deliberate tap-the-track-to-jump behaviour — so any double-tap would first move the
+  slider twice before resetting it, and making a tap gesture win requires delaying Pan, which
+  would break tap-to-jump for every single tap. That's precisely the regression C5 warns about.
+  Instead the value/unit row itself became the reset target: it's `disabled` while the slider
+  is at its default (nothing to reset, stays visually inert) and gains a `colors.border`
+  outline when it isn't, which doubles as the "this is tappable" affordance. New
+  `defaultValue` prop per `SliderCol`, wired for all six columns. **Zero change to
+  `VerticalSlider`'s gesture code** — the C5 risk is avoided rather than managed.
+
+**On-device:** tapped the Hyzer track to +19° (outline appeared on the value row, ghost arc and
+adjusted numbers updated), tapped the value row, and it returned to 0° with the outline gone.
+Then confirmed the page still scrolls after slider interaction — the scroll lock releases
+correctly and C5's "never leave scroll permanently locked" condition holds. (First scroll
+attempt was a false negative: the swipe started on a slider column, which Pan correctly claims.
+Re-run from the left margin scrolled fine.)
 
 ---
 
