@@ -13,7 +13,7 @@
 // it. A GestureDetector-driven Pan gesture on a plain View does go through that layer, which
 // is what actually resolves the conflict — confirmed working on-device after switching.
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { colors } from '../theme';
@@ -27,6 +27,11 @@ interface Props {
   length?: number;
   onSlidingStart?: () => void;
   onSlidingComplete?: () => void;
+  // UX_AUDIT.md C2: the track had no visible bounds, so "how far can this go" was invisible
+  // until you dragged to an end. Rendered absolutely at the track ends so adding them costs
+  // no layout height — the column's spacing is unchanged.
+  maxLabel?: string;
+  minLabel?: string;
 }
 
 const TRACK_WIDTH = 4;
@@ -41,6 +46,8 @@ export default function VerticalSlider({
   length = 120,
   onSlidingStart,
   onSlidingComplete,
+  maxLabel,
+  minLabel,
 }: Props) {
   // Top of the track = maximumValue, bottom = minimumValue (matches the website's own
   // rotate(-90deg) convention — dragging up increases the value).
@@ -107,6 +114,8 @@ export default function VerticalSlider({
         <View style={[styles.track, { height: length }]} />
         <Animated.View style={[styles.fill, fillStyle]} />
         <Animated.View style={[styles.thumb, thumbStyle]} />
+        {maxLabel != null && <Text style={[styles.endLabel, styles.endLabelTop]}>{maxLabel}</Text>}
+        {minLabel != null && <Text style={[styles.endLabel, styles.endLabelBottom]}>{minLabel}</Text>}
       </View>
     </GestureDetector>
   );
@@ -114,6 +123,11 @@ export default function VerticalSlider({
 
 const styles = StyleSheet.create({
   hitArea: { width: 44, alignItems: 'center' },
+  // pointerEvents isn't needed — Text doesn't capture touches by default here, and the Pan
+  // gesture lives on the parent View, so these never steal a drag.
+  endLabel: { position: 'absolute', right: 0, fontSize: 9, color: colors.muted },
+  endLabelTop: { top: -3 },
+  endLabelBottom: { bottom: -3 },
   track: { position: 'absolute', top: 0, width: TRACK_WIDTH, borderRadius: TRACK_WIDTH / 2, backgroundColor: colors.border },
   fill: { position: 'absolute', width: TRACK_WIDTH, borderRadius: TRACK_WIDTH / 2, backgroundColor: colors.accent },
   thumb: {

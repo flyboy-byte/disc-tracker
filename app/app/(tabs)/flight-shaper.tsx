@@ -323,14 +323,14 @@ export default function FlightShaperScreen() {
           )}
 
           <View style={styles.sliderBank}>
-            <SliderCol label="Hyzer" formatKey="hyzer" unit="degrees" value={sliders.hyzer} min={-30} max={30} isDefault={sliders.hyzer === 0} onChange={setSlider('hyzer')} onScrollLock={setScrollEnabled} />
-            <SliderCol label="Nose" formatKey="nose" unit="pitch" value={sliders.nose} min={-15} max={15} isDefault={sliders.nose === 0} onChange={setSlider('nose')} onScrollLock={setScrollEnabled} />
-            <SliderCol label="Wind" formatKey="wind" unit="mph" value={sliders.wind} min={-20} max={20} isDefault={sliders.wind === 0} onChange={setSlider('wind')} onScrollLock={setScrollEnabled} />
+            <SliderCol label="Hyzer" defaultValue={0} formatKey="hyzer" unit="degrees" value={sliders.hyzer} min={-30} max={30} isDefault={sliders.hyzer === 0} onChange={setSlider('hyzer')} onScrollLock={setScrollEnabled} />
+            <SliderCol label="Nose" defaultValue={0} formatKey="nose" unit="pitch" value={sliders.nose} min={-15} max={15} isDefault={sliders.nose === 0} onChange={setSlider('nose')} onScrollLock={setScrollEnabled} />
+            <SliderCol label="Wind" defaultValue={0} formatKey="wind" unit="mph" value={sliders.wind} min={-20} max={20} isDefault={sliders.wind === 0} onChange={setSlider('wind')} onScrollLock={setScrollEnabled} />
             {physicsSimOn && (
-              <SliderCol label="Cross" formatKey="wind" unit="mph" valueText={crosswindLabel(crosswind)} value={crosswind} min={-20} max={20} isDefault={crosswind === 0} onChange={(v) => setCrosswind(Math.round(v))} onScrollLock={setScrollEnabled} />
+              <SliderCol label="Cross" defaultValue={0} formatKey="wind" unit="mph" valueText={crosswindLabel(crosswind)} value={crosswind} min={-20} max={20} isDefault={crosswind === 0} onChange={(v) => setCrosswind(Math.round(v))} onScrollLock={setScrollEnabled} />
             )}
-            <SliderCol label="Arm" formatKey="armSpeed" unit="power" value={sliders.armSpeed} min={50} max={100} isDefault={sliders.armSpeed === 100} onChange={setSlider('armSpeed')} onScrollLock={setScrollEnabled} />
-            <SliderCol label="Spin" formatKey="spin" unit="rpm" value={sliders.spin} min={50} max={100} isDefault={sliders.spin === 100} onChange={setSlider('spin')} onScrollLock={setScrollEnabled} />
+            <SliderCol label="Arm" defaultValue={100} formatKey="armSpeed" unit="power" value={sliders.armSpeed} min={50} max={100} isDefault={sliders.armSpeed === 100} onChange={setSlider('armSpeed')} onScrollLock={setScrollEnabled} />
+            <SliderCol label="Spin" defaultValue={100} formatKey="spin" unit="rpm" value={sliders.spin} min={50} max={100} isDefault={sliders.spin === 100} onChange={setSlider('spin')} onScrollLock={setScrollEnabled} />
           </View>
         </View>
 
@@ -443,6 +443,7 @@ function SliderCol({
   min,
   max,
   isDefault,
+  defaultValue,
   onChange,
   formatKey,
   valueText,
@@ -454,6 +455,7 @@ function SliderCol({
   min: number;
   max: number;
   isDefault: boolean;
+  defaultValue: number;
   onChange: (v: number) => void;
   formatKey: keyof SliderValues;
   valueText?: string; // overrides the SliderValues-keyed label (used by the sim-only crosswind col)
@@ -462,7 +464,22 @@ function SliderCol({
   return (
     <View style={styles.sliderCol}>
       <Text style={styles.sliderLabel}>{label}</Text>
-      <Text style={[styles.sliderValue, { color: isDefault ? colors.muted : colors.accent }]}>{valueText ?? sliderLabel(formatKey, value)}</Text>
+      {/* UX_AUDIT.md C2: value and unit were separate Texts ~80dp apart (unit sat *below* the
+          slider), so the unit didn't visibly qualify the number. Now one line, unit dimmed.
+          Tapping resets just this slider — see the note on why it isn't a double-tap. */}
+      <Pressable
+        onPress={isDefault ? undefined : () => onChange(defaultValue)}
+        disabled={isDefault}
+        hitSlop={8}
+        style={[styles.sliderValueRow, !isDefault && styles.sliderValueRowReset]}
+        accessibilityRole={isDefault ? undefined : 'button'}
+        accessibilityLabel={isDefault ? undefined : `Reset ${label} to default`}
+      >
+        <Text style={[styles.sliderValue, { color: isDefault ? colors.muted : colors.accent }]}>
+          {valueText ?? sliderLabel(formatKey, value)}
+        </Text>
+        <Text style={styles.sliderUnit}>{unit}</Text>
+      </Pressable>
       <VerticalSlider
         minimumValue={min}
         maximumValue={max}
@@ -470,8 +487,9 @@ function SliderCol({
         onValueChange={onChange}
         onSlidingStart={() => onScrollLock(false)}
         onSlidingComplete={() => onScrollLock(true)}
+        maxLabel={String(max)}
+        minLabel={String(min)}
       />
-      <Text style={styles.sliderUnit}>{unit}</Text>
     </View>
   );
 }
@@ -549,7 +567,11 @@ const styles = StyleSheet.create({
   sliderBank: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', gap: 10 },
   sliderCol: { alignItems: 'center', gap: 6, minWidth: 84, flexBasis: '30%' },
   sliderLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, color: colors.muted, textTransform: 'uppercase' },
-  sliderValue: { fontSize: 12, fontWeight: '700', minWidth: 44, textAlign: 'center' },
+  sliderValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 6, borderWidth: 1, borderColor: 'transparent' },
+  // Only a resettable (non-default) slider shows the outline — it's the affordance that says
+  // "this is tappable", so a slider already at its default stays visually inert.
+  sliderValueRowReset: { borderColor: colors.border },
+  sliderValue: { fontSize: 12, fontWeight: '700', textAlign: 'center' },
   sliderUnit: { fontSize: 9, color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
   collapseToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, paddingHorizontal: 4 },
   collapseToggleText: { color: colors.muted, fontSize: 13, fontWeight: '600' },
