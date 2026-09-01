@@ -104,12 +104,19 @@ export function scoreTier(strokes: number, par: number): ScoreTier {
 }
 
 // Is every hole scored for every player? (drives the "round complete" hint / finish prompt.)
+// A hole counts as done only when EVERY player has a score on it — the useful question mid-round
+// is "what still needs entering", and with up to 8 players a hole with one score in isn't done.
+// Stated explicitly because the hole strip (UX_AUDIT.md E3) renders off this and "scored" is
+// ambiguous for multiplayer rounds; solo rounds behave identically either way.
+export function holeComplete(round: Round, hole: number): boolean {
+  if (round.players.length === 0) return false;
+  return round.players.every((p) => strokesAt(round.scores, p.id, hole) !== undefined);
+}
+
 export function isRoundComplete(round: Round): boolean {
   if (round.players.length === 0 || round.holeCount === 0) return false;
-  for (const p of round.players) {
-    for (let h = 1; h <= round.holeCount; h++) {
-      if (strokesAt(round.scores, p.id, h) === undefined) return false;
-    }
+  for (let h = 1; h <= round.holeCount; h++) {
+    if (!holeComplete(round, h)) return false;
   }
   return true;
 }

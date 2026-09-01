@@ -6,6 +6,7 @@ import {
   formatVsPar,
   strokesAt,
   isRoundComplete,
+  holeComplete,
   scoreTier,
   type Round,
 } from './roundMath';
@@ -118,6 +119,19 @@ describe('isRoundComplete', () => {
       ],
     });
     expect(isRoundComplete(full)).toBe(true);
+  });
+});
+
+describe('holeComplete', () => {
+  it('is true only when every player has a score on that hole', () => {
+    const r = makeRound();
+    expect(holeComplete(r, 1)).toBe(true); // both players scored
+    expect(holeComplete(r, 2)).toBe(false); // only player 10 scored — a partial hole isn't done
+    expect(holeComplete(r, 3)).toBe(false); // nobody scored
+  });
+
+  it('is false for a round with no players', () => {
+    expect(holeComplete(makeRound({ players: [], scores: [] }), 1)).toBe(false);
   });
 });
 

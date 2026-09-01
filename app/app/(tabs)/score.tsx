@@ -3,7 +3,7 @@
 // views (list → setup → active → summary) managed by state, same pattern the Bag tab uses for its
 // modes. All data is local SQLite (db.ts round CRUD); scoring math is roundMath.ts. See
 // app/plan/docs/scorekeeper-scope.md for scope + the hard non-goals (no GPS/maps/course-DB/online).
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, BackHandler, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import {
@@ -16,7 +16,7 @@ import {
   setScore,
   updateRoundMeta,
 } from '../../src/db/db';
-import { colors } from '../../src/theme';
+import { colors, tints } from '../../src/theme';
 import GradientButton from '../../src/components/GradientButton';
 import EmptyStateIcon from '../../src/components/EmptyStateIcon';
 import Icon from '../../src/components/Icon';
@@ -28,6 +28,7 @@ import {
   standings,
   strokesAt,
   isRoundComplete,
+  holeComplete,
   type Round,
 } from '../../src/utils/roundMath';
 
@@ -35,6 +36,9 @@ type Mode = 'list' | 'setup' | 'active' | 'summary';
 // Casual-group cap. Bigger groups than this are rare on one card; the hole-by-hole view scrolls
 // fine, and the summary grid scrolls horizontally, so this is a UX guardrail, not a DB limit.
 const MAX_PLAYERS = 8;
+// Chip geometry lives here because the auto-scroll maths needs the same numbers the styles use.
+const HOLE_CHIP_SIZE = 34;
+const HOLE_CHIP_GAP = 8;
 // Header links are short text ("‹ Rounds", "Finish", "Edit") — pad the touch area so they clear
 // the ~44px minimum tap target even though the glyphs are small.
 const HEADER_HITSLOP = { top: 12, bottom: 12, left: 12, right: 12 };
@@ -534,10 +538,19 @@ function ActiveView({
   // switching holes closes it (a stale open picker pointed at the wrong hole would be a real
   // mis-tap risk).
   const [quickPickPlayer, setQuickPickPlayer] = useState<number | null>(null);
+  const holeStripRef = useRef<ScrollView>(null);
   const goHole = (h: number) => {
     setQuickPickPlayer(null);
     setHole(h);
   };
+
+  // Keep the active chip on screen — at 18 holes the strip is far wider than the viewport, so
+  // advancing past the right edge would otherwise leave the current hole scrolled out of view.
+  // Centres it where possible, clamped at 0 so early holes don't scroll into negative space.
+  useEffect(() => {
+    const CHIP = HOLE_CHIP_SIZE + HOLE_CHIP_GAP;
+    holeStripRef.current?.scrollTo({ x: Math.max(0, (hole - 1) * CHIP - CHIP * 2), animated: true });
+  }, [hole]);
 
   return (
     <View style={styles.container}>
@@ -552,16 +565,37 @@ function ActiveView({
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* UX_AUDIT.md E3: was a ‹/› pair, which put hole 17 sixteen taps from hole 1. Every
+            hole is now one tap. Per the plan's resolved open question (option b), a chip carries
+            NO score-tier tint — only done-vs-not — because a tier tint would have to pick one
+            player's tier in a round that supports eight, and A5 just removed tier colour from
+            this screen entirely. `holeComplete` (roundMath, tested) defines "done" as every
+            player scored. */}
+        <ScrollView
+          ref={holeStripRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.holeStrip}
+        >
+          {Array.from({ length: round.holeCount }, (_, i) => i + 1).map((h) => {
+            const current = h === hole;
+            const done = holeComplete(round, h);
+            return (
+              <Pressable
+                key={h}
+                testID={`hole-chip-${h}`}
+                style={[styles.holeChip, done && styles.holeChipDone, current && styles.holeChipCurrent]}
+                onPress={() => goHole(h)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: current }}
+                accessibilityLabel={`Hole ${h}${done ? ', scored' : ''}`}
+              >
+                <Text style={[styles.holeChipText, done && styles.holeChipTextDone, current && styles.holeChipTextCurrent]}>{h}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
         <View style={styles.holeNav}>
-          <Pressable
-            style={[styles.holeNavBtn, hole <= 1 && styles.holeNavBtnDisabled]}
-            disabled={hole <= 1}
-            onPress={() => goHole(Math.max(1, hole - 1))}
-            accessibilityRole="button"
-            accessibilityLabel="Previous hole"
-          >
-            <Icon name="chevron-left" color={colors.accent} size={26} strokeWidth={2.2} />
-          </Pressable>
           <View style={styles.holeCenter}>
             <Text style={styles.holeLabel}>Hole {hole} of {round.holeCount}</Text>
             <View style={styles.parRow}>
@@ -569,15 +603,6 @@ function ActiveView({
               <Stepper value={par} min={2} max={6} small onChange={(v) => onSetPar(hole, v)} />
             </View>
           </View>
-          <Pressable
-            style={[styles.holeNavBtn, hole >= round.holeCount && styles.holeNavBtnDisabled]}
-            disabled={hole >= round.holeCount}
-            onPress={() => goHole(Math.min(round.holeCount, hole + 1))}
-            accessibilityRole="button"
-            accessibilityLabel="Next hole"
-          >
-            <Icon name="chevron-right" color={colors.accent} size={26} strokeWidth={2.2} />
-          </Pressable>
         </View>
 
         {round.players.map((p) => {
@@ -841,9 +866,23 @@ const styles = StyleSheet.create({
   backLink: { color: colors.muted, fontSize: 14, fontWeight: '600' },
   finishLink: { color: colors.accent },
 
-  holeNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  holeNavBtn: { width: 52, height: 52, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card },
-  holeNavBtnDisabled: { opacity: 0.3 },
+  holeNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  holeStrip: { gap: HOLE_CHIP_GAP, paddingVertical: 8, paddingHorizontal: 2 },
+  holeChip: {
+    width: HOLE_CHIP_SIZE,
+    height: HOLE_CHIP_SIZE,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // "Done" is a filled card ground, not a colour — see the option-(b) note at the call site.
+  holeChipDone: { backgroundColor: colors.cardHover, borderColor: colors.cardHover },
+  holeChipCurrent: { borderColor: colors.accent, backgroundColor: tints.accentTint },
+  holeChipText: { color: colors.muted, fontSize: 13, fontWeight: '600' },
+  holeChipTextDone: { color: colors.text },
+  holeChipTextCurrent: { color: colors.accent, fontWeight: '800' },
   holeCenter: { alignItems: 'center', gap: 6 },
   holeLabel: { color: colors.text, fontSize: 18, fontWeight: '800' },
   parRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
