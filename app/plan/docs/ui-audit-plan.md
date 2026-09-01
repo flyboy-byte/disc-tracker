@@ -4,12 +4,13 @@
 code-complete (closes A1, A3, and C1-for-`index.tsx`); T2-2/T2-3/T2-4/T2-5 not started, and
 T2-3/T2-4 both still carry open decisions.**
 
-> **Verification debt — read before shipping a release.** No physical device was available this
-> session, so **F2 and all of T2-1 are unverified on hardware** — that's one Settings rework
-> plus every "pick one of N" control and most icon glyphs in the app, changed without a single
-> look at a running screen. `tsc` + Jest (422/422) pass, but neither catches clipped segment
-> text, a mis-centered icon, or a control that wraps badly. Do a device pass over Bag / Flight
-> Shaper / Score setup / Settings before tagging anything.
+> **Verification debt: CLEARED 2026-09-01.** F2 and all of T2-1 were verified on a real
+> **Pixel 9 (Android 17)** — release-signed build installed over the existing v0.25.0 in place,
+> so this ran against real data (33 discs, 41 demotions), not a fresh install. Covered: Bag
+> (scope segment, SORT at five segments, arc view, filter pills, In-bag ✓, reorder arrows),
+> Settings (all three preference segments, F2's radio list, backup), Score setup (hole
+> presets), Flight Shaper (2×2 arc grid, selector chevron). Two real defects found and fixed —
+> see "Found on-device" below.
 
 Source: the Claude Design UX pass in
 `docs/app-ui-design.zip` (`UX_AUDIT.md`, 30 findings across all five tabs, severity-ranked
@@ -181,9 +182,10 @@ section), so free to restructure without touching test coverage.
 
 **Definition of done.** Tapping an available source row selects it; `Download`/`Import` are
 reachable as their own tap targets and never fire as a side effect of tapping the row. Verified
-via `tsc --noEmit` + full Jest suite (422/422); on-device pass (all three sources, both
-directions of switching, both Custom-import paths — same rigor as the `v0.21` three-way-picker
-verification) still owed once a physical device is available again.
+via `tsc --noEmit` + full Jest suite (422/422), and **on-device on a Pixel 9, 2026-09-01** —
+the radio list renders correctly with Try Discs active (filled dot) and Custom unavailable
+(dimmed `radioUnavailable` border) with its `Import` button as a separate trailing tap target,
+which is exactly the state the fix was written for.
 
 ### 5. A5 — Score tier: second signal beyond color
 
@@ -337,12 +339,18 @@ and the ✓ in all three checkbox call sites (`DiscCard`, `CsvImportModal`, `Dis
    card"), which would now describe icons that no longer look like that — reworded to "use the
    arrow buttons on a card to reorder".
 
-**What a device pass needs to check specifically:** SORT at five segments (the widest use of
-the control — most likely place for text to clip); the arc-view control in `index.tsx`'s
-`arcBar`, which uses `flexGrow` + `minWidth: 210` and is expected to either sit beside the
-legend or wrap to its own full-width line; the hole-preset control's new tinted selected state;
-and that every swapped icon is centered in its old touch target rather than sitting high or
-low against the text baseline it replaced.
+**Found on-device (Pixel 9, 2026-09-01) — one prediction wrong, one real defect:**
+- **SORT at five segments does NOT clip.** This was flagged as the likeliest failure and it
+  renders cleanly ("Speed ↓ / Speed ↑ / Name / Mfr / Custom") at full width. No change needed.
+- **The `arcBar` legend wrapped 2-then-1** once the arc-view control went full-width — the
+  legend and the control were still flex siblings in a wrapping row, so the legend never got
+  the full line it needed. Fixed in `ca28cdf`: `arcBar` is now an explicit column
+  (`{ gap: 8, marginBottom: 8 }`), the `arcViewSegment` `flexGrow`/`minWidth: 210` wrapper is
+  gone, and the legend fits on one line again.
+- Everything else verified as intended: hole presets read correctly in the shared tint; every
+  swapped icon is centered in its old touch target; disabled reorder arrows still dim
+  correctly on the first card; `flight-shaper`'s 2×2 arc grid looks right with the shared tint,
+  confirming the decision not to migrate it.
 
 ### T2-2. B1 — Bag actions: primary + overflow (⋮)
 
