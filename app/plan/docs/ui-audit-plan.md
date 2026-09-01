@@ -1,8 +1,9 @@
 # UI audit — tracked plan
 
-**Status, 2026-09-01: Tier 1 code-complete 5 of 5 (A2, E1, D3, A5, F2). Tier 2: T2-1
-code-complete (closes A1, A3, and C1-for-`index.tsx`); T2-2/T2-3/T2-4/T2-5 not started, and
-T2-3/T2-4 both still carry open decisions.**
+**Status, 2026-09-01: Tier 1 done 5 of 5 (A2, E1, D3, A5, F2). Tier 2: T2-1 done (closes A1,
+A3, and C1-for-`index.tsx`), T2-2 done (closes B1). T2-3/T2-4/T2-5 not started — T2-3 and
+T2-4 each still need an open decision answered before they can be built. All of the above is
+verified on a physical Pixel 9.**
 
 > **Verification debt: CLEARED 2026-09-01.** F2 and all of T2-1 were verified on a real
 > **Pixel 9 (Android 17)** — release-signed build installed over the existing v0.25.0 in place,
@@ -381,6 +382,27 @@ Field view (conditional) — wrapping across rows.
 **Definition of done.** Same five actions reachable, `+ Add disc` and Field view work exactly
 as before, overflow sheet opens/closes cleanly, Clear bag visually separated and red inside it.
 Verify on-device — this is a real layout change, not a style-only patch.
+
+**Done, 2026-09-01 — built and verified on the Pixel 9.** Built as scoped: `header` became a
+row (`headerText` + a 44×44 `overflowBtn` in `tints.accentTint` with the new `more-vertical`
+Icon glyph); `actionsRow` is now just `+ Add disc`; Field view moved into a new `filterRow`
+beside the `Filters & sort` expander (which took `flex: 1`) as an outlined pill; everything
+else moved into a transparent bottom-sheet `<Modal>` reusing `CsvExportModal`'s exact
+backdrop/sheet/tap-outside vocabulary, with a local `SheetRow` helper (48dp rows). Handlers
+untouched — each row fires the same setter the ghost button did. `ghostBtnActive`/
+`ghostBtnTextActive` deleted (only Field view used them); `ghostBtn` itself stays, still used
+by the empty-state buttons.
+
+**On-device result:** the actions area went from two wrapping rows of six buttons to one
+primary button. Sheet renders correctly — Import CSV / Export CSV / Share bag report, divider,
+`Clear today's bag` in `colors.danger` last; `My library` correctly absent (0 custom discs).
+Tapping `Export CSV` closed the sheet and opened the export modal with real data, confirming
+the handler wiring survived the move.
+
+**One build mistake worth noting:** the first attempt put the Field view button inside `header`
+rather than `filterRow` — a `str.replace` on `</Pressable>\n      </View>` matched the header's
+closing tags first, since the overflow button had just made that pattern appear there too.
+Caught immediately on-device (Field view rendered next to the ⋮). Fixed, rebuilt, re-verified.
 
 ### T2-3. F1 — Settings: flat preference list, not nine cards
 
