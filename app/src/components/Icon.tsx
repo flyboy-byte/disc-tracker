@@ -23,7 +23,8 @@ export type IconName =
   | 'check'
   | 'arrow-up'
   | 'arrow-down'
-  | 'arrow-to-top';
+  | 'arrow-to-top'
+  | 'more-vertical';
 
 interface Props {
   name: IconName;
@@ -45,6 +46,9 @@ const PATHS: Record<IconName, string> = {
   'arrow-down': 'M12 5v14M12 19l-5.5-5.5M12 19l5.5-5.5',
   // "Send to top": an up arrow with a bar over it, matching the ⤒ it replaces.
   'arrow-to-top': 'M5 4h14M12 20V8M12 8l-5 5M12 8l5 5',
+  // Overflow (⋮). Three dots drawn as zero-length round-capped strokes, so it inherits the
+  // same strokeWidth/linecap as every other glyph instead of needing <Circle> elements.
+  'more-vertical': 'M12 5.5v0M12 12v0M12 18.5v0',
 };
 
 export default function Icon({ name, color, size = 20, strokeWidth = 1.8 }: Props) {

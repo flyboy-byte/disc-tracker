@@ -2,7 +2,7 @@
 // openAdd()/openEdit()/saveDisc()/deleteDisc()/setFilter()/setSort()/startDrag()+endDrag().
 // CSV export/import (Phase 7) is wired in via CsvExportModal/CsvImportModal below.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import { useFocusEffect } from 'expo-router';
 import ArcDetailModal from '../../src/components/ArcDetailModal';
@@ -19,7 +19,7 @@ import Icon from '../../src/components/Icon';
 import SegmentedControl from '../../src/components/SegmentedControl';
 import EmptyStateIcon from '../../src/components/EmptyStateIcon';
 import { useToast } from '../../src/components/Toast';
-import { colors } from '../../src/theme';
+import { colors, tints } from '../../src/theme';
 import {
   getDiscs,
   getMeta,
@@ -123,6 +123,8 @@ export default function BagScreen() {
   const [reportOpen, setReportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [detailDisc, setDetailDisc] = useState<Disc | null>(null);
+  // B1 overflow sheet — every bag action that isn't "+ Add disc" or the Field view toggle.
+  const [overflowOpen, setOverflowOpen] = useState(false);
   // Guards the focus refetch so it only runs after the initial mount load below (which the
   // Settings tab's import/reset can invalidate — same useFocusEffect pattern the plan flags).
   const didInitialLoad = useRef(false);
@@ -493,11 +495,25 @@ export default function BagScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Bag</Text>
-        <Text style={styles.substat}>
-          {discs.length} disc{discs.length === 1 ? '' : 's'}
-          {bagCount > 0 ? ` · ${bagCount} in bag` : ''}
-        </Text>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>Bag</Text>
+          <Text style={styles.substat}>
+            {discs.length} disc{discs.length === 1 ? '' : 's'}
+            {bagCount > 0 ? ` · ${bagCount} in bag` : ''}
+          </Text>
+        </View>
+        {/* UX_AUDIT.md B1: the actions row was one primary + up to five ghost buttons wrapping
+            onto a second line. Everything except "+ Add disc" (and Field view, which is a view
+            mode, not an action) moves in here. */}
+        <Pressable
+          testID="bag-overflow"
+          style={styles.overflowBtn}
+          onPress={() => setOverflowOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="More bag actions"
+        >
+          <Icon name="more-vertical" color={colors.accent} size={22} strokeWidth={2.4} />
+        </Pressable>
       </View>
 
       {selectingDiscs && (
@@ -552,7 +568,10 @@ export default function BagScreen() {
         placeholderTextColor={colors.muted}
       />
 
-      {/* Filters expander — collapsed by default so the screen opens on search + cards. */}
+      {/* Filters expander — collapsed by default so the screen opens on search + cards.
+          Field view sits beside it (UX_AUDIT.md B1): it switches how the same discs are drawn,
+          which belongs with the view controls, not with Import/Export/Share. */}
+      <View style={styles.filterRow}>
       <Pressable
         style={styles.filterToggle}
         onPress={() => setShowFilters((v) => !v)}
@@ -570,6 +589,21 @@ export default function BagScreen() {
         <View style={{ flex: 1 }} />
         <Icon name={showFilters ? 'chevron-up' : 'chevron-down'} color={colors.muted} size={18} />
       </Pressable>
+      {bagScope === 'today' && (
+        <Pressable
+          style={[styles.fieldViewBtn, viewMode === 'field' && styles.fieldViewBtnActive]}
+          onPress={() => setViewMode((m) => (m === 'field' ? 'list' : 'field'))}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityState={{ selected: viewMode === 'field' }}
+          accessibilityLabel={viewMode === 'field' ? 'Switch to card list' : 'Switch to field view'}
+        >
+          <Text style={[styles.fieldViewText, viewMode === 'field' && styles.fieldViewTextActive]}>
+            {viewMode === 'field' ? 'Bag view' : 'Field view'}
+          </Text>
+        </Pressable>
+      )}
+      </View>
       {showFilters && (
         <View style={styles.filterPanel}>
           <Text style={styles.filterGroupLabel}>STABILITY</Text>
@@ -610,41 +644,6 @@ export default function BagScreen() {
 
       <View style={styles.actionsRow}>
         <GradientButton testID="bag-add-disc" style={styles.addBtn} textStyle={styles.addBtnText} onPress={openAdd} label="+ Add disc" accessibilityLabel="Add a disc" />
-        <Pressable testID="bag-import" style={styles.ghostBtn} hitSlop={6} onPress={() => setImportOpen(true)} accessibilityRole="button" accessibilityLabel="Import discs from CSV">
-          <Text style={styles.ghostBtnText}>Import</Text>
-        </Pressable>
-        <Pressable testID="bag-export" style={styles.ghostBtn} hitSlop={6} onPress={() => setExportOpen(true)} accessibilityRole="button" accessibilityLabel="Export discs to CSV">
-          <Text style={styles.ghostBtnText}>Export</Text>
-        </Pressable>
-        <Pressable testID="bag-share-report" style={styles.ghostBtn} hitSlop={6} onPress={() => setReportOpen(true)} accessibilityRole="button" accessibilityLabel="Share your bag as an image">
-          <Text style={styles.ghostBtnText}>Share</Text>
-        </Pressable>
-        {customDiscs.length > 0 && (
-          <Pressable style={styles.ghostBtn} hitSlop={6} onPress={() => setLibraryOpen(true)} accessibilityRole="button" accessibilityLabel="Browse or manage your custom disc library">
-            <Text style={styles.ghostBtnText}>My library ({customDiscs.length})</Text>
-          </Pressable>
-        )}
-        {/* Field view + Clear bag are today's-bag affordances (Field view is scoped there; a
-            200-arc field is the cliff we deliberately avoid). Collection stays a browse/manage view. */}
-        {bagScope === 'today' && bagCount > 0 && (
-          <Pressable style={styles.ghostBtn} hitSlop={6} onPress={clearBag} accessibilityRole="button" accessibilityLabel="Clear today's bag">
-            <Text style={styles.ghostBtnText}>Clear bag</Text>
-          </Pressable>
-        )}
-        {bagScope === 'today' && (
-          <Pressable
-            style={[styles.ghostBtn, viewMode === 'field' && styles.ghostBtnActive]}
-            onPress={() => setViewMode((m) => (m === 'field' ? 'list' : 'field'))}
-            hitSlop={6}
-            accessibilityRole="button"
-            accessibilityState={{ selected: viewMode === 'field' }}
-            accessibilityLabel={viewMode === 'field' ? 'Switch to card list' : 'Switch to field view'}
-          >
-            <Text style={[styles.ghostBtnText, viewMode === 'field' && styles.ghostBtnTextActive]}>
-              {viewMode === 'field' ? 'Bag view' : 'Field view'}
-            </Text>
-          </Pressable>
-        )}
       </View>
       {bagScope === 'collection' && sortMode === 'custom' && (
         <Text style={styles.dragHint}>
@@ -796,15 +795,57 @@ export default function BagScreen() {
       />
       <CsvExportModal visible={exportOpen} discs={discs} onCancel={() => setExportOpen(false)} />
       <BagReportModal visible={reportOpen} discs={discs.filter((d) => d.inBag)} onCancel={() => setReportOpen(false)} />
+      {/* B1 overflow sheet. Same transparent bottom-sheet vocabulary as every other modal in
+          this app (CsvExportModal et al) rather than an anchored popover — this codebase has no
+          popover precedent, and a sheet keeps the 44dp row targets for free. Each row just
+          fires the handler the old ghost button did; nothing about the actions themselves
+          changed. */}
+      <Modal visible={overflowOpen} animationType="slide" transparent onRequestClose={() => setOverflowOpen(false)}>
+        <View style={styles.sheetBackdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setOverflowOpen(false)} accessibilityRole="button" accessibilityLabel="Close" />
+          <View style={styles.sheet}>
+            <Text style={styles.sheetTitle}>Bag actions</Text>
+            <SheetRow testID="bag-import" label="Import CSV" onPress={() => { setOverflowOpen(false); setImportOpen(true); }} />
+            <SheetRow testID="bag-export" label="Export CSV" onPress={() => { setOverflowOpen(false); setExportOpen(true); }} />
+            <SheetRow testID="bag-share-report" label="Share bag report" onPress={() => { setOverflowOpen(false); setReportOpen(true); }} />
+            {customDiscs.length > 0 && (
+              <SheetRow label={`My library (${customDiscs.length})`} onPress={() => { setOverflowOpen(false); setLibraryOpen(true); }} />
+            )}
+            {bagScope === 'today' && bagCount > 0 && (
+              <>
+                <View style={styles.sheetDivider} />
+                <SheetRow label="Clear today's bag" danger onPress={() => { setOverflowOpen(false); clearBag(); }} />
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+
       <CsvImportModal visible={importOpen} existingDiscs={discs} onCancel={() => setImportOpen(false)} onImport={handleImportDiscs} />
     </View>
+  );
+}
+
+function SheetRow({ label, onPress, danger, testID }: { label: string; onPress: () => void; danger?: boolean; testID?: string }) {
+  return (
+    <Pressable
+      testID={testID}
+      style={styles.sheetRow}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <Text style={[styles.sheetRowText, danger && styles.sheetRowDanger]}>{label}</Text>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, paddingTop: 56, paddingHorizontal: 14 },
   center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
-  header: { marginBottom: 10 },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 10 },
+  headerText: { flex: 1 },
+  overflowBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: tints.accentTint },
   selBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.accent, backgroundColor: colors.cardHover },
   selBarBtn: { paddingVertical: 4, paddingHorizontal: 4 },
   selBarCount: { color: colors.text, fontSize: 14, fontWeight: '700', flex: 1, textAlign: 'center' },
@@ -828,7 +869,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   // Filters expander
+  filterRow: { flexDirection: 'row', alignItems: 'stretch', gap: 8 },
+  fieldViewBtn: { justifyContent: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingHorizontal: 12, marginBottom: 8 },
+  fieldViewBtnActive: { borderColor: colors.accent, backgroundColor: tints.accentTint },
+  fieldViewText: { color: colors.muted, fontSize: 13, fontWeight: '600' },
+  fieldViewTextActive: { color: colors.accent },
   filterToggle: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -846,13 +893,18 @@ const styles = StyleSheet.create({
   filterPanel: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, marginBottom: 8 },
   filterGroupLabel: { color: colors.muted, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
   filterDivider: { height: 1, backgroundColor: colors.border, marginVertical: 10 },
+  sheetBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: colors.card, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, paddingBottom: 28 },
+  sheetTitle: { color: colors.text, fontSize: 20, fontWeight: '700', marginBottom: 4 },
+  sheetRow: { minHeight: 48, justifyContent: 'center' },
+  sheetRowText: { color: colors.text, fontSize: 16 },
+  sheetRowDanger: { color: colors.danger },
+  sheetDivider: { height: 1, backgroundColor: colors.border, marginVertical: 6 },
   actionsRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginVertical: 8 },
   addBtn: { backgroundColor: colors.accent, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   addBtnText: { color: '#fff', fontWeight: '700' },
   ghostBtn: { borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  ghostBtnActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.12)' },
   ghostBtnText: { color: colors.muted, fontWeight: '600', fontSize: 13 },
-  ghostBtnTextActive: { color: colors.accent },
   dragHint: { color: colors.muted, fontSize: 12, flexShrink: 1, marginBottom: 6 },
   // Was a wrapping row (legend | four small arc pills). Now that the arc-view control is a
   // full-width SegmentedControl it never shares a line anyway, and leaving them as flex
