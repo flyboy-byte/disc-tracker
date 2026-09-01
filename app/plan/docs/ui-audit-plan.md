@@ -1,9 +1,9 @@
 # UI audit — tracked plan
 
 **Status, 2026-09-01: Tier 1 done 5 of 5 (A2, E1, D3, A5, F2). Tier 2: T2-1 done (closes A1,
-A3, and C1-for-`index.tsx`), T2-2 done (closes B1). T2-3/T2-4/T2-5 not started — T2-3 and
-T2-4 each still need an open decision answered before they can be built. All of the above is
-verified on a physical Pixel 9.**
+A3, C1-for-`index.tsx`), T2-2 done (closes B1), T2-3 done (closes F1 + F6). T2-4 and T2-5 not
+started — T2-4 still needs its open decision answered. All of the above is verified on a
+physical Pixel 9.**
 
 > **Verification debt: CLEARED 2026-09-01.** F2 and all of T2-1 were verified on a real
 > **Pixel 9 (Android 17)** — release-signed build installed over the existing v0.25.0 in place,
@@ -406,7 +406,7 @@ Caught immediately on-device (Field view rendered next to the ⋮). Fixed, rebui
 
 ### T2-3. F1 — Settings: flat preference list, not nine cards
 
-**Priority: P1 · Effort: M–L · Has an open decision, see below**
+**Priority: P1 · Effort: M–L · Done, 2026-09-01**
 
 Confirmed 10 separate `<View style={styles.card}>` sections in `settings.tsx` (Default Throw
 View, Skill Level, Throw Style, Field View, Reference Images, Backup & Restore, Data, Disc
@@ -420,8 +420,26 @@ between sections; replace `sectionLabel`'s all-caps 10-11px treatment with 14sp 
 in `colors.accent` (also closes `UX_AUDIT.md` **F6**); use `divider` between sections instead
 of card edges.
 
-**Open question — what happens to the three pill-choice sections (Default Throw View, Skill
-Level, Throw Style):**
+**Done, 2026-09-01 — built with option (a), verified on the Pixel 9.** Decision made rather
+than re-asked: the finding is about *visual weight*, and converting three working inline
+controls into tap-to-open dialogs is a bigger interaction change than F1 asked for. Since
+T2-1 had already turned all three into `SegmentedControl`s, (a) also meant zero work on them.
+
+`card` → `section` (`{ paddingVertical: 16, borderTopWidth: 1, borderTopColor: colors.border }`)
+across all ten sections — no fill, no border box, no radius; a hairline rule now separates
+them and the ScrollView's own `padding: 14` carries the horizontal inset, so content is wider
+than it was inside the old 16px-padded cards. `sectionLabel` went from 11px all-caps
+letter-spaced muted to **14sp sentence-case `colors.accent`** and all ten label strings were
+rewritten to sentence case ("DEFAULT THROW VIEW" → "Default throw view"), which closes
+**F6** as the scope predicted. `content`'s `gap: 12` dropped, now redundant.
+
+**On-device result:** reads as one continuous list with accent headings rather than nine
+equal boxes; Backup & Restore and Data no longer carry the same visual weight as Default
+Throw View. Also incidentally the first clear full view of F2's radio list in context
+(Built-in unselected / Try Discs filled) — it looks right sitting in the flattened layout.
+
+~~**Open question — what happens to the three pill-choice sections (Default Throw View, Skill
+Level, Throw Style):**~~ *(resolved above — option (a))*
 - **(a) Keep them as inline pill rows** under a plain (no-card) section header — smallest
   change, fixes the "equal visual weight" complaint (the actual F1 finding) without adding new
   screens. *(Recommended — the visual-weight problem is the real bug; converting to
