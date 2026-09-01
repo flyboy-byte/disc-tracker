@@ -87,7 +87,7 @@ rather than claiming full coverage.
 
 ### 3. D3 — Snackbar UNDO for swipe-to-demote
 
-**Priority: P0 · Effort: M**
+**Priority: P0 · Effort: M · Done, 2026-08-31 (`ce75942`)**
 
 `onSwipeThrow`/`onSwipeBuy` in `disc-suggest.tsx` call `demoteDisc(...)` immediately; in Buy
 mode with the learning engine on, `recordSwipeAway` also mutates the learned aversion state.
@@ -109,6 +109,36 @@ fires by accident.
 window, confirm the disc's position and (Buy mode) the learning state are back to exactly
 where they were before the swipe. Verify the Snackbar auto-dismisses and the swipe becomes
 permanent after ~5s with no UNDO tap.
+
+**What shipped.** No new Snackbar component — the existing `Toast` gained an optional action
+instead, since it already had the properties that keep this from being annoying (absolutely
+positioned so showing one never reflows the list, only ever one on screen — a new swipe
+replaces and re-times rather than stacking, auto-dismiss) and a second treatment for one job
+is exactly the audit's own A1 complaint. Action toasts add only the delta: a tappable label,
+4s instead of 1.9s, and `box-none` so the list stays scrollable underneath while one is up.
+
+Both halves of a swipe are reversed. `demoteDisc` now returns the prior position and
+`undemoteDisc` consumes it — a disc that was *already* demoted and swiped again has to go back
+to where it was, not lose its row. For the learning engine, the EMA blend can't be inverted
+(`avoid_strength` and each brand score clamp at 1, so a saturated value has lost what it was),
+so the row is snapshotted before the write and restored through the existing
+`replaceLearningState`. The snapshot is read through the serialized DB queue rather than React
+state, so rapid swipes each capture their true pre-swipe value instead of a stale one;
+`engine_enabled` is re-read at undo time so toggling the engine off mid-window isn't reversed.
+
+**Real bug found on-device while verifying** (same class as `v0.23`'s gesture-vs-scroll find):
+`SwipeableSuggestCard` never reset `translateX` after a completed swipe, leaving the instance
+parked off-screen. Latent while demote-to-bottom was the only outcome — the list virtualizes,
+so the row usually remounted fresh before scrolling back into view — but undo restores a
+still-mounted card, which rendered as a red "SKIP" band where the card should be. Fixed in the
+component: the transform is transient gesture state, so it resets once the card is gone.
+
+**Verified on a real Pixel 7**, Throw and Buy: swipe → toast → UNDO restores the exact prior
+list order with the card rendering correctly; auto-dismiss confirmed (a late UNDO tap does
+nothing). `tsc --noEmit` clean, 422/422 Jest. **Gap, stated honestly:** the learning-state
+restore runs without error but isn't independently observable on screen, and there's no
+`expo-sqlite` Jest harness to assert it directly (`PLAN.md` Track B) — it's verified by code
+inspection plus the list-level round trip, not by reading back the stored row.
 
 ### 4. F2 — Catalog picker as a radio list
 
