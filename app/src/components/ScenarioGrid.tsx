@@ -5,6 +5,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme';
 import type { Scenario } from '../utils/scenarios';
+import ScenarioIcon from './ScenarioIcon';
 
 interface Props {
   scenarios: Scenario[];
@@ -12,11 +13,14 @@ interface Props {
   onSelect: (sc: Scenario) => void;
 }
 
+const WIND_SCENARIOS = new Set(['headwind', 'tailwind']);
+
 export default function ScenarioGrid({ scenarios, activeId, onSelect }: Props) {
   return (
     <View style={styles.grid}>
       {scenarios.map((sc) => {
         const active = sc.id === activeId;
+        const wind = WIND_SCENARIOS.has(sc.id);
         return (
           <Pressable
             key={sc.id}
@@ -27,11 +31,16 @@ export default function ScenarioGrid({ scenarios, activeId, onSelect }: Props) {
             accessibilityState={{ selected: active }}
             accessibilityLabel={`${sc.title}: ${sc.desc}`}
           >
-            {/* Every icon sits in the same tinted circular badge — this unifies the full-color
-                emoji and the monochrome glyph-arrows into one visual language, and the explicit
-                light `color` rescues the arrow glyphs, which otherwise render dark-on-dark. */}
-            <View style={[styles.iconBadge, active && styles.iconBadgeActive]}>
-              <Text style={styles.icon}>{sc.icon}</Text>
+            {/* One drawn icon language (react-native-svg, matching TabBarIcon.tsx) instead of
+                the emoji/glyph mix — scales and tints cleanly, reads correctly in TalkBack. */}
+            <View
+              style={[
+                styles.iconBadge,
+                wind && styles.iconBadgeWind,
+                active && (wind ? styles.iconBadgeWindActive : styles.iconBadgeActive),
+              ]}
+            >
+              <ScenarioIcon id={sc.id} size={22} />
             </View>
             <Text style={styles.title}>{sc.title}</Text>
             <Text style={styles.desc}>{sc.desc}</Text>
@@ -69,7 +78,8 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   iconBadgeActive: { backgroundColor: 'rgba(145,94,255,0.28)', borderColor: colors.accent },
-  icon: { fontSize: 22, lineHeight: 26, color: colors.text, textAlign: 'center' },
+  iconBadgeWind: { backgroundColor: 'rgba(56,189,248,0.12)', borderColor: 'rgba(56,189,248,0.22)' },
+  iconBadgeWindActive: { backgroundColor: 'rgba(56,189,248,0.28)', borderColor: colors.sim },
   title: { color: colors.text, fontSize: 13, fontWeight: '700', textAlign: 'center' },
   desc: { color: colors.muted, fontSize: 10, lineHeight: 14, textAlign: 'center' },
 });

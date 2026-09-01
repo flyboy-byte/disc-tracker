@@ -7,7 +7,6 @@ import type { Disc } from './disc';
 
 export interface Scenario {
   id: string;
-  icon: string;
   title: string;
   desc: string;
   stabMin?: number;
@@ -20,7 +19,6 @@ export interface Scenario {
 export const SCENARIOS: Scenario[] = [
   {
     id: 'straight',
-    icon: '➡',
     title: 'Dead Straight',
     desc: "Turn and fade cancel out — holds the line",
     stabMin: -1,
@@ -30,7 +28,6 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'hyzer',
-    icon: '↙',
     title: 'Reliable Hyzer',
     desc: "Finishes hard left, won't turn over",
     stabMin: 2,
@@ -39,7 +36,6 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'distance',
-    icon: '🚀',
     title: 'Max Distance',
     desc: 'Turns and carries — not a fade pile-driver',
     stabMin: -1,
@@ -49,7 +45,6 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'headwind',
-    icon: '🌬',
     title: 'Into Headwind',
     desc: "Won't flip even in a strong headwind",
     stabMin: 2.5,
@@ -58,7 +53,6 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'tailwind',
-    icon: '💨',
     title: 'Tailwind',
     desc: 'Tailwind makes discs fly OS — go understable to compensate',
     stabMin: -2,
@@ -69,7 +63,6 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'turnover',
-    icon: '↗',
     title: 'Turnover',
     desc: 'Holds an anhyzer — turns and stays turned',
     stabMax: -1.5,
@@ -78,7 +71,6 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'forehand',
-    icon: '✋',
     title: 'Forehand',
     desc: "Won't flip on a sidearm release",
     stabMin: 2,
@@ -87,7 +79,6 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'tomahawk',
-    icon: '🪓',
     title: 'Tomahawk',
     desc: 'High fade spikes; slight US carries farther inverted',
     stabMin: 1,
@@ -97,7 +88,6 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'approach',
-    icon: '🎯',
     title: 'Approach',
     desc: 'Controlled & accurate into the green',
     stabMin: -1,
@@ -107,7 +97,6 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'accurate_mid',
-    icon: '⊙',
     title: 'Accurate Mid',
     desc: 'Predictable mid — slight fade, hits the gap',
     stabMin: 0,
@@ -117,7 +106,6 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'hyzerflip',
-    icon: '↪',
     title: 'Hyzer Flip',
     desc: 'Starts hyzer, flips flat, holds straight',
     stabMin: -2,
@@ -128,7 +116,6 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'roller',
-    icon: '⟳',
     title: 'Roller',
     desc: 'Very US with low fade — runs straight on the ground',
     stabMax: -2.5,
@@ -137,7 +124,6 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: 'flex',
-    icon: '〰',
     title: 'Flex Shot',
     desc: 'Turns on release, fades back straight — extra distance without a full turnover',
     stabMin: -2,
