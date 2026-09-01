@@ -1,8 +1,7 @@
 # UI audit — tracked plan
 
-**Status: not started. Tier 1 and Tier 2 both fully scoped 2026-08-31 — Tier 2 to the same
-depth as Tier 1 (exact files/styles/values, open decisions flagged inline rather than
-pre-decided), so picking any item up later doesn't require re-deriving it from `UX_AUDIT.md`.**
+**Status, 2026-09-01: Tier 1 4 of 5 done (A2, E1, D3, A5) — only F2 (catalog radio list)
+remains. Tier 2 fully scoped, not started, opportunistic per-screen as planned.**
 Source: the Claude Design UX pass in
 `docs/app-ui-design.zip` (`UX_AUDIT.md`, 30 findings across all five tabs, severity-ranked
 P0/P1/P2). This doc narrows that audit to what's actually getting built and in what order —
@@ -167,20 +166,35 @@ reachable as their own tap targets and don't also change selection as a side eff
 
 ### 5. A5 — Score tier: second signal beyond color
 
-**Priority: P0 · Effort: S**
+**Priority: P0 · Effort: S · Done, 2026-09-01**
 
-`TIER_COLOR[scoreTier(...)]` in `score.tsx` colors stroke numbers by birdie/par/bogey with
+`TIER_COLOR[scoreTier(...)]` in `score.tsx` colored stroke numbers by birdie/par/bogey with
 color as the only channel — a real gap for the ~8% of men with red-green color deficiency in a
-sport that skews heavily male.
+sport that skews heavily male. Discussed with Logan whether a shape/weight second channel
+(the original scoped fix, below) was worth the layout risk on the summary grid's dense 34px
+cells — he raised a second, independent problem: the tier palette (`os` purple / `st` green /
+`us` amber / `danger` red) was the only place in the app using colors outside its one-purple
+(+ `sim` blue for wind) visual language, so it read as a bolted-on convention rather than
+something native to this app.
 
-**Fix.** Add a shape or weight channel alongside the existing color, matching real scorecard
+**What shipped.** Dropped tier coloring entirely instead of adding a second channel — closes
+the accessibility gap by elimination rather than mitigation, and fixes the palette-consistency
+complaint as a side effect. `TIER_COLOR` constant, and the now-unused `scoreTier`/`ScoreTier`
+import, removed from `score.tsx`; both call sites (live hole card `~610`, summary grid `~743`)
+now render scored strokes in plain `colors.text` (unscored/preview stays `colors.muted`,
+unchanged). Verified: `tsc --noEmit` clean, full Jest suite 422/422 passing. Per Logan, this
+also leaves disc color-picker in the Bag tab as the only remaining "arbitrary" (non-purple-
+family) color use in the app — a deliberate, known exception (user-chosen disc plastic colors),
+not a target for this audit.
+
+~~**Fix.** Add a shape or weight channel alongside the existing color, matching real scorecard
 convention: circle outline for under par, plain for par, filled/boxed for over par. Exact
 visual TBD when building — check `designs/Before After.html` row 2 (Score) for whether the
 handoff mockup already shows a specific treatment before inventing one.
 
 **Definition of done.** A user with the color channel removed (test by desaturating a
 screenshot, or Android's grayscale accessibility toggle) can still distinguish birdie/par/bogey
-at a glance.
+at a glance.~~ — superseded by the plain-number approach above; kept for the reasoning trail.
 
 ---
 
