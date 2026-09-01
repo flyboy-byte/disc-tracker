@@ -4,7 +4,7 @@
 // modes. All data is local SQLite (db.ts round CRUD); scoring math is roundMath.ts. See
 // app/plan/docs/scorekeeper-scope.md for scope + the hard non-goals (no GPS/maps/course-DB/online).
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, BackHandler, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import {
   createRound,
@@ -70,6 +70,35 @@ export default function ScoreScreen() {
     useCallback(() => {
       refetch();
     }, [refetch])
+  );
+
+  // UX_AUDIT.md E1: setup/active/summary are modes of this one screen, not router destinations
+  // — without this, the hardware/gesture Back button doesn't map to '‹ Rounds' and instead falls
+  // through to the tab navigator (switches tabs), worst mid-round. One listener at the screen
+  // level covers all three non-list modes with the same "go back to the rounds list" action each
+  // already exposes via onCancel/onExit/onBack. Added/removed on focus so it never intercepts
+  // Back for another tab while this one is just mounted-but-not-visible.
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        if (mode === 'setup') {
+          setMode('list');
+          return true;
+        }
+        if (mode === 'active') {
+          refetch();
+          setMode('list');
+          return true;
+        }
+        if (mode === 'summary') {
+          setActive(null);
+          setMode('list');
+          return true;
+        }
+        return false; // mode === 'list': let Back behave normally (exit tab/app)
+      });
+      return () => sub.remove();
+    }, [mode, refetch])
   );
 
   const openRound = async (r: Round) => {
