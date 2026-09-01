@@ -34,6 +34,8 @@ import { colors } from '../../src/theme';
 import type { Disc } from '../../src/utils/disc';
 import type { SkillPreset, ThrowStyle } from '../../src/utils/suggestScore';
 import CustomCatalogModal from '../../src/components/CustomCatalogModal';
+import Icon from '../../src/components/Icon';
+import SegmentedControl from '../../src/components/SegmentedControl';
 import { buildBackup, parseBackup, backupSummary } from '../../src/utils/backup';
 import {
   getCatalog,
@@ -370,21 +372,13 @@ export default function SettingsScreen() {
       <View style={styles.card}>
         <Text style={styles.sectionLabel}>DEFAULT THROW VIEW</Text>
         <Text style={styles.sectionHint}>The hand/throw the Flight Shaper starts on.</Text>
-        <View style={styles.pillRow}>
-          {ARC_VIEWS.map((v) => (
-            <Pressable
-              key={v}
-              onPress={() => changeArcView(v)}
-              style={[styles.pill, arcView === v && styles.pillActive]}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityState={{ selected: arcView === v }}
-              accessibilityLabel={`Default throw view ${v}`}
-            >
-              <Text style={[styles.pillText, arcView === v && styles.pillTextActive]}>{v}</Text>
-            </Pressable>
-          ))}
-        </View>
+        <SegmentedControl
+          style={styles.prefSegment}
+          value={arcView}
+          onChange={changeArcView}
+          options={ARC_VIEWS.map((v) => ({ key: v, label: v }))}
+          accessibilityLabel="Default throw view"
+        />
       </View>
 
       {/* Skill level — drives Disc Suggest ranking (B1). Caps recommended speed + nudges
@@ -392,22 +386,14 @@ export default function SettingsScreen() {
       <View style={styles.card}>
         <Text style={styles.sectionLabel}>SKILL LEVEL</Text>
         <Text style={styles.sectionHint}>Tunes Disc Suggest — caps recommended speed and shifts stability to match your arm.</Text>
-        <View style={styles.pillRow}>
-          {SKILLS.map((s) => (
-            <Pressable
-              key={s.id}
-              testID={`settings-skill-${s.id}`}
-              onPress={() => changeSkill(s.id)}
-              style={[styles.pill, skill === s.id && styles.pillActive]}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityState={{ selected: skill === s.id }}
-              accessibilityLabel={`Skill level ${s.label}`}
-            >
-              <Text style={[styles.pillText, skill === s.id && styles.pillTextActive]}>{s.label}</Text>
-            </Pressable>
-          ))}
-        </View>
+        <SegmentedControl
+          style={styles.prefSegment}
+          testIDPrefix="settings-skill"
+          value={skill}
+          onChange={changeSkill}
+          options={SKILLS.map((s) => ({ key: s.id, label: s.label }))}
+          accessibilityLabel="Skill level"
+        />
       </View>
 
       {/* Throw style — a modifier on top of whichever Disc Suggest scenario is active, not a
@@ -417,22 +403,14 @@ export default function SettingsScreen() {
       <View style={styles.card}>
         <Text style={styles.sectionLabel}>THROW STYLE</Text>
         <Text style={styles.sectionHint}>Also tunes Disc Suggest — forehand nudges every scenario toward overstable, since forehand power overpowers turn.</Text>
-        <View style={styles.pillRow}>
-          {THROW_STYLES.map((t) => (
-            <Pressable
-              key={t.id}
-              testID={`settings-throw-style-${t.id}`}
-              onPress={() => changeThrowStyle(t.id)}
-              style={[styles.pill, throwStyle === t.id && styles.pillActive]}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityState={{ selected: throwStyle === t.id }}
-              accessibilityLabel={`Throw style ${t.label}`}
-            >
-              <Text style={[styles.pillText, throwStyle === t.id && styles.pillTextActive]}>{t.label}</Text>
-            </Pressable>
-          ))}
-        </View>
+        <SegmentedControl
+          style={styles.prefSegment}
+          testIDPrefix="settings-throw-style"
+          value={throwStyle}
+          onChange={changeThrowStyle}
+          options={THROW_STYLES.map((t) => ({ key: t.id, label: t.label }))}
+          accessibilityLabel="Throw style"
+        />
       </View>
 
       {/* Field view scope — B2. Off by default: Field view plots today's bag (few discs, legible).
@@ -552,12 +530,12 @@ export default function SettingsScreen() {
         <View style={styles.divider} />
         <Pressable style={styles.row} onPress={() => setExportOpen(true)} accessibilityRole="button" accessibilityLabel="Export discs to CSV">
           <Text style={styles.rowText}>Export discs (CSV)</Text>
-          <Text style={styles.rowChevron}>›</Text>
+          <Icon name="chevron-right" color={colors.muted} size={18} />
         </Pressable>
         <View style={styles.divider} />
         <Pressable style={styles.row} onPress={() => setImportOpen(true)} accessibilityRole="button" accessibilityLabel="Import discs from CSV">
           <Text style={styles.rowText}>Import discs (CSV)</Text>
-          <Text style={styles.rowChevron}>›</Text>
+          <Icon name="chevron-right" color={colors.muted} size={18} />
         </Pressable>
         <View style={styles.divider} />
         <Pressable
@@ -731,7 +709,7 @@ export default function SettingsScreen() {
           accessibilityLabel="How to use Disc Tracker"
         >
           <Text style={[styles.rowText, styles.link]}>How to use Disc Tracker</Text>
-          <Text style={[styles.rowChevron, styles.link]}>›</Text>
+          <Icon name="chevron-right" color={colors.accent} size={18} />
         </Pressable>
         <View style={styles.divider} />
         <View style={styles.aboutRow}>
@@ -805,11 +783,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 14, padding: 16 },
   sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, color: colors.muted, textTransform: 'uppercase' },
   sectionHint: { color: colors.muted, fontSize: 12, marginTop: 4 },
-  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  pill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, borderWidth: 1, borderColor: colors.border },
-  pillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.12)' },
-  pillText: { color: colors.muted, fontSize: 13, fontWeight: '600' },
-  pillTextActive: { color: colors.accent },
+  prefSegment: { marginTop: 12 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
   catalogSelectArea: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', paddingRight: 8 },
   radio: {

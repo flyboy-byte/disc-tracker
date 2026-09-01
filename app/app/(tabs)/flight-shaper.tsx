@@ -27,7 +27,8 @@ import HyzerReferenceDiagram from '../../src/components/HyzerReferenceDiagram';
 import NumberInput from '../../src/components/NumberInput';
 import VerticalSlider from '../../src/components/VerticalSlider';
 import { getDiscs, getMeta, getOrCreateDefaultUser, setMeta } from '../../src/db/db';
-import { colors } from '../../src/theme';
+import Icon from '../../src/components/Icon';
+import { colors, tints } from '../../src/theme';
 import { STAB_META, stab, type Disc } from '../../src/utils/disc';
 import { applyModifiers, estimateDist, type BaseDisc, type SliderValues } from '../../src/utils/legacyPhysics';
 import { simulateShot } from '../../src/physics/sim/simulateShot';
@@ -206,7 +207,7 @@ export default function FlightShaperScreen() {
               <Text style={styles.discSelectName} numberOfLines={1}>{selectorTitle}</Text>
               {selectorSub && <Text style={styles.discSelectSub}>{selectorSub}</Text>}
             </View>
-            <Text style={styles.chevron}>▾</Text>
+            <Icon name="chevron-down" color={colors.muted} size={18} />
           </Pressable>
 
           {/* arc-view pills */}
@@ -335,7 +336,8 @@ export default function FlightShaperScreen() {
 
         {/* collapsible reference diagrams — collapsed by default so sliders sit near the arc */}
         <Pressable style={styles.collapseToggle} onPress={() => setDiagramsOpen((v) => !v)} hitSlop={9} accessibilityRole="button" accessibilityState={{ expanded: diagramsOpen }}>
-          <Text style={styles.collapseToggleText}>{diagramsOpen ? '▾' : '▸'}  Angle & hyzer reference</Text>
+          <Icon name={diagramsOpen ? 'chevron-down' : 'chevron-right'} color={colors.accent} size={16} />
+          <Text style={styles.collapseToggleText}>Angle & hyzer reference</Text>
         </Pressable>
         {diagramsOpen && (
           <View style={styles.card}>
@@ -495,12 +497,11 @@ const styles = StyleSheet.create({
   },
   discSelectName: { color: colors.text, fontSize: 15, fontWeight: '700' },
   discSelectSub: { color: colors.muted, fontSize: 11, marginTop: 1 },
-  chevron: { color: colors.muted, fontSize: 12 },
   // Fixed 2×2 grid (each pill a set width so exactly two fit per row) — avoids the ragged 3+1
   // wrap the old maxWidth produced.
   arcViewRow: { flexDirection: 'row', gap: 4, flexWrap: 'wrap', width: 128, justifyContent: 'flex-end' },
   arcViewPill: { width: 62, alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingVertical: 4 },
-  arcViewPillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.1)' },
+  arcViewPillActive: { borderColor: colors.accent, backgroundColor: tints.accentTint },
   arcViewPillText: { color: colors.muted, fontSize: 10, fontWeight: '600' },
   arcViewPillTextActive: { color: colors.accent, fontWeight: '700' },
   // Pinned arc — fixed height so the sliders below stay on-screen. The SVG scales to fit.
@@ -550,7 +551,7 @@ const styles = StyleSheet.create({
   sliderLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, color: colors.muted, textTransform: 'uppercase' },
   sliderValue: { fontSize: 12, fontWeight: '700', minWidth: 44, textAlign: 'center' },
   sliderUnit: { fontSize: 9, color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
-  collapseToggle: { paddingVertical: 4, paddingHorizontal: 4 },
+  collapseToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4, paddingHorizontal: 4 },
   collapseToggleText: { color: colors.muted, fontSize: 13, fontWeight: '600' },
   distLabel: { fontSize: 10, color: colors.muted, textTransform: 'uppercase', letterSpacing: 1, fontWeight: '700' },
   distVal: { fontSize: 13, fontWeight: '700', color: colors.accent },

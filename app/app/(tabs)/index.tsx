@@ -15,6 +15,8 @@ import DiscLibraryModal from '../../src/components/DiscLibraryModal';
 import FieldView from '../../src/components/FieldView';
 import FilterPillRow from '../../src/components/FilterPill';
 import GradientButton from '../../src/components/GradientButton';
+import Icon from '../../src/components/Icon';
+import SegmentedControl from '../../src/components/SegmentedControl';
 import EmptyStateIcon from '../../src/components/EmptyStateIcon';
 import { useToast } from '../../src/components/Toast';
 import { colors } from '../../src/theme';
@@ -529,22 +531,17 @@ export default function BagScreen() {
       )}
 
       {/* B2 IA split: Today's Bag (in-bag subset — the primary view) vs. Collection (full archive). */}
-      <View style={styles.segment}>
-        {(['today', 'collection'] as const).map((scope) => (
-          <Pressable
-            key={scope}
-            testID={`bag-scope-${scope}`}
-            style={[styles.segmentBtn, bagScope === scope && styles.segmentBtnActive]}
-            onPress={() => changeScope(scope)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: bagScope === scope }}
-          >
-            <Text style={[styles.segmentText, bagScope === scope && styles.segmentTextActive]}>
-              {scope === 'today' ? `Today's Bag${bagCount > 0 ? ` (${bagCount})` : ''}` : `Collection (${discs.length})`}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <SegmentedControl
+        style={styles.scopeSegment}
+        testIDPrefix="bag-scope"
+        accessibilityLabel="Bag scope"
+        value={bagScope}
+        onChange={changeScope}
+        options={[
+          { key: 'today' as const, label: `Today's Bag${bagCount > 0 ? ` (${bagCount})` : ''}` },
+          { key: 'collection' as const, label: `Collection (${discs.length})` },
+        ]}
+      />
 
       <TextInput
         testID="bag-search"
@@ -571,7 +568,7 @@ export default function BagScreen() {
           </View>
         )}
         <View style={{ flex: 1 }} />
-        <Text style={styles.filterChevron}>{showFilters ? '▴' : '▾'}</Text>
+        <Icon name={showFilters ? 'chevron-up' : 'chevron-down'} color={colors.muted} size={18} />
       </Pressable>
       {showFilters && (
         <View style={styles.filterPanel}>
@@ -580,7 +577,16 @@ export default function BagScreen() {
           <Text style={styles.filterGroupLabel}>TYPE</Text>
           <FilterPillRow items={TYPE_PILLS} active={typeFilter} counts={typeCounts} onPress={setTypeFilter} />
           <Text style={styles.filterGroupLabel}>SORT</Text>
-          <FilterPillRow items={SORT_OPTIONS} active={sortMode} onPress={(m) => persistSortMode(m as SortMode)} />
+          {/* Single-select, so a SegmentedControl rather than the filter pills above it — the
+              two rows above genuinely narrow a list, this one picks an order. Widest use of
+              this control in the app at five segments. */}
+          <SegmentedControl
+            style={styles.sortSegment}
+            value={sortMode}
+            onChange={(m) => persistSortMode(m as SortMode)}
+            options={SORT_OPTIONS}
+            accessibilityLabel="Sort order"
+          />
           <View style={styles.filterDivider} />
           <View style={styles.arcBar}>
             <View style={styles.legend}>
@@ -591,21 +597,16 @@ export default function BagScreen() {
                 </View>
               ))}
             </View>
-            <View style={styles.arcViewPills}>
-              {ARC_VIEWS.map((v) => (
-                <Pressable
-                  key={v}
-                  onPress={() => changeArcView(v)}
-                  style={[styles.arcViewPill, arcView === v && styles.arcViewPillActive]}
-                  hitSlop={11}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: arcView === v }}
-                  accessibilityLabel={`Show arcs as ${v}`}
-                >
-                  <Text style={[styles.arcViewPillText, arcView === v && styles.arcViewPillTextActive]}>{v}</Text>
-                </Pressable>
-              ))}
-            </View>
+            {/* Was four 10sp pills needing hitSlop={11} to clear 44dp (UX_AUDIT.md A2/C1).
+                minWidth + flex means it takes the space left beside the legend, or wraps to its
+                own full-width line when the legend is wide — arcBar already flexWraps. */}
+            <SegmentedControl
+              style={styles.arcViewSegment}
+              value={arcView}
+              onChange={changeArcView}
+              options={ARC_VIEWS.map((v) => ({ key: v, label: v }))}
+              accessibilityLabel="Arc view"
+            />
           </View>
         </View>
       )}
@@ -650,7 +651,7 @@ export default function BagScreen() {
       </View>
       {bagScope === 'collection' && sortMode === 'custom' && (
         <Text style={styles.dragHint}>
-          {reorderable ? 'use ⤒ / ↑ / ↓ on a card to reorder' : 'clear search/filters to reorder'}
+          {reorderable ? 'use the arrow buttons on a card to reorder' : 'clear search/filters to reorder'}
         </Text>
       )}
 
@@ -817,11 +818,8 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 26, fontWeight: '800' },
   substat: { color: colors.muted, fontSize: 12, marginTop: 2 },
   // Bag/Collection segmented control (B2)
-  segment: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: 10, padding: 3, marginBottom: 10, borderWidth: 1, borderColor: colors.border },
-  segmentBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
-  segmentBtnActive: { backgroundColor: 'rgba(145,94,255,0.16)' },
-  segmentText: { color: colors.muted, fontSize: 13, fontWeight: '600' },
-  segmentTextActive: { color: colors.accent },
+  scopeSegment: { marginBottom: 10 },
+  sortSegment: { marginBottom: 6 },
   search: {
     backgroundColor: colors.card,
     borderWidth: 1,
@@ -848,7 +846,6 @@ const styles = StyleSheet.create({
   filterToggleText: { color: colors.text, fontSize: 13, fontWeight: '600' },
   filterBadge: { minWidth: 18, height: 18, borderRadius: 9, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
   filterBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  filterChevron: { color: colors.muted, fontSize: 12 },
   filterPanel: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, marginBottom: 8 },
   filterGroupLabel: { color: colors.muted, fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
   filterDivider: { height: 1, backgroundColor: colors.border, marginVertical: 10 },
@@ -872,11 +869,7 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 9, height: 9, borderRadius: 5 },
   legendText: { color: colors.muted, fontSize: 11 },
-  arcViewPills: { flexDirection: 'row', gap: 4 },
-  arcViewPill: { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 },
-  arcViewPillActive: { borderColor: colors.accent, backgroundColor: 'rgba(145,94,255,0.12)' },
-  arcViewPillText: { color: colors.muted, fontSize: 10, fontWeight: '600' },
-  arcViewPillTextActive: { color: colors.accent },
+  arcViewSegment: { flexGrow: 1, flexShrink: 1, minWidth: 210 },
   emptyWrap: { alignItems: 'center', paddingHorizontal: 24, paddingTop: 56, gap: 10 },
   emptyTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
   emptyBody: { color: colors.muted, fontSize: 14, textAlign: 'center', lineHeight: 20 },

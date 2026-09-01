@@ -4,6 +4,7 @@
 // behind a toggle (swatches cover the common case; no raw hex field).
 import { useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Icon from './Icon';
 import { colors } from '../theme';
 import { wearEstimateLabel, type Disc } from '../utils/disc';
 import { DISC_COLORS } from '../utils/discColors';
@@ -147,7 +148,7 @@ export default function DiscFormModal({ visible, isNew, initial, onCancel, onSav
                 accessibilityLabel="Also save this disc to my library"
               >
                 <View style={[styles.checkbox, saveToLibrary && styles.checkboxOn]}>
-                  {saveToLibrary && <Text style={styles.checkboxMark}>✓</Text>}
+                  {saveToLibrary && <Icon name="check" color="#fff" size={14} strokeWidth={2.6} />}
                 </View>
                 <Text style={styles.saveLibText}>Also save to my disc library (autofills next time)</Text>
               </Pressable>
@@ -425,7 +426,6 @@ const styles = StyleSheet.create({
   saveLibRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   checkbox: { width: 20, height: 20, borderRadius: 5, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   checkboxOn: { borderColor: colors.accent, backgroundColor: colors.accent },
-  checkboxMark: { color: '#fff', fontSize: 12, fontWeight: '800', lineHeight: 14 },
   saveLibText: { color: colors.muted, fontSize: 12, flex: 1 },
   input: {
     backgroundColor: colors.bg,

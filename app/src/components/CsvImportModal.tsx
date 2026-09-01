@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
+import Icon from './Icon';
 import { colors } from '../theme';
 import type { Disc } from '../utils/disc';
 import { MAX_IMPORT, previewImport } from '../utils/csv';
@@ -114,7 +115,7 @@ export default function CsvImportModal({ visible, existingDiscs, onCancel, onImp
             accessibilityLabel="Allow duplicate discs"
           >
             <View style={[styles.checkbox, allowDuplicates && styles.checkboxOn]}>
-              {allowDuplicates && <Text style={styles.checkboxMark}>✓</Text>}
+              {allowDuplicates && <Icon name="check" color="#fff" size={14} strokeWidth={2.6} />}
             </View>
             <Text style={styles.dupText}>Allow duplicates (e.g. multiple copies of the same disc)</Text>
           </Pressable>
@@ -171,7 +172,6 @@ const styles = StyleSheet.create({
   dupRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   checkbox: { width: 20, height: 20, borderRadius: 5, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   checkboxOn: { borderColor: colors.accent, backgroundColor: colors.accent },
-  checkboxMark: { color: '#fff', fontSize: 12, fontWeight: '800', lineHeight: 14 },
   dupText: { color: colors.muted, fontSize: 12, flex: 1 },
   message: { fontSize: 12, marginTop: 8, minHeight: 16 },
   messageOk: { color: colors.st },

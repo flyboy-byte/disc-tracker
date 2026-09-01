@@ -1,10 +1,16 @@
 # UI audit — tracked plan
 
-**Status, 2026-09-01: Tier 1 code-complete, 5 of 5 (A2, E1, D3, A5, F2) — F2 still owes an
-on-device verification pass (no Pixel 7 connected this session). Tier 2 started: T2-1's shared
-components exist and one zero-risk call site is migrated; every remaining T2-1 migration is a
-real visual change and is parked until a device is available. T2-2/T2-4/T2-5 not started,
-T2-3 not started, both open decisions (T2-3, T2-4) still open.**
+**Status, 2026-09-01: Tier 1 code-complete 5 of 5 (A2, E1, D3, A5, F2). Tier 2: T2-1
+code-complete (closes A1, A3, and C1-for-`index.tsx`); T2-2/T2-3/T2-4/T2-5 not started, and
+T2-3/T2-4 both still carry open decisions.**
+
+> **Verification debt — read before shipping a release.** No physical device was available this
+> session, so **F2 and all of T2-1 are unverified on hardware** — that's one Settings rework
+> plus every "pick one of N" control and most icon glyphs in the app, changed without a single
+> look at a running screen. `tsc` + Jest (422/422) pass, but neither catches clipped segment
+> text, a mis-centered icon, or a control that wraps badly. Do a device pass over Bag / Flight
+> Shaper / Score setup / Settings before tagging anything.
+
 Source: the Claude Design UX pass in
 `docs/app-ui-design.zip` (`UX_AUDIT.md`, 30 findings across all five tabs, severity-ranked
 P0/P1/P2). This doc narrows that audit to what's actually getting built and in what order —
@@ -296,13 +302,47 @@ provably-safe half and a needs-eyes half, since no device was available:
   change by construction — same values, same `hitSlop={8}`, same `counts` skip-`all` rule.
   `tsc` clean, Jest 422/422.
 
-*Still owed (each is a real visual change — hold for on-device):* SORT's reclassification from
-pill row to `SegmentedControl` (it's single-select, per the two-roles split above — migrated to
-`FilterPillRow` for now only to keep rendering byte-identical, not as the end state);
-`segment` (Today's Bag/Collection); `arcViewPill` ×2 (`index.tsx` + `flight-shaper.tsx`, closes
-C1); `holePresetPill`; `settings.tsx`'s three preference pill rows. Plus every `Icon` call site
-— all of those swap a text glyph for an SVG, which is exactly the kind of thing that needs one
-look on hardware.
+**Completed, 2026-09-01 (same session) — all remaining migrations done. `tsc` clean, Jest
+422/422, net −51 lines. NONE of it has been seen on a device; every item below is a real
+visual change and the whole batch owes one hardware pass.**
+
+*`SegmentedControl` call sites migrated:* `segment` (Today's Bag/Collection, `index.tsx`);
+SORT (reclassified from the pill row it was parked in); `arcViewPill` in `index.tsx`;
+`holePresetPill` (`score.tsx`); `settings.tsx`'s three preference rows (Default Throw View,
+Skill Level, Throw Style). Six style blocks deleted across three files, replaced by
+margin-only wrappers (`scopeSegment`, `sortSegment`, `arcViewSegment`, `prefSegment`).
+
+*`Icon` call sites migrated:* `filterChevron` (`index.tsx`), disc-select + collapse chevrons
+(`flight-shaper.tsx`), `rowChevron` ×2 (`settings.tsx`), `holeNavText` ‹/› + row chevron +
+`removePlayerText` ✕ (`score.tsx`), `ReorderBtn`'s ⤒/↑/↓ and the "In bag" ✓ (`DiscCard.tsx`),
+and the ✓ in all three checkbox call sites (`DiscCard`, `CsvImportModal`, `DiscFormModal`).
+`Σ` → `Tot` per A3/E6. Six now-dead glyph styles removed.
+
+**Three judgment calls made during the migration, each a deviation worth knowing about:**
+1. **`flight-shaper.tsx`'s `arcViewPill` was NOT migrated.** Its `arcViewRow` is
+   `width: 128` + `flexWrap` with 62px pills — i.e. it is *already* the 2×2 grid `UX_AUDIT.md`
+   C1 asks for. Forcing a 1×4 segmented control into a 128px slot would put four 32px segments
+   under "RHBH" labels and regress it. Left the geometry alone; only retinted `arcViewPillActive`
+   to the shared `tints.accentTint` so the color vocabulary still unifies. **C1 is therefore
+   closed for `index.tsx` (which really was four cramped 10sp pills) and was never actually
+   open for `flight-shaper.tsx`.**
+2. **`holePresetPill` lost a solid fill.** Its selected state was `backgroundColor:
+   colors.accent` with white text — the only solid-accent selected state among the five
+   treatments. It's now the standard tint + accent text. Intended (that inconsistency is the
+   A1 finding) but it's the single most visible change in this batch.
+3. **Inline-in-sentence glyphs left as text on purpose:** `‹ Rounds`, `‹ Settings`,
+   `‹ Prev`/`Next ›`, and the `↗` external-link markers in `settings.tsx`. Swapping those for
+   SVG means restructuring a `<Text>` into a row for no legibility gain. The one exception:
+   `index.tsx`'s reorder help string named the old glyphs literally ("use ⤒ / ↑ / ↓ on a
+   card"), which would now describe icons that no longer look like that — reworded to "use the
+   arrow buttons on a card to reorder".
+
+**What a device pass needs to check specifically:** SORT at five segments (the widest use of
+the control — most likely place for text to clip); the arc-view control in `index.tsx`'s
+`arcBar`, which uses `flexGrow` + `minWidth: 210` and is expected to either sit beside the
+legend or wrap to its own full-width line; the hole-preset control's new tinted selected state;
+and that every swapped icon is centered in its old touch target rather than sitting high or
+low against the text baseline it replaced.
 
 ### T2-2. B1 — Bag actions: primary + overflow (⋮)
 

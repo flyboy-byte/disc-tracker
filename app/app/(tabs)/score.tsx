@@ -19,6 +19,8 @@ import {
 import { colors } from '../../src/theme';
 import GradientButton from '../../src/components/GradientButton';
 import EmptyStateIcon from '../../src/components/EmptyStateIcon';
+import Icon from '../../src/components/Icon';
+import SegmentedControl from '../../src/components/SegmentedControl';
 import {
   coursePar,
   formatVsPar,
@@ -377,7 +379,7 @@ function RoundRow({
     >
       {selecting && (
         <View style={[styles.checkbox, checked && styles.checkboxOn]}>
-          {checked && <Text style={styles.checkboxMark}>✓</Text>}
+          {checked && <Icon name="check" color="#fff" size={14} strokeWidth={2.6} />}
         </View>
       )}
       <View style={styles.rowMain}>
@@ -392,7 +394,7 @@ function RoundRow({
           </Text>
         </View>
       )}
-      {!selecting && <Text style={styles.chevron}>›</Text>}
+      {!selecting && <Icon name="chevron-right" color={colors.muted} size={18} />}
     </Pressable>
   );
 }
@@ -447,32 +449,19 @@ function SetupView({
       <TextInput style={styles.input} value={course} onChangeText={setCourse} placeholder="Maple Hill" placeholderTextColor={colors.muted} />
 
       <Text style={styles.fieldLabel}>Holes</Text>
-      <View style={styles.holePresetRow}>
-        {[9, 18].map((n) => {
-          const active = !customHoles && holeCount === n;
-          return (
-            <Pressable
-              key={n}
-              testID={`holes-preset-${n}`}
-              style={[styles.holePresetPill, active && styles.holePresetPillActive]}
-              onPress={() => pickPreset(n)}
-              accessibilityRole="button"
-              accessibilityLabel={`${n} holes`}
-            >
-              <Text style={[styles.holePresetPillText, active && styles.holePresetPillTextActive]}>{n}</Text>
-            </Pressable>
-          );
-        })}
-        <Pressable
-          testID="holes-preset-custom"
-          style={[styles.holePresetPill, customHoles && styles.holePresetPillActive]}
-          onPress={() => setCustomHoles(true)}
-          accessibilityRole="button"
-          accessibilityLabel="Custom hole count"
-        >
-          <Text style={[styles.holePresetPillText, customHoles && styles.holePresetPillTextActive]}>Custom</Text>
-        </Pressable>
-      </View>
+      {/* When neither preset matches and customHoles is false (only reachable from a restored
+          round with an odd hole count), no segment reads as selected — same as the pills did. */}
+      <SegmentedControl
+        testIDPrefix="holes-preset"
+        accessibilityLabel="Hole count"
+        value={customHoles ? 'custom' : String(holeCount)}
+        onChange={(key) => (key === 'custom' ? setCustomHoles(true) : pickPreset(Number(key)))}
+        options={[
+          { key: '9', label: '9' },
+          { key: '18', label: '18' },
+          { key: 'custom', label: 'Custom' },
+        ]}
+      />
       {customHoles && (
         <View style={styles.stepperRow}>
           <Stepper value={holeCount} min={1} max={36} onChange={setHoleCount} />
@@ -496,7 +485,7 @@ function SetupView({
               accessibilityRole="button"
               accessibilityLabel={`Remove player ${i + 1}`}
             >
-              <Text style={styles.removePlayerText}>✕</Text>
+              <Icon name="close" color={colors.danger} size={15} strokeWidth={2.2} />
             </Pressable>
           )}
         </View>
@@ -571,7 +560,7 @@ function ActiveView({
             accessibilityRole="button"
             accessibilityLabel="Previous hole"
           >
-            <Text style={styles.holeNavText}>‹</Text>
+            <Icon name="chevron-left" color={colors.accent} size={26} strokeWidth={2.2} />
           </Pressable>
           <View style={styles.holeCenter}>
             <Text style={styles.holeLabel}>Hole {hole} of {round.holeCount}</Text>
@@ -587,7 +576,7 @@ function ActiveView({
             accessibilityRole="button"
             accessibilityLabel="Next hole"
           >
-            <Text style={styles.holeNavText}>›</Text>
+            <Icon name="chevron-right" color={colors.accent} size={26} strokeWidth={2.2} />
           </Pressable>
         </View>
 
@@ -712,7 +701,7 @@ function SummaryView({ round, onResume, onBack, onDelete }: { round: Round; onRe
               {holes.map((h) => (
                 <Text key={h} style={[styles.gridCell, styles.gridHeadCell]}>{h}</Text>
               ))}
-              <Text style={[styles.gridCell, styles.gridHeadCell]}>Σ</Text>
+              <Text style={[styles.gridCell, styles.gridHeadCell]}>Tot</Text>
             </View>
             <View style={styles.gridRow}>
               <Text style={[styles.gridCell, styles.gridParCell, styles.gridNameCell]}>Par</Text>
@@ -807,7 +796,6 @@ const styles = StyleSheet.create({
   rowMain: { flex: 1, minWidth: 0 },
   checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   checkboxOn: { borderColor: colors.accent, backgroundColor: colors.accent },
-  checkboxMark: { color: '#fff', fontSize: 14, fontWeight: '800', lineHeight: 16 },
   // Selection toolbar (replaces the title row while multiselect is active)
   selBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, marginBottom: 4, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 8 },
   selCount: { color: colors.text, fontSize: 15, fontWeight: '700', flex: 1, textAlign: 'center' },
@@ -829,21 +817,14 @@ const styles = StyleSheet.create({
   rowScoreName: { color: colors.muted, fontSize: 10 },
   rowScoreVal: { color: colors.text, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
   rowScorePar: { color: colors.accent, fontSize: 12, fontWeight: '600' },
-  chevron: { color: colors.muted, fontSize: 22 },
 
   fieldLabel: { color: colors.muted, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 12, marginBottom: 2 },
   input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10, color: colors.text, fontSize: 15, paddingHorizontal: 12, paddingVertical: 10 },
   stepperRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   stepperHint: { color: colors.muted, fontSize: 12 },
-  holePresetRow: { flexDirection: 'row', gap: 8 },
-  holePresetPill: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: 10, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card },
-  holePresetPillActive: { borderColor: colors.accent, backgroundColor: colors.accent },
-  holePresetPillText: { color: colors.muted, fontSize: 14, fontWeight: '700' },
-  holePresetPillTextActive: { color: '#fff' },
   playerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   playerInput: { flex: 1 },
   removePlayer: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 10, borderWidth: 1, borderColor: colors.border },
-  removePlayerText: { color: colors.muted, fontSize: 14 },
   setupActions: { flexDirection: 'row', gap: 10, marginTop: 20 },
 
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -863,7 +844,6 @@ const styles = StyleSheet.create({
   holeNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   holeNavBtn: { width: 52, height: 52, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card },
   holeNavBtnDisabled: { opacity: 0.3 },
-  holeNavText: { color: colors.accent, fontSize: 26, fontWeight: '700' },
   holeCenter: { alignItems: 'center', gap: 6 },
   holeLabel: { color: colors.text, fontSize: 18, fontWeight: '800' },
   parRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

@@ -3,6 +3,7 @@
 // plus a per-disc flight-arc thumbnail (the website's signature — an arc on every card).
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Icon, { type IconName } from './Icon';
 import { colors } from '../theme';
 import { discType, stab, STAB_META, TYPE_META, type Disc } from '../utils/disc';
 import { applyModifiers, type SliderValues } from '../utils/legacyPhysics';
@@ -62,7 +63,7 @@ function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onToggleBag, onMo
       <View style={styles.body}>
         {selecting && (
           <View style={[styles.checkbox, checked && styles.checkboxOn]}>
-            {checked && <Text style={styles.checkboxMark}>✓</Text>}
+            {checked && <Icon name="check" color="#fff" size={14} strokeWidth={2.6} />}
           </View>
         )}
         <View style={styles.main}>
@@ -84,7 +85,8 @@ function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onToggleBag, onMo
                 accessibilityState={{ selected: !!d.inBag }}
                 accessibilityLabel={d.inBag ? `Remove ${d.mold} from today's bag` : `Add ${d.mold} to today's bag`}
               >
-                <Text style={[styles.bagCheckText, d.inBag && styles.bagCheckTextOn]}>{d.inBag ? '✓ In bag' : 'In bag'}</Text>
+                {d.inBag && <Icon name="check" color={colors.accent} size={13} strokeWidth={2.6} />}
+                <Text style={[styles.bagCheckText, d.inBag && styles.bagCheckTextOn]}>In bag</Text>
               </Pressable>
             )}
           </View>
@@ -112,9 +114,9 @@ function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onToggleBag, onMo
             </View>
             {onMoveToTop && d.id != null && !selecting && (
               <View style={styles.reorder}>
-                <ReorderBtn label="⤒" a11y={`Move ${d.mold} to top`} disabled={!canMoveUp} onPress={() => onMoveToTop(d.id!)} />
-                <ReorderBtn label="↑" a11y={`Move ${d.mold} up`} disabled={!canMoveUp} onPress={() => onMoveUp?.(d.id!)} />
-                <ReorderBtn label="↓" a11y={`Move ${d.mold} down`} disabled={!canMoveDown} onPress={() => onMoveDown?.(d.id!)} />
+                <ReorderBtn icon="arrow-to-top" a11y={`Move ${d.mold} to top`} disabled={!canMoveUp} onPress={() => onMoveToTop(d.id!)} />
+                <ReorderBtn icon="arrow-up" a11y={`Move ${d.mold} up`} disabled={!canMoveUp} onPress={() => onMoveUp?.(d.id!)} />
+                <ReorderBtn icon="arrow-down" a11y={`Move ${d.mold} down`} disabled={!canMoveDown} onPress={() => onMoveDown?.(d.id!)} />
               </View>
             )}
           </View>
@@ -148,7 +150,7 @@ function NumStat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function ReorderBtn({ label, a11y, disabled, onPress }: { label: string; a11y: string; disabled?: boolean; onPress: () => void }) {
+function ReorderBtn({ icon, a11y, disabled, onPress }: { icon: IconName; a11y: string; disabled?: boolean; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
@@ -161,7 +163,7 @@ function ReorderBtn({ label, a11y, disabled, onPress }: { label: string; a11y: s
       accessibilityRole="button"
       accessibilityLabel={a11y}
     >
-      <Text style={styles.reorderBtnText}>{label}</Text>
+      <Icon name={icon} color={colors.accent} size={15} />
     </Pressable>
   );
 }
@@ -179,7 +181,6 @@ const styles = StyleSheet.create({
   selected: { borderColor: colors.accent, backgroundColor: colors.cardHover },
   checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginTop: 18 },
   checkboxOn: { borderColor: colors.accent, backgroundColor: colors.accent },
-  checkboxMark: { color: '#fff', fontSize: 14, fontWeight: '800', lineHeight: 16 },
   body: { flexDirection: 'row', gap: 10 },
   main: { flex: 1, minWidth: 0 },
   arcThumb: {
@@ -200,6 +201,7 @@ const styles = StyleSheet.create({
   bagCheck: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 999,
@@ -212,7 +214,6 @@ const styles = StyleSheet.create({
   reorder: { flexDirection: 'row', gap: 6, marginLeft: 'auto' },
   reorderBtn: { width: 34, height: 30, borderRadius: 8, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
   reorderBtnDisabled: { opacity: 0.3 },
-  reorderBtnText: { color: colors.accent, fontSize: 15, fontWeight: '700' },
   mfr: { color: colors.muted, fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
   mold: { color: colors.text, fontSize: 18, fontWeight: '700' },
   nums: { flexDirection: 'row', gap: 14, marginBottom: 6 },
