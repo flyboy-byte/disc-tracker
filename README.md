@@ -122,6 +122,11 @@ signed with the production release key. Also installable via a
 an F-Droid client for update checks without the Play Store. The official F-Droid index
 and Play Store are still ahead.
 
+The whole UI went through a design-audit pass in `v0.26`: one shared set of controls and drawn
+icons instead of five look-alike variants, every tap target at Android's 44dp minimum, the
+hardware Back button behaving mid-round, and no screen relying on colour alone to tell you
+something.
+
 <table>
   <tr>
     <td><img src="docs/app-bag.png" alt="App — Bag"></td>
@@ -144,15 +149,15 @@ and Play Store are still ahead.
   (a clean image of your bag, straight to the Android share sheet).
 - **Flight Shaper** — the slider tool with a live arc, plus an opt-in on-device physics sim.
 - **Disc Suggest** — skill-aware recommendations (Beginner / Intermediate / Advanced) with
-  great/good/marginal fit chips.
+  great/good/marginal fit chips, and a swipe-to-demote gesture with undo.
 - **Score** — a dead-simple **offline scorekeeper** for when the scoring app won't load or there's
   no signal: hole-by-hole, 1–8 players, running totals vs. par, saved rounds. No account, no course
   lookup, no GPS.
 - **Settings** — throw view, skill level, opt-in reference images, a **disc catalog picker**
   (switch between the built-in library, the larger Try Discs catalog, or your own imported
   catalog file/URL), and **full backup & restore** (one file: discs + today's bag + settings +
-  scorecards — share it, or save it straight to a folder on your device; move to a new phone, no
-  server).
+  scorecards — saved straight to a folder you pick, or sent to another app if you'd rather; move
+  to a new phone, no server).
 
 ---
 

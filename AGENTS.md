@@ -4,15 +4,19 @@
 tracked in `PLAN.md` at the repo root** — separate from the feature-work plan docs in `app/plan/`.
 Tracks A–D done, Track E started, as of 2026-08-21.
 
-**A UI/UX audit pass is tracked in `app/plan/docs/ui-audit-plan.md`** (scoped 2026-08-31, not
-started as of that date). Scenario icons already shipped (`14def75`); Tier 1 (touch targets,
-hardware Back mid-round, swipe undo, catalog radio list, score-tier color-blind fix) is next.
+**A UI/UX audit pass is tracked in `app/plan/docs/ui-audit-plan.md`** — scoped 2026-08-31 and
+**fully delivered 2026-09-01: Tier 1 and Tier 2 are both complete (10 items), every one
+verified on a physical Pixel 9.** Shipped as `v0.26`. Read that doc before touching UI
+patterns — it records the two open design decisions that were resolved, and three places where
+the built solution deliberately differs from the scoped one (Flight Shaper's arc view kept its
+2×2 grid; Score lost tier colour rather than gaining a second channel; slider reset is a tap on
+the value, not a double-tap on the slider), each with the reason.
 
 ## What this project is
 
 Two things in one repo:
 
-1. **An Android app — v1 feature-complete, and now the canonical build.** Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. **Superseded the website as the reference implementation 2026-08-31** — the app grew past the website (Score tab, Disc Suggest swipe-to-learn engine, full backup/restore, the larger Try Discs catalog) and is where new behavior gets designed first. The old rule ("the two disagree, the website wins") is retired; the website is not required to mirror the app feature-for-feature anymore. This closes out the "spec-of-record vs. primary-deployment-target" split that `PLAN.md` Track D sub-track 3 and `app/plan/docs/track-d-flight-arc-parity.md` tracked through 2026-08-21 — both roles now belong to the app. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest tagged release is **`v0.25`** (2026-08-20: Disc Suggest swipe hint text + stronger
+1. **An Android app — v1 feature-complete, and now the canonical build.** Expo (React Native) app, local-first SQLite, targeting Play Store + F-Droid. Plan docs are in `app/`. **Superseded the website as the reference implementation 2026-08-31** — the app grew past the website (Score tab, Disc Suggest swipe-to-learn engine, full backup/restore, the larger Try Discs catalog) and is where new behavior gets designed first. The old rule ("the two disagree, the website wins") is retired; the website is not required to mirror the app feature-for-feature anymore. This closes out the "spec-of-record vs. primary-deployment-target" split that `PLAN.md` Track D sub-track 3 and `app/plan/docs/track-d-flight-arc-parity.md` tracked through 2026-08-21 — both roles now belong to the app. Now **five tabs** (Bag / Flight Shaper / Disc Suggest / **Score** / Settings), all built and verified, first shipped as `mobile-preview-0.5` and **confirmed on a real physical Android phone (2026-07-24)**. Latest tagged release is **`v0.26`** (2026-09-01: the UI/UX audit pass — a shared `SegmentedControl`/`FilterPill`/`Icon` vocabulary replacing five hand-rolled control treatments and most text glyphs, 44dp touch targets, hardware Back mid-round, swipe-to-demote undo, the catalog picker as a real radio list, Score tier colour dropped for accessibility + palette consistency, bag actions behind an overflow sheet, Settings flattened from nine cards to a list, a one-tap hole strip, and Flight Shaper slider labelling — plus a real backup bug fix, see `app/plan/docs/ui-audit-plan.md`). Previous release **`v0.25`** (2026-08-20: Disc Suggest swipe hint text + stronger
 Buy-mode brand-aversion weighting, a compact bag-report grid for bags over 12 discs, Score
 tab 9/18/Custom hole presets + roster prefill + quick-pick score entry + color-coded scores,
 a new in-app "How to use Disc Tracker" tutorial linked from Settings, and two F-Droid
@@ -228,7 +232,11 @@ a real reason to keep checking model agreement over time rather than the one-tim
 ## Mobile app — current state
 
 **Phases 0-9 done; v1 first shipped as `mobile-preview-0.5`, confirmed on a real phone;
-latest tagged release `v0.25`** (2026-08-20 — swipe hint text, stronger Buy-mode brand
+latest tagged release `v0.26`** (2026-09-01 — the complete UI/UX audit pass, Tier 1 + Tier 2,
+all ten items verified on a physical Pixel 9; see `app/plan/docs/ui-audit-plan.md`. Also fixed
+a real user-reported bug: "Back up everything" was wired to the share sheet, which on Android
+can't reach Files at all — it now writes straight to a folder you pick, with sharing demoted to
+"Send a copy…"). Previous release **`v0.25`** (2026-08-20 — swipe hint text, stronger Buy-mode brand
 weighting, bag-report compact grid, Score tab presets/prefill/quick-pick/color-coding, a
 new in-app tutorial, and two F-Droid privacy/manifest fixes; see
 `app/plan/docs/fdroid-privacy-audit-2026-08-20.md`). Also see "D2 — self-hosted F-Droid
