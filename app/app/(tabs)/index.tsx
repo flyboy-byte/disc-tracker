@@ -558,6 +558,7 @@ export default function BagScreen() {
       <Pressable
         style={styles.filterToggle}
         onPress={() => setShowFilters((v) => !v)}
+        hitSlop={5}
         accessibilityRole="button"
         accessibilityState={{ expanded: showFilters }}
         accessibilityLabel="Filters, sort and arc view"
@@ -595,6 +596,7 @@ export default function BagScreen() {
                   key={v}
                   onPress={() => changeArcView(v)}
                   style={[styles.arcViewPill, arcView === v && styles.arcViewPillActive]}
+                  hitSlop={11}
                   accessibilityRole="button"
                   accessibilityState={{ selected: arcView === v }}
                   accessibilityLabel={`Show arcs as ${v}`}
@@ -609,24 +611,24 @@ export default function BagScreen() {
 
       <View style={styles.actionsRow}>
         <GradientButton testID="bag-add-disc" style={styles.addBtn} textStyle={styles.addBtnText} onPress={openAdd} label="+ Add disc" accessibilityLabel="Add a disc" />
-        <Pressable testID="bag-import" style={styles.ghostBtn} onPress={() => setImportOpen(true)} accessibilityRole="button" accessibilityLabel="Import discs from CSV">
+        <Pressable testID="bag-import" style={styles.ghostBtn} hitSlop={6} onPress={() => setImportOpen(true)} accessibilityRole="button" accessibilityLabel="Import discs from CSV">
           <Text style={styles.ghostBtnText}>Import</Text>
         </Pressable>
-        <Pressable testID="bag-export" style={styles.ghostBtn} onPress={() => setExportOpen(true)} accessibilityRole="button" accessibilityLabel="Export discs to CSV">
+        <Pressable testID="bag-export" style={styles.ghostBtn} hitSlop={6} onPress={() => setExportOpen(true)} accessibilityRole="button" accessibilityLabel="Export discs to CSV">
           <Text style={styles.ghostBtnText}>Export</Text>
         </Pressable>
-        <Pressable testID="bag-share-report" style={styles.ghostBtn} onPress={() => setReportOpen(true)} accessibilityRole="button" accessibilityLabel="Share your bag as an image">
+        <Pressable testID="bag-share-report" style={styles.ghostBtn} hitSlop={6} onPress={() => setReportOpen(true)} accessibilityRole="button" accessibilityLabel="Share your bag as an image">
           <Text style={styles.ghostBtnText}>Share</Text>
         </Pressable>
         {customDiscs.length > 0 && (
-          <Pressable style={styles.ghostBtn} onPress={() => setLibraryOpen(true)} accessibilityRole="button" accessibilityLabel="Browse or manage your custom disc library">
+          <Pressable style={styles.ghostBtn} hitSlop={6} onPress={() => setLibraryOpen(true)} accessibilityRole="button" accessibilityLabel="Browse or manage your custom disc library">
             <Text style={styles.ghostBtnText}>My library ({customDiscs.length})</Text>
           </Pressable>
         )}
         {/* Field view + Clear bag are today's-bag affordances (Field view is scoped there; a
             200-arc field is the cliff we deliberately avoid). Collection stays a browse/manage view. */}
         {bagScope === 'today' && bagCount > 0 && (
-          <Pressable style={styles.ghostBtn} onPress={clearBag} accessibilityRole="button" accessibilityLabel="Clear today's bag">
+          <Pressable style={styles.ghostBtn} hitSlop={6} onPress={clearBag} accessibilityRole="button" accessibilityLabel="Clear today's bag">
             <Text style={styles.ghostBtnText}>Clear bag</Text>
           </Pressable>
         )}
@@ -634,6 +636,7 @@ export default function BagScreen() {
           <Pressable
             style={[styles.ghostBtn, viewMode === 'field' && styles.ghostBtnActive]}
             onPress={() => setViewMode((m) => (m === 'field' ? 'list' : 'field'))}
+            hitSlop={6}
             accessibilityRole="button"
             accessibilityState={{ selected: viewMode === 'field' }}
             accessibilityLabel={viewMode === 'field' ? 'Switch to card list' : 'Switch to field view'}
@@ -664,7 +667,7 @@ export default function BagScreen() {
               </Text>
               <View style={styles.emptyActions}>
                 <GradientButton style={styles.addBtn} textStyle={styles.addBtnText} onPress={openAdd} label="+ Add disc" accessibilityLabel="Add a disc" />
-                <Pressable style={styles.ghostBtn} onPress={() => setImportOpen(true)} accessibilityRole="button" accessibilityLabel="Import discs from CSV">
+                <Pressable style={styles.ghostBtn} hitSlop={6} onPress={() => setImportOpen(true)} accessibilityRole="button" accessibilityLabel="Import discs from CSV">
                   <Text style={styles.ghostBtnText}>Import CSV</Text>
                 </Pressable>
               </View>
@@ -690,7 +693,7 @@ export default function BagScreen() {
               <Text style={styles.emptyTitle}>No discs match</Text>
               <Text style={styles.emptyBody}>Nothing fits your current filters or search.</Text>
               {filtersActive && (
-                <Pressable style={styles.ghostBtn} onPress={clearFilters} accessibilityRole="button" accessibilityLabel="Clear filters and search">
+                <Pressable style={styles.ghostBtn} hitSlop={6} onPress={clearFilters} accessibilityRole="button" accessibilityLabel="Clear filters and search">
                   <Text style={styles.ghostBtnText}>Clear filters</Text>
                 </Pressable>
               )}
@@ -817,6 +820,7 @@ function PillRow<T extends string>({
           key={it.key}
           onPress={() => onPress(it.key)}
           style={[styles.pill, active === it.key && styles.pillActive]}
+          hitSlop={8}
           accessibilityRole="button"
           accessibilityState={{ selected: active === it.key }}
           accessibilityLabel={it.label}

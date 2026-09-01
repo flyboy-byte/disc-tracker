@@ -201,7 +201,7 @@ export default function FlightShaperScreen() {
 
         <View style={styles.headerRow}>
           {/* compact disc selector — opens the picker modal */}
-          <Pressable style={styles.discSelect} onPress={() => setPickerOpen(true)} accessibilityRole="button" accessibilityLabel="Choose disc">
+          <Pressable style={styles.discSelect} onPress={() => setPickerOpen(true)} hitSlop={5} accessibilityRole="button" accessibilityLabel="Choose disc">
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={styles.discSelectName} numberOfLines={1}>{selectorTitle}</Text>
               {selectorSub && <Text style={styles.discSelectSub}>{selectorSub}</Text>}
@@ -212,7 +212,7 @@ export default function FlightShaperScreen() {
           {/* arc-view pills */}
           <View style={styles.arcViewRow}>
             {(['RHBH', 'RHFH', 'LHBH', 'LHFH'] as ArcView[]).map((v) => (
-              <Pressable key={v} onPress={() => changeArcView(v)} style={[styles.arcViewPill, arcView === v && styles.arcViewPillActive]}>
+              <Pressable key={v} onPress={() => changeArcView(v)} style={[styles.arcViewPill, arcView === v && styles.arcViewPillActive]} hitSlop={10}>
                 <Text style={[styles.arcViewPillText, arcView === v && styles.arcViewPillTextActive]}>{v}</Text>
               </Pressable>
             ))}
@@ -334,7 +334,7 @@ export default function FlightShaperScreen() {
         </View>
 
         {/* collapsible reference diagrams — collapsed by default so sliders sit near the arc */}
-        <Pressable style={styles.collapseToggle} onPress={() => setDiagramsOpen((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: diagramsOpen }}>
+        <Pressable style={styles.collapseToggle} onPress={() => setDiagramsOpen((v) => !v)} hitSlop={9} accessibilityRole="button" accessibilityState={{ expanded: diagramsOpen }}>
           <Text style={styles.collapseToggleText}>{diagramsOpen ? '▾' : '▸'}  Angle & hyzer reference</Text>
         </Pressable>
         {diagramsOpen && (

@@ -315,7 +315,7 @@ function RenameRoundModal({ round, onCancel, onSave }: { round: Round | null; on
             onSubmitEditing={() => onSave(text)}
           />
           <View style={styles.renameBtnRow}>
-            <Pressable style={styles.ghostBtn} onPress={onCancel} accessibilityRole="button" accessibilityLabel="Cancel">
+            <Pressable style={styles.ghostBtn} hitSlop={4} onPress={onCancel} accessibilityRole="button" accessibilityLabel="Cancel">
               <Text style={styles.ghostBtnText}>Cancel</Text>
             </Pressable>
             <Pressable style={styles.saveBtn} onPress={() => onSave(text)} accessibilityRole="button" accessibilityLabel="Save name">
@@ -487,6 +487,7 @@ function SetupView({
       {players.length < MAX_PLAYERS && (
         <Pressable
           style={styles.ghostBtn}
+          hitSlop={4}
           onPress={() => setPlayers((prev) => [...prev, `Player ${prev.length + 1}`])}
           accessibilityRole="button"
           accessibilityLabel="Add a player"
@@ -496,7 +497,7 @@ function SetupView({
       )}
 
       <View style={styles.setupActions}>
-        <Pressable style={styles.ghostBtn} onPress={onCancel} accessibilityRole="button" accessibilityLabel="Cancel">
+        <Pressable style={styles.ghostBtn} hitSlop={4} onPress={onCancel} accessibilityRole="button" accessibilityLabel="Cancel">
           <Text style={styles.ghostBtnText}>Cancel</Text>
         </Pressable>
         <GradientButton style={styles.primaryBtn} textStyle={styles.primaryBtnText} onPress={start} label="Start round" accessibilityLabel="Start round" />

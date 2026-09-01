@@ -376,6 +376,7 @@ export default function SettingsScreen() {
               key={v}
               onPress={() => changeArcView(v)}
               style={[styles.pill, arcView === v && styles.pillActive]}
+              hitSlop={8}
               accessibilityRole="button"
               accessibilityState={{ selected: arcView === v }}
               accessibilityLabel={`Default throw view ${v}`}
@@ -398,6 +399,7 @@ export default function SettingsScreen() {
               testID={`settings-skill-${s.id}`}
               onPress={() => changeSkill(s.id)}
               style={[styles.pill, skill === s.id && styles.pillActive]}
+              hitSlop={8}
               accessibilityRole="button"
               accessibilityState={{ selected: skill === s.id }}
               accessibilityLabel={`Skill level ${s.label}`}
@@ -422,6 +424,7 @@ export default function SettingsScreen() {
               testID={`settings-throw-style-${t.id}`}
               onPress={() => changeThrowStyle(t.id)}
               style={[styles.pill, throwStyle === t.id && styles.pillActive]}
+              hitSlop={8}
               accessibilityRole="button"
               accessibilityState={{ selected: throwStyle === t.id }}
               accessibilityLabel={`Throw style ${t.label}`}

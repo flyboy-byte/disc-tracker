@@ -78,7 +78,7 @@ function DiscCardBase({ disc: d, arcView, onPress, onPressArc, onToggleBag, onMo
               <Pressable
                 testID={`disc-card-toggle-bag-${d.id}`}
                 onPress={() => onToggleBag(d.id!, !d.inBag)}
-                hitSlop={8}
+                hitSlop={{ top: 11, bottom: 11, left: 8, right: 8 }}
                 style={[styles.bagCheck, d.inBag && styles.bagCheckOn]}
                 accessibilityRole="button"
                 accessibilityState={{ selected: !!d.inBag }}
@@ -153,7 +153,10 @@ function ReorderBtn({ label, a11y, disabled, onPress }: { label: string; a11y: s
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      hitSlop={6}
+      // Three of these sit side by side with a 6px gap (styles.reorder) — horizontal hitSlop
+      // is capped at 3 so adjacent buttons' hit areas touch but never overlap into a mis-tap;
+      // vertical has no such neighbor, so it gets the rest of the reach to the 44dp floor.
+      hitSlop={{ top: 8, bottom: 8, left: 3, right: 3 }}
       style={[styles.reorderBtn, disabled && styles.reorderBtnDisabled]}
       accessibilityRole="button"
       accessibilityLabel={a11y}
