@@ -483,11 +483,19 @@ export default function SettingsScreen() {
           </Text>
         </View>
         {downloadError && <Text style={styles.errorText}>Couldn't save the file — try again.</Text>}
+        {/* On Android the primary action writes straight to a folder you pick (SAF). It used to
+            be the share sheet, which was the wrong default: a backup's whole lifecycle is
+            save-then-restore, and Android's share sheet only lists apps that registered an
+            intent filter for application/json — Files isn't one of them, so "share to Files"
+            (an iOS idiom) simply isn't reachable that way. Sharing stays available below for
+            the genuine send-it-elsewhere case. iOS has no SAF, so share remains primary there. */}
         <GradientButton
           style={styles.actionBtn}
-          onPress={handleBackupShare}
+          onPress={Platform.OS === 'android' ? handleBackupDownload : handleBackupShare}
           disabled={busy}
-          accessibilityLabel="Share a backup file"
+          accessibilityLabel={
+            Platform.OS === 'android' ? 'Back up everything to a folder on this device' : 'Back up everything'
+          }
         >
           {busy ? (
             <ActivityIndicator color="#fff" size="small" />
@@ -498,12 +506,12 @@ export default function SettingsScreen() {
         {Platform.OS === 'android' && (
           <Pressable
             style={[styles.actionBtnGhost, busy && styles.actionBtnDisabled]}
-            onPress={handleBackupDownload}
+            onPress={handleBackupShare}
             disabled={busy}
             accessibilityRole="button"
-            accessibilityLabel="Save a backup file directly to a folder on this device"
+            accessibilityLabel="Send a copy of the backup to another app"
           >
-            <Text style={styles.actionBtnGhostText}>Save to device</Text>
+            <Text style={styles.actionBtnGhostText}>Send a copy…</Text>
           </Pressable>
         )}
         <Pressable
