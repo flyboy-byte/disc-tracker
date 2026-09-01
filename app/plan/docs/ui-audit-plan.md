@@ -1,9 +1,10 @@
 # UI audit — tracked plan
 
-**Status, 2026-09-01: Tier 1 done 5 of 5 (A2, E1, D3, A5, F2). Tier 2: T2-1 done (closes A1,
-A3, C1-for-`index.tsx`), T2-2 done (closes B1), T2-3 done (closes F1 + F6). T2-4 and T2-5 not
-started — T2-4 still needs its open decision answered. All of the above is verified on a
-physical Pixel 9.**
+**Status, 2026-09-01: Tier 1 done 5 of 5 (A2, E1, D3, A5, F2). Tier 2 done 4 of 5 — T2-1
+(closes A1, A3, C1-for-`index.tsx`), T2-2 (B1), T2-3 (F1 + F6), T2-4 (E3). Both open decisions
+resolved: T2-3 → (a) inline choice rows, T2-4 → (b) no tier tint on hole chips. **T2-5 (Flight
+Shaper slider labelling) is the only item left.** Everything above is verified on a physical
+Pixel 9.**
 
 > **Verification debt: CLEARED 2026-09-01.** F2 and all of T2-1 were verified on a real
 > **Pixel 9 (Android 17)** — release-signed build installed over the existing v0.25.0 in place,
@@ -456,7 +457,7 @@ View; whichever (a)/(b) was chosen works end-to-end.
 
 ### T2-4. E3 — Hole strip navigation
 
-**Priority: P1 · Effort: M · Has an open decision, see below**
+**Priority: P1 · Effort: M · Done, 2026-09-01 (option b)**
 
 `score.tsx`'s `ActiveView` (~line 509) uses `‹`/`›` only (`holeNavBtn`, 52×52, ~line 548) —
 hole 17 of 18 is sixteen taps from hole 1. ~~`TIER_COLOR`/`scoreTier`/`parForHole` (already
@@ -491,6 +492,30 @@ Decide when this is picked up.
 **Definition of done.** Any hole reachable in one tap; the strip stays usable (readable,
 scrollable, current hole visible) at both 9 and 18 holes; whichever (a)/(b)/(c) was chosen is
 unambiguous in the code, not implicit.
+
+**Done, 2026-09-01 — built with option (b), verified on the Pixel 9.** The `‹`/`›` pair is
+gone; a horizontally-scrolling strip of 34×34 chips sits above the hole label, with the Par
+stepper unchanged beneath it. Three states, and deliberately no colour semantics: **current**
+(accent border + `tints.accentTint`), **done** (`colors.cardHover` ground, brighter text),
+**not done** (outline only, muted). Auto-scroll via a `ScrollView` ref keeps the active chip
+on screen with ~2 chips of lead-in, clamped at 0.
+
+*"Done" is defined, not implied* — new `holeComplete(round, hole)` in `roundMath.ts` means
+**every player has a score on that hole**, since with up to 8 players "scored" is otherwise
+ambiguous and the useful mid-round question is what still needs entering. `isRoundComplete` was
+refactored to call it. Covered by 2 new tests against the existing 2-player fixture (fully
+scored / partially scored / unscored hole, plus the no-players case) — 424/424 Jest.
+
+**On-device:** started a real 18-hole round, scored hole 1, tapped chip 9 — **one tap**, where
+the old arrows needed eight — and the strip auto-scrolled to show 7-15 with 9 centred. Scrolling
+back showed all three states at once: 1 filled (done), 2-8 outline, 9 accent (current). Test
+round deleted afterwards.
+
+**Note on the removed arrows.** The plan said "replace the `‹`/`›` pair" and that's what
+shipped, so there's no longer a fixed-position next-hole target — you aim at a 34px chip
+instead of a 52px button. That reads fine in the hand but is untested while actually walking a
+course; if it turns out worse in the field, re-adding a single "next hole" affordance beside
+the strip is a small change.
 
 ### T2-5. C2 — Flight Shaper slider labeling
 
