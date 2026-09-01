@@ -26,20 +26,8 @@ import {
   standings,
   strokesAt,
   isRoundComplete,
-  scoreTier,
   type Round,
-  type ScoreTier,
 } from '../../src/utils/roundMath';
-
-// UDisc-style color for a scored hole, tier -> theme token. Unscored holes never call this
-// (ghost/dash rendering stays neutral) — only applied once a real strokes value exists.
-const TIER_COLOR: Record<ScoreTier, string> = {
-  eagle: colors.os,
-  birdie: colors.st,
-  par: colors.text,
-  bogey: colors.us,
-  double: colors.danger,
-};
 
 type Mode = 'list' | 'setup' | 'active' | 'summary';
 // Casual-group cap. Bigger groups than this are rare on one card; the hole-by-hole view scrolls
@@ -607,7 +595,7 @@ function ActiveView({
           const stored = strokesAt(round.scores, p.id, hole);
           const shown = stored ?? par; // unscored holes preview par (dimmed) until you commit one
           const st = board.find((s) => s.player.id === p.id);
-          const tierColor = stored != null ? TIER_COLOR[scoreTier(stored, par)] : colors.muted;
+          const tierColor = stored != null ? colors.text : colors.muted;
           const pickerOpen = quickPickPlayer === p.id;
           // 1..(par+4), floor 6, cap 12 — covers everything from an ace to a real blowup hole
           // without the chip row scrolling on a normal phone width.
@@ -740,7 +728,7 @@ function SummaryView({ round, onResume, onBack, onDelete }: { round: Round; onRe
                   <Text style={[styles.gridCell, styles.gridNameCell]} numberOfLines={1}>{p.name}</Text>
                   {holes.map((h) => {
                     const v = strokesAt(round.scores, p.id, h);
-                    const color = v != null ? TIER_COLOR[scoreTier(v, parForHole(round.holes, h))] : colors.muted;
+                    const color = v != null ? colors.text : colors.muted;
                     return (
                       <Text key={h} style={[styles.gridCell, { color }]}>{v ?? '–'}</Text>
                     );
