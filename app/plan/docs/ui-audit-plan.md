@@ -23,7 +23,7 @@ grid, vector icons instead of emoji, no layout change. Not tracked below.
 
 ### 1. A2 — Touch targets to 44–48dp
 
-**Priority: P0 · Effort: S · Risk: none (invisible in a screenshot)**
+**Priority: P0 · Effort: S · Risk: none (invisible in a screenshot) · Done, 2026-08-31 (`9565ca3`)**
 
 Seven controls measure under Android's 44dp floor: `arcViewPill` (~22dp, `index.tsx` /
 `flight-shaper.tsx`), `pill` (~28dp, `index.tsx` / `settings.tsx`), `ghostBtn` (~33dp,
@@ -38,6 +38,19 @@ existing style without changing layout. No new component.
 **Definition of done.** Every control above hits ≥44dp touch target; verified visually
 unchanged (screenshot diff or eyeball) and functionally by tapping near — not dead-center on —
 each control on-device.
+
+**What shipped.** All 7 named controls covered via `hitSlop` only (no style/layout change):
+`arcViewPill` (`index.tsx` `hitSlop={11}`, `flight-shaper.tsx` `hitSlop={10}`), `pill`
+(`index.tsx` `PillRow`, `hitSlop={8}`; `settings.tsx` ×3, `hitSlop={8}`), `ghostBtn`
+(`index.tsx` ×8, `hitSlop={6}`; `score.tsx` ×3, `hitSlop={4}`), `reorderBtn` (`DiscCard.tsx`,
+asymmetric `{top:8,bottom:8,left:3,right:3}` — capped horizontal so the three adjacent buttons'
+hit areas don't overlap each other), `bagCheck` (`DiscCard.tsx`, bumped from the pre-existing
+`hitSlop={8}` to `{top:11,bottom:11,left:8,right:8}`), and the chevron-carrying rows
+(`filterToggle` `index.tsx` `hitSlop={5}`; `discSelect` `hitSlop={5}` and `collapseToggle`
+`hitSlop={9}`, both `flight-shaper.tsx` — two call sites the audit's table didn't itemize by
+name but fell under the same "chevron rows" category). `tsc --noEmit` clean, 422/422 Jest.
+Not yet verified on a real device (tap-near-not-dead-center check) — do that pass before
+relying on it in the field.
 
 ### 2. E1 — Hardware Back button mid-round
 
