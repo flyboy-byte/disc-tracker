@@ -579,52 +579,78 @@ export default function SettingsScreen() {
         <Text style={styles.sectionLabel}>DISC CATALOG</Text>
         <Text style={styles.sectionHint}>{getCatalog().length} discs in the active catalog. Switch sources anytime — nothing downloads until you ask.</Text>
 
+        {/* Radio list, not action rows (UX_AUDIT.md F2, app/plan/docs/ui-audit-plan.md Tier 1
+            #4): the row itself is a single-choice selector — tapping it only switches to a
+            source that's already available. Downloading/importing a source for the first time
+            is a separate, explicit trailing button so a tap never silently triggers a network
+            fetch as a side effect of "selecting" something. */}
         <View style={styles.divider} />
-        <Pressable
-          testID="settings-catalog-bundled"
-          style={styles.row}
-          onPress={() => handleSwitchSource('bundled')}
-          accessibilityRole="button"
-          accessibilityState={{ selected: catalogSourceState === 'bundled' }}
-          accessibilityLabel="Use the built-in catalog"
-        >
-          <View style={styles.msTextCol}>
-            <Text style={styles.rowText}>Built-in</Text>
-            <Text style={styles.sectionHint}>Bundled with the app, always available offline.</Text>
-          </View>
-          <Text style={styles.rowValue}>{catalogSourceState === 'bundled' ? '✓ Active' : 'Switch'}</Text>
-        </Pressable>
+        <View style={styles.row}>
+          <Pressable
+            testID="settings-catalog-bundled"
+            style={styles.catalogSelectArea}
+            onPress={() => handleSwitchSource('bundled')}
+            hitSlop={8}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: catalogSourceState === 'bundled' }}
+            accessibilityLabel="Use the built-in catalog"
+          >
+            <View style={[styles.radio, catalogSourceState === 'bundled' && styles.radioSelected]}>
+              {catalogSourceState === 'bundled' && <View style={styles.radioDot} />}
+            </View>
+            <View style={styles.msTextCol}>
+              <Text style={styles.rowText}>Built-in</Text>
+              <Text style={styles.sectionHint}>Bundled with the app, always available offline.</Text>
+            </View>
+          </Pressable>
+        </View>
 
         <View style={styles.divider} />
-        <Pressable
-          testID="settings-catalog-trydiscs"
-          style={styles.row}
-          onPress={() => (trydiscsSlot && catalogSourceState !== 'trydiscs' ? handleSwitchSource('trydiscs') : handleTryDiscsTap())}
-          disabled={catalogChecking}
-          accessibilityRole="button"
-          accessibilityState={{ selected: catalogSourceState === 'trydiscs' }}
-          accessibilityLabel="Use the Try Discs catalog"
-        >
-          <View style={styles.msTextCol}>
-            <Text style={styles.rowText}>Try Discs</Text>
-            <Text style={styles.sectionHint}>
-              {trydiscsSlot ? `Downloaded — ${trydiscsSlot.recordCount} discs.` : 'A larger third-party catalog. Downloads on first tap.'}
-            </Text>
-            <Text style={styles.sectionHint}>
-              Try Discs lists 2,147 molds; 273 without complete flight numbers are left out so every
-              disc here works fully in Flight Shaper and Disc Suggest.
-            </Text>
-          </View>
-          <Text style={[styles.rowValue, catalogChecking && styles.rowDisabled]}>
-            {catalogChecking
-              ? 'Checking…'
-              : catalogSourceState === 'trydiscs'
-                ? '✓ Active'
-                : trydiscsSlot
-                  ? 'Switch'
-                  : 'Download'}
-          </Text>
-        </Pressable>
+        <View style={styles.row}>
+          <Pressable
+            testID="settings-catalog-trydiscs"
+            style={styles.catalogSelectArea}
+            onPress={() => handleSwitchSource('trydiscs')}
+            disabled={!trydiscsSlot || catalogChecking}
+            hitSlop={8}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: catalogSourceState === 'trydiscs', disabled: !trydiscsSlot }}
+            accessibilityLabel="Use the Try Discs catalog"
+          >
+            <View style={[
+              styles.radio,
+              catalogSourceState === 'trydiscs' && styles.radioSelected,
+              !trydiscsSlot && styles.radioUnavailable,
+            ]}>
+              {catalogSourceState === 'trydiscs' && <View style={styles.radioDot} />}
+            </View>
+            <View style={styles.msTextCol}>
+              <Text style={styles.rowText}>Try Discs</Text>
+              <Text style={styles.sectionHint}>
+                {trydiscsSlot ? `Downloaded — ${trydiscsSlot.recordCount} discs.` : 'A larger third-party catalog.'}
+              </Text>
+              <Text style={styles.sectionHint}>
+                Try Discs lists 2,147 molds; 273 without complete flight numbers are left out so every
+                disc here works fully in Flight Shaper and Disc Suggest.
+              </Text>
+            </View>
+          </Pressable>
+          {!trydiscsSlot && (
+            <Pressable
+              testID="settings-catalog-trydiscs-download"
+              style={styles.catalogActionBtn}
+              onPress={handleTryDiscsTap}
+              disabled={catalogChecking}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Download the Try Discs catalog"
+            >
+              <Text style={[styles.catalogActionText, catalogChecking && styles.rowDisabled]}>
+                {catalogChecking ? 'Checking…' : 'Download'}
+              </Text>
+            </Pressable>
+          )}
+        </View>
         {catalogSourceState === 'trydiscs' && (
           <Pressable
             testID="settings-catalog-check-updates"
@@ -641,22 +667,44 @@ export default function SettingsScreen() {
         )}
 
         <View style={styles.divider} />
-        <Pressable
-          testID="settings-catalog-custom"
-          style={styles.row}
-          onPress={() => (customSlot && catalogSourceState !== 'custom' ? handleSwitchSource('custom') : setCustomImportOpen(true))}
-          accessibilityRole="button"
-          accessibilityState={{ selected: catalogSourceState === 'custom' }}
-          accessibilityLabel="Use a custom catalog"
-        >
-          <View style={styles.msTextCol}>
-            <Text style={styles.rowText}>Custom</Text>
-            <Text style={styles.sectionHint}>
-              {customSlot ? `${customSlot.label} — ${customSlot.recordCount} discs.` : 'Import your own catalog file or a self-hosted URL.'}
-            </Text>
-          </View>
-          <Text style={styles.rowValue}>{catalogSourceState === 'custom' ? '✓ Active' : customSlot ? 'Switch' : 'Import'}</Text>
-        </Pressable>
+        <View style={styles.row}>
+          <Pressable
+            testID="settings-catalog-custom"
+            style={styles.catalogSelectArea}
+            onPress={() => handleSwitchSource('custom')}
+            disabled={!customSlot}
+            hitSlop={8}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: catalogSourceState === 'custom', disabled: !customSlot }}
+            accessibilityLabel="Use a custom catalog"
+          >
+            <View style={[
+              styles.radio,
+              catalogSourceState === 'custom' && styles.radioSelected,
+              !customSlot && styles.radioUnavailable,
+            ]}>
+              {catalogSourceState === 'custom' && <View style={styles.radioDot} />}
+            </View>
+            <View style={styles.msTextCol}>
+              <Text style={styles.rowText}>Custom</Text>
+              <Text style={styles.sectionHint}>
+                {customSlot ? `${customSlot.label} — ${customSlot.recordCount} discs.` : 'Import your own catalog file or a self-hosted URL.'}
+              </Text>
+            </View>
+          </Pressable>
+          {!customSlot && (
+            <Pressable
+              testID="settings-catalog-custom-import"
+              style={styles.catalogActionBtn}
+              onPress={() => setCustomImportOpen(true)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Import a custom catalog"
+            >
+              <Text style={styles.catalogActionText}>Import</Text>
+            </Pressable>
+          )}
+        </View>
         {customSlot && catalogSourceState !== 'custom' && (
           <Pressable
             testID="settings-catalog-custom-reimport"
@@ -763,6 +811,23 @@ const styles = StyleSheet.create({
   pillText: { color: colors.muted, fontSize: 13, fontWeight: '600' },
   pillTextActive: { color: colors.accent },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
+  catalogSelectArea: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', paddingRight: 8 },
+  radio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+    marginRight: 12,
+  },
+  radioSelected: { borderColor: colors.accent },
+  radioUnavailable: { borderColor: colors.border },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accent },
+  catalogActionBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: colors.accent },
+  catalogActionText: { color: colors.accent, fontSize: 13, fontWeight: '600' },
   msTextCol: { flex: 1, paddingRight: 12 },
   rowText: { color: colors.text, fontSize: 15 },
   rowTextSub: { color: colors.accent, fontSize: 13, fontWeight: '600' },
