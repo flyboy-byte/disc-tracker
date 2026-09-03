@@ -143,3 +143,60 @@ means it can be built in an afternoon, no re-research required.
   floated 2026-08-15, scoped in detail and **shipped 2026-08-16** (`019f480`). No longer graveyard
   material; see `plan/docs/archive/wear-estimate-scope.md` / `plan/docs/archive/buying-mode-scope.md` for the
   confirmed decisions and `suggest-engine-plan.md` for verification notes.
+
+---
+
+### UI audit leftovers — culled 2026-09-02
+
+**What it was:** 20 real findings from the Claude Design audit (`UX_AUDIT.md`) that weren't
+picked for the Tier 1/Tier 2 pass that shipped as `v0.26`. After shipping, they sat as an open
+"reference, consult later" list — Logan: *"i dont want to keep so much open. i want to cull or
+curate."* Went through them one by one instead of leaving a vague pile.
+
+**Kept as real future candidates (short list, not urgent):**
+- **A4 · P0 — font scaling.** Still the one named priority — see `ui-audit-plan.md`'s scoping
+  notes. Only remaining P0.
+- **F5 · P1 — "Delete all discs" sits mid-list in Settings** instead of isolated/last. Real
+  mis-tap risk on a fast scroll, cheap fix (reorder one row).
+- **B2 · P1 — "Clear bag" is a neutral ghost button** despite being destructive. Confirm dialog
+  already exists, so this is styling-only, but kept since it's near-free to fix alongside F5.
+- **B4 · P1 — Bag's long-press multiselect has no visual hint it exists**, and — new finding
+  from this cull, Logan on-device: **once you enter multiselect, Cancel is the only way out** —
+  no tap-elsewhere or second-long-press exit. Needs a bit more scope than the original audit
+  line credited it.
+- **C4/F4 · P1 — explainer text in control panels.** Logan's steer: *"good explaining is good,
+  just not too much bc audience dont have attention span."* Not a cut-it-all mandate — trim
+  length, don't remove the explanation.
+- **D1 · P1 — Disc Suggest still uses emoji as icons**, inconsistent with the SVG `Icon.tsx`
+  vocabulary the rest of the app adopted in `v0.26`.
+- **F6 · P2 — Settings has some uppercase micro-label styling** that reads as dated next to the
+  T2-3 flattened section headings.
+
+**Closed — reviewed and deliberately not pursuing, not just deferred:**
+- **D4** (Buy-mode filters ungrouped) — cosmetic/organizational only, no functional problem.
+- **E2** (no confirm on "Finish round") — Logan: the button isn't easy to mis-tap, and a
+  finished round can't be resumed anyway (confirmed: reopening a finished round loads read-only
+  `summary` mode, not `active`) — so a confirm dialog wouldn't be catching anything real.
+- **B3** (pager vs. continuous scroll between holes) — moot now that T2-4's hole strip already
+  solved the real pain point (any hole in one tap).
+- **B5/D5** (search fields lack a clear/✕ affordance) — cosmetic keyboard polish, backspace
+  works fine.
+- **C3** (Flight Shaper Reset always enabled) — harmless no-op when tapped at default.
+- **F3** (state-echo lines duplicating a switch/filter) — minor redundancy, not confusing.
+- **A6** (two-word tab labels) — cosmetic wording nit.
+- **E4** (no live standings mid-round, only post-finish) — a real feature want, but a bigger
+  build than "polish," and per-hole running total/vs-par already covers the moment-to-moment
+  need. Closed rather than kept as a maybe-someday.
+- **D2** (Disc Suggest's Throw/Buy toggle reads as tabs-inside-tabs) — the audit itself flagged
+  this needs its own design decision, not a quick fix. Logan: close it rather than leave it open
+  — it works and isn't confusing in practice, and reopening the IA is a bigger project than he
+  wants sitting on a list right now.
+- **E5** (first-tap semantics on an unscored hole) — the audit itself already said "not worth
+  changing on theory alone"; never actually open.
+- **E6** ("Σ" as the totals column header) — already fixed in T2-4 (`Σ` → `Tot`), not actually a
+  leftover, just missing its strikethrough.
+- **B6/C5/D6/E7** ("what's working — keep") — not findings, no action was ever implied.
+
+**Status:** the app's open UI list is now 7 items, all P1/P2 except A4, none urgent. Nothing else
+from the audit is open. Don't resurrect the closed items without a new reason — the review just
+happened, it isn't stale.

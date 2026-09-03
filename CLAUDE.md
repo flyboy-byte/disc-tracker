@@ -12,15 +12,18 @@ places where the built solution deliberately differs from the scoped one (Flight
 view kept its 2×2 grid; Score lost tier colour rather than gaining a second channel; slider
 reset is a tap on the value, not a double-tap on the slider), each with the reason.
 
-**The ~20 unpicked audit findings stay valuable as an audit — they're just not a work queue.**
-Logan, 2026-09-01: *"they are valuable as a[n] audit. but... we dont neccasarily need to just add
-them next feature adding session. with the exception of the fonts. that sounds like a good one."*
-So: consult them when you're next working in the relevant screen; don't open a session by
-proposing them as the next feature batch. **The one exception is `A4` — font scaling — which
-Logan agreed is worth doing.** It's the only remaining P0: RN's `allowFontScaling` defaults to
-`true`, so text already grows with the Android system font-size setting while fixed-height rows,
-the 34px hole chips and the 34px score-grid cells don't. Never tested at raised scale. Full
-scoping notes are in `app/plan/docs/ui-audit-plan.md`'s "Not in scope here" section.
+**The leftover audit findings were culled 2026-09-02** — Logan: *"i dont want to keep so much
+open. i want to cull or curate."* Went through all ~20 one by one; 7 survive as real future
+candidates, the rest are closed (reviewed, not pursuing — reasoning in
+`app/plan/GRAVEYARD.md`'s "UI audit leftovers" entry). The survivors, none urgent: **A4** (font
+scaling — still the one named P0; RN's `allowFontScaling` defaults to `true` so text already
+grows with the Android system font-size setting while fixed-height rows, the 34px hole chips,
+and the 34px score-grid cells don't — never tested at raised scale), **F5** (Delete-all-discs
+isolation), **B2** (Clear-bag button styling), **B4** (multiselect discoverability + no exit but
+Cancel), **C4/F4** (trim explainer text, don't cut it — "good explaining is good, just not too
+much"), **D1** (emoji icons in Disc Suggest vs. the rest of the app's SVG set), **F6** (Settings
+uppercase micro-labels). Full scoping for A4 and the reasoning for every closed item are in
+`app/plan/docs/ui-audit-plan.md`'s "Not in scope here" section and the graveyard entry.
 
 ## What this project is
 

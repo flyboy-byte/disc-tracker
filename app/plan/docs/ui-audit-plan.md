@@ -596,11 +596,10 @@ Everything in `UX_AUDIT.md` Part 3 not listed above (B2–B6, C1/C3–C5, D1/D2/
 already done, E2/E4–E7, F3/F4/F6, and the cross-cutting A4/A6) — real findings, just not picked
 for this pass.
 
-**Status 2026-09-01: valuable as an audit, but not a work queue — with one named exception.**
-These are real observations worth consulting when you're next in the relevant screen. What they
-are *not* is a list to batch through at the start of a future session. Logan's framing: *"they
-are valuable as a[n] audit. but... we dont neccasarily need to just add them next feature adding
-session. with the exception of the fonts."*
+**Status 2026-09-02: culled.** Sat as an open "consult later" pile from 2026-09-01 to
+2026-09-02; Logan then asked to cull it down rather than keep ~20 things loosely open. Went
+through each one in `app/plan/GRAVEYARD.md`'s "UI audit leftovers" entry — **read that entry for
+the reasoning**, this is just the surviving short list:
 
 - **A4 · P0 — font scaling. ⭐ THE ONE LOGAN SINGLED OUT AS WORTH DOING.** Not started; the
   highest-value remaining item and the only remaining P0. Every `fontSize` in the app is a fixed
@@ -614,20 +613,24 @@ session. with the exception of the fonts."*
   genuinely can't be absorbed (numeric chips, the score grid), letting rows wrap instead of
   truncate, and then verifying at 130% and 200%. That last part is cheap to check on a connected
   device: `adb shell settings put system font_scale 1.3` (restore with `1.0`).
+- **F5 · P1** — `Delete all discs` sits mid-list rather than last and isolated.
+- **B2 · P1** — `Clear bag` is a neutral `ghostBtn` despite being destructive (confirm `Alert`
+  already exists — styling-only).
+- **B4 · P1** — long-press multiselect in Bag has no visual hint it exists, **and** — found
+  during the cull, Logan on-device — Cancel is currently the *only* way out of multiselect once
+  entered (no tap-elsewhere, no second long-press). Slightly more scope than the original audit
+  line credited it.
+- **C4/F4 · P1** — explainer text in control panels (Flight Shaper, Disc Suggest). Logan: *"good
+  explaining is good, just not too much bc audience dont have attention span."* Trim, don't
+  strip.
+- **D1 · P1** — Disc Suggest still uses emoji as icons, inconsistent with the `Icon.tsx` SVG set
+  the rest of the app adopted in `v0.26`.
+- **F6 · P2** — Settings has uppercase micro-label styling that reads dated next to T2-3's
+  flattened section headings.
 
-  The rest below are the lower-priority remainder:
-- **F5 · P1** — `Delete all discs` sits mid-list rather than last and isolated (the T2-3 flatten
-  made it more visible without moving it). **B2 · P1** — `Clear bag` is a neutral `ghostBtn`
-  despite being destructive (it does have the confirm `Alert`). **D4 · P1** — Buy-mode filters
-  stack ungrouped, where the Bag screen already solved the same problem with a collapsible
-  panel. **E2 · P1** — `Finish` ends a round with no confirmation.
-- Smaller: **B3** (pager vs. continuous scroll), **B4** (long-press multiselect has no
-  affordance), **B5/D5** (search fields lack a clear affordance + `returnKeyType`), **C3**
-  (Reset always enabled), **C4/F4** (explainer paragraphs inside control panels), **F3**
-  (state-echo lines), **A6** (two-word tab labels), **E4** (standings only post-round).
-- Deliberately left alone: **E5** (the audit itself says "not worth changing on theory alone"),
-  **D2** (Throw/Buy tabs-inside-tabs — needs its own design decision), and the
-  **B6/C5/D6/E7** "what's working, keep" sections.
+Everything else audited this pass — D4, E2, B3, B5/D5, C3, F3, A6, E4, D2, E5, E6, and the
+B6/C5/D6/E7 "keep as-is" sections — was reviewed and **closed**, not just left off the list. Full
+per-item reasoning is in the graveyard entry; don't resurrect one without a new reason.
 
 Also explicitly out: **2.1 Score redesign, 2.2 Settings-as-list, 2.3 Disc Suggest picker
 directions 1b/1c** from the handoff `README.md` — 2.1/2.2 overlap with Tier 2's E3/F1 above at a
