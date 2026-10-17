@@ -8,13 +8,11 @@
 const fs = require('fs');
 const path = require('path');
 
-// The 4 permissions docs/privacy.html already discloses. Any other <uses-permission> in the
+// The 2 permissions docs/privacy.html discloses. Any other <uses-permission> in the
 // merged manifest fails the build — extend this list (and privacy.html, and README.md) in the
 // same commit that adds a new one, never silently.
 const ALLOWED = new Set([
   'android.permission.INTERNET',
-  'android.permission.READ_EXTERNAL_STORAGE',
-  'android.permission.WRITE_EXTERNAL_STORAGE',
   'android.permission.VIBRATE',
 ]);
 

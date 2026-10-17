@@ -127,12 +127,14 @@
   <ul>
     <li><code>android.permission.INTERNET</code> &mdash; used only for the optional
       network features above.</li>
-    <li><code>android.permission.READ_EXTERNAL_STORAGE</code> /
-      <code>WRITE_EXTERNAL_STORAGE</code> (Android 12 and below only) &mdash; used for CSV and
-      backup file export/import through the system file picker and share sheet.</li>
     <li><code>android.permission.VIBRATE</code> &mdash; used for tap/haptic feedback on
       interactive controls.</li>
   </ul>
+  <p>
+    The app requests no storage permission. Backups and CSV files are saved to a folder you pick,
+    and opened from a file you pick, using Android&rsquo;s own folder and file pickers, which
+    grant access only to what you choose.
+  </p>
 
   <h2>Third parties</h2>
   <p>
