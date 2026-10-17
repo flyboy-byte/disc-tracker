@@ -21,3 +21,6 @@ playwright-report/
 # TryDiscs catalog sync (tools/trydiscs-sync.js) — working cache + reports, never committed
 # per Try Discs' request to coordinate before any generated catalog data lands in the repo.
 tools/.trydiscs-cache/
+
+# Accepted-manuscript paper — kept locally only, not redistributable (see app/references/README.md)
+app/references/kamaruddin-potts-crowther-2018-aerodynamic-performance-of-flying-discs.pdf

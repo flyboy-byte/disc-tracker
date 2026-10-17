@@ -42,10 +42,16 @@ This is the whole point, so it goes first.
   home — no Firebase, no Sentry, no crash reporters, no "anonymous usage stats."
 - **The Android app makes zero network connections** in its default configuration. You can watch
   it stay silent.
-- **One optional, opt-in exception:** real measured flight-path reference images from the public
-  [DiscIt API](https://discit-api.fly.dev). It's **off by default**; when off, no request is ever
-  made. When on, it fetches a single image per disc on demand and caches it. That's the only
-  outside service either surface will ever touch — and only if you ask it to.
+- **Optional, opt-in exceptions — each only when you ask:**
+  - the larger Try Discs catalog, a one-time download from `disc.flyboybyte.com` (the
+    developer's own server) when you tap Download;
+  - a custom catalog from a URL you enter yourself;
+  - real measured flight-path reference images from the public
+    [DiscIt API](https://discit-api.fly.dev) — **off by default**, fetched one image per disc on
+    demand and cached.
+
+  That's the complete list. See the [privacy policy](https://flyboy-byte.github.io/disc-tracker/privacy.html)
+  for exactly what each one sends.
 - **Your data moves the way you move it.** Export to CSV, or use the app's full backup file, and
   carry it to a new phone yourself. Nothing leaves a device unless you send it.
 - **Even the "learning" is local.** Disc Suggest's swipe-away preferences (Buy mode's sense of

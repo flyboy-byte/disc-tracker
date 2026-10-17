@@ -1,0 +1,44 @@
+Disc Tracker is a disc golf bag tracker that keeps everything on your phone. No account, no cloud, no ads, no analytics.
+
+<b>Bag</b>
+<ul>
+<li>Add discs from the built-in library of 1,660+ molds (flight numbers filled in), or enter your own</li>
+<li>Plastic, weight, color, wear, notes, and a personal stability adjustment per disc</li>
+<li>Today's Bag vs. full Collection, filters, search, sorting, flight-arc thumbnails</li>
+<li>Shareable bag report: a clean image of your bag you can send anywhere</li>
+</ul>
+
+<b>Flight Shaper</b>
+<ul>
+<li>Live flight arc driven by hyzer, nose angle, wind, arm speed and spin sliders</li>
+<li>Right/left hand, backhand/forehand views</li>
+<li>Optional physics simulation that runs fully on-device (a port of the open-source shotshaper engine)</li>
+</ul>
+
+<b>Disc Suggest</b>
+<ul>
+<li>13 shot scenarios (max distance, reliable hyzer, roller, flex shot and more) ranked against your bag and the full library</li>
+<li>Skill level and throw style aware</li>
+<li>Buy mode: find discs you don't own that fill a gap in your bag</li>
+<li>Swipe away suggestions you don't want; the re-ranking it learns stays on your device</li>
+</ul>
+
+<b>Score</b>
+<ul>
+<li>Offline scorecard for 1–8 players, hole by hole, running totals vs. par, saved rounds</li>
+<li>No course lookup, no GPS, works with no signal</li>
+</ul>
+
+<b>Your data</b>
+<ul>
+<li>Stored in a local database on your phone; Android Auto Backup is disabled</li>
+<li>Full backup and restore to a file you choose, plus CSV import/export</li>
+</ul>
+
+<b>Network use (all optional, all off until you ask)</b>
+<ul>
+<li>Larger disc catalog: a one-time download of disc data provided by Try Discs, hosted by the developer. Only when you tap Download.</li>
+<li>Reference flight images: fetched from the third-party DiscIt API (Marshall Street flight guide data) for the disc you're viewing. Off by default.</li>
+<li>Custom catalog: import a catalog file or a URL you provide.</li>
+</ul>
+With none of these enabled, the app makes no network connections.

@@ -4,10 +4,12 @@ Authoritative context for any coding agent (Claude Code, Codex). `CLAUDE.md` jus
 file — edit here, not there. If this file conflicts with the docs it points to, the docs win:
 fix the pointer, don't paste the detail back up here.
 
-**Status: PARKED since 2026-09-01 at `v0.26`. Nothing is queued** (last verified 2026-10-17).
-Don't propose work unprompted; wait for Logan. Honest state if he picks it back up: no open
-bugs, no queued features, C-series closed, R6 (Play Store) hard-paused, R7 (official F-Droid
-index) the only natural next distribution step. The one named candidate is **A4 (font scaling)**.
+**Status: UNPARKED 2026-10-17. Active work is R7, getting into the official F-Droid index.**
+The goal is an fdroiddata MR that sits through review. Read
+`app/plan/docs/fdroid-submission.md` first: it has the audit, the open decisions, the version
+plan and the draft recipe. Latest release is still `v0.26` (2026-09-01). The next planned
+release is `v0.27.0`, carrying the F-Droid listing and the privacy-text fixes. R6 (Play Store)
+is still hard-paused. The other named candidate is **A4 (font scaling)**.
 
 ## Where the real state lives (read these, not your memory of past sessions)
 
@@ -64,7 +66,9 @@ npm run typecheck                          # tsc --noEmit
 npx jest                                   # all tests (424 across 15 suites, 2026-10-17)
 npx jest src/utils/suggestScore.test.ts    # one file
 npx jest -t "fragment of test name"        # one test
-npm run prebuild                           # expo prebuild --clean → regenerates android/
+# npm run prebuild — expo prebuild --clean. DON'T run it in the working tree: it deletes all of
+#   android/, including the gitignored local.properties that holds the signing passwords. To see
+#   what F-Droid's prebuild produces, use a throwaway clone (CI's manifest audit already does).
 cd android && JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew assembleRelease \
   -PreactNativeArchitectures=arm64-v8a,armeabi-v7a   # release APK, then `gh release create`
 ```

@@ -27,13 +27,13 @@
 </head>
 <body>
   <h1>Disc Tracker — Privacy Policy</h1>
-  <p class="meta">Effective date: August 17, 2026 &middot; Last updated: August 20, 2026</p>
+  <p class="meta">Effective date: August 17, 2026 &middot; Last updated: October 17, 2026</p>
 
   <p>
     Disc Tracker (the &ldquo;app&rdquo;) is a local-first disc golf bag tracker for Android.
     This policy explains what data the app handles. The short version:
-    <strong>everything stays on your device, and the one optional network feature is off
-    unless you turn it on.</strong>
+    <strong>everything stays on your device, and the app makes no network connections
+    unless you ask it to.</strong>
   </p>
 
   <h2>Open source</h2>
@@ -50,7 +50,9 @@
   <p>
     <strong>None.</strong> Disc Tracker does not collect, transmit, sell, share, or otherwise
     send any personal information, usage data, device identifiers, advertising identifiers,
-    or analytics anywhere. The app has no user accounts and no servers of its own it talks to.
+    or analytics anywhere. The app has no user accounts. The only network requests it can make
+    are the optional ones listed under &ldquo;Optional network features&rdquo; below, and only
+    after you choose them.
   </p>
 
   <h2>Data stored on your device</h2>
@@ -63,9 +65,9 @@
     </li>
     <li>
       <strong>Backups &amp; CSV export.</strong> The Backup &amp; Restore and CSV export
-      features write a file and hand it to Android&rsquo;s share sheet &mdash; where that
-      file goes from there (email, cloud drive, local save) is entirely your choice. The app
-      itself never uploads it anywhere.
+      features write a file to a folder you pick, or hand it to Android&rsquo;s share sheet
+      if you choose &ldquo;Send a copy&rdquo; &mdash; where that file goes from there is
+      entirely your choice. The app itself never uploads it anywhere.
     </li>
     <li>
       <strong>Disc Suggest preferences.</strong> Swiping a disc away in Disc Suggest saves a
@@ -89,26 +91,45 @@
     the in-app &ldquo;Delete all discs&rdquo; option in Settings.
   </p>
 
-  <h2>The one optional network feature</h2>
+  <h2>Optional network features</h2>
   <p>
-    Disc Suggest and the Bag view can show a real measured flight-path reference image for a
-    disc, sourced from the third-party
-    <a href="https://github.com/kegiljarhus">Marshall Street</a> database via
-    <code>discit-api.fly.dev</code>. This is <strong>off by default</strong> &mdash; it only
-    runs if you enable &ldquo;Marshall Street reference images&rdquo; in Settings. When
-    enabled, the app sends the manufacturer and mold name of a disc you&rsquo;re viewing to
-    that API to fetch its image; no other personal or bag data is included in that request,
-    and it only happens for a disc you&rsquo;re actively looking at. Turning the setting off
-    stops all requests to this API immediately.
+    With none of these used, the app makes no network connections at all.
   </p>
+  <ul>
+    <li>
+      <strong>Larger disc catalog (Try Discs).</strong> The app can download an expanded disc
+      catalog (disc data provided by <a href="https://api.trydiscs.com">Try Discs</a>) from
+      <code>disc.flyboybyte.com</code>, a server run by the developer. This happens only when
+      you tap Download &mdash; on the one-time prompt at first launch, or in Settings &rarr;
+      Disc Catalog. The request is a plain file download: no account, identifier, or bag data
+      is sent. Like any web server, it keeps a standard access log (IP address, time, the file
+      requested, and your device&rsquo;s user-agent string), which is used only for operating
+      the server and is deleted after 14 days. Once downloaded, the catalog is stored on your
+      device and works offline.
+    </li>
+    <li>
+      <strong>Custom catalog URL.</strong> If you choose to import a catalog from a web address
+      you enter, the app downloads it from that address. That server is yours or someone you
+      chose, not the developer&rsquo;s.
+    </li>
+    <li>
+      <strong>Reference flight images.</strong> Disc Suggest and the Bag view can show a
+      measured flight-path image for a disc, from the third-party Marshall Street flight guide
+      data served by <code>discit-api.fly.dev</code>. This is <strong>off by default</strong>
+      &mdash; it only runs if you enable &ldquo;Marshall Street reference images&rdquo; in
+      Settings. When enabled, the app sends the mold name of a disc you&rsquo;re actively
+      viewing to that API to fetch its image; no other personal or bag data is included.
+      Turning the setting off stops all requests to it immediately.
+    </li>
+  </ul>
 
   <h2>Permissions</h2>
   <ul>
-    <li><code>android.permission.INTERNET</code> &mdash; required only for the optional
-      Marshall Street reference-image lookup above.</li>
+    <li><code>android.permission.INTERNET</code> &mdash; used only for the optional
+      network features above.</li>
     <li><code>android.permission.READ_EXTERNAL_STORAGE</code> /
       <code>WRITE_EXTERNAL_STORAGE</code> (Android 12 and below only) &mdash; used for CSV and
-      backup file export/import through the share sheet and document picker.</li>
+      backup file export/import through the system file picker and share sheet.</li>
     <li><code>android.permission.VIBRATE</code> &mdash; used for tap/haptic feedback on
       interactive controls.</li>
   </ul>

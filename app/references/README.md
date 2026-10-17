@@ -19,7 +19,8 @@ and `static/physics.js`'s `MOD` coefficients. Kept locally so they don't get los
   Aerospace Technology* 90(2), 390–397. Accepted-manuscript copy from Sheffield Hallam's SHURA
   repository (green open access — author's peer-reviewed version, not publisher's typeset PDF, and
   not CC-BY like the paper above; keep this for internal research reference, don't republish it
-  elsewhere). This is the direct wind-tunnel source behind the "Kamaruddin/Potts" citation already in
+  elsewhere). **Untracked from git 2026-10-17** and gitignored, so it now exists only in local
+  checkouts. It's still in older commits; rewriting history wasn't judged worth it. This is the direct wind-tunnel source behind the "Kamaruddin/Potts" citation already in
   `static/physics.js` (`pitch_turn` coefficient) and the primary aero dataset the Giljarhus 2022 CFD
   paper validates against (ref [8] there).
   - Wind-tunnel-measured Cl/Cd/Cm for putter/mid/driver golf discs plus 4 parametric disc shapes,

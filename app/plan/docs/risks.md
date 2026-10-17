@@ -62,6 +62,19 @@
   a real, licensed, founder-approved replacement/supplement (TryDiscs) is being evaluated —
   see `catalog-v2-scope.md`. Not resolved yet (blocked on the founder's packaging reply), but
   this is the path that closes this risk out, not a hypothetical.
+  **Source identified 2026-10-17** (Logan): the Kaggle dataset
+  [joej0e/disc-golf-disc-data](https://www.kaggle.com/datasets/joej0e/disc-golf-disc-data),
+  "Disc Golf Disc Data", version 1, 2025-03-27.
+  - DOCUMENTED (Kaggle API): the upload is licensed **Apache 2.0**.
+  - DOCUMENTED (the dataset's own description): "This data is from the TryDiscs website… I was
+    able to manually scrape the disc names, manufacturer, flight numbers, type, and rim stats."
+  - INFERRED: the Apache 2.0 label is the uploader's. It doesn't establish that Try Discs
+    licensed its catalog that way. So the bundled library is Try Discs-derived data with a
+    second-hand license.
+  - Mitigating: Logan has since got direct permission from Try Discs' founder to
+    store/bundle a locally generated copy (`RESEARCH.md` §11.5).
+  - Still open (Logan's call): crediting Try Discs for the *bundled* library too, not just the
+    downloaded catalog, and whether to mention this lineage to Azeem.
 
 ## Technical risk
 

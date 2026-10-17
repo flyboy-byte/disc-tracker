@@ -460,8 +460,8 @@ export default function SettingsScreen() {
         <View style={styles.divider} />
         <Text style={styles.sectionHint}>
           {msRefEnabled
-            ? 'When you open a disc, the app fetches its image once from discit-api.fly.dev, then caches it. No other network use; turn off to stay fully offline.'
-            : 'Off — the app makes no network connections. Turn on to fetch images from discit-api.fly.dev on demand.'}
+            ? 'When you open a disc, the app fetches its image once from discit-api.fly.dev, then caches it. Turn off to stop all image requests.'
+            : 'Off — no image requests are made. Turn on to fetch images from discit-api.fly.dev on demand.'}
         </Text>
       </View>
 
