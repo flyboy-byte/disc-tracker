@@ -48,7 +48,7 @@ layout and package names. Each is listed after the YAML.
 
 ```yaml
 Categories:
-  - <DECISION D1>
+  - Sport Game
 License: GPL-3.0-only
 AuthorName: flyboy-byte
 SourceCode: https://github.com/flyboy-byte/disc-tracker
@@ -158,7 +158,7 @@ guesswork. Expect extra entries for the native deps drag-tree doesn't have:
 
 ## Decisions for Logan
 
-- **D1, Categories.** S8 has both **`Sports & Health`** and **`Sport Game`**. drag-tree went
+- ~~**D1, Categories.**~~ **Decided 2026-10-17 (Logan): `Sport Game`**, matching drag-tree. S8 has both **`Sports & Health`** and **`Sport Game`**. drag-tree went
   from `Sports & Health` to `Sport Game` in its own commit `50751249`. The thread has no
   reviewer comment on it, so it isn't a spec ruling. The only golf app upstream
   (`me.mgerdes.open_golf`) is a game and uses `Sport Game`. There are no disc golf apps in
