@@ -291,3 +291,11 @@ ran. There's a backup at `~/disc-tracker-local.properties.bak`.)
 - The non-redistributable Kamaruddin PDF is untracked.
 - The package ID stays `com.disctracker.app`. S6 doesn't require an owned domain, and changing
   it later would orphan existing installs.
+
+### Run 1 attempt 5 — PASSED (2026-10-17)
+
+Pipeline 2959067157 (fork head 1bb97e0b), job 17258653222: all four blocks built from
+2ea1fad9 (271 armeabi-v7a, 272 arm64-v8a, 273 x86, 274 x86_64), ~60 min total. Artifact zip
+holds `tmp/com.disctracker.app_27{1..4}.apk` (unsigned); each contains only its own ABI's libs
+(verified with `unzip -l`). `checkupdates` fails as expected until the tag exists.
+**Next: sign the 4 unsigned APKs (needs keystore passwords from Logan), release v0.27.0, Run 2.**
