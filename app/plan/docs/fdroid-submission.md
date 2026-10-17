@@ -1,136 +1,56 @@
-# F-Droid submission (R7 / D3) — plan and draft recipe
+# F-Droid submission (R7 / D3) — plan and recipe
 
-Status: **audit done, recipe drafted, nothing submitted** (2026-10-17). Goal per Logan
+Status: **audit done, recipe written to spec, nothing submitted** (2026-10-17). Goal per Logan
 (2026-10-17): get disc-tracker into an fdroiddata MR and let it sit there through review.
 
-Use with `fdroid-reference.md` (the mechanics learned from drag-tree) and
-`fdroid-privacy-audit-2026-08-20.md` (the manifest pass). This doc covers what was checked on
-2026-10-17, what got fixed, what's still Logan's call, and the draft YAML.
+**Rule, from Logan (2026-10-17): "none of ur own judgement, its exactly to fdroid spec or not at
+all. from the dragtree experience with the fdroid mantainers."** Every recipe line and every
+change below cites its source. Where the sources don't decide something, it's listed as
+Logan's decision, not filled in.
 
-The source of truth for the process is drag-tree's own docs:
-- `~/projects/drag-tree/fdroid/README.md`: the release flow and the hard rules.
-- `~/projects/drag-tree/fdroid/MR_ACTIVITY.md`: what reviewer linsui actually asked for.
+## Primary sources (read 2026-10-17)
 
-drag-tree has been live on f-droid.org since its MR (!41671) was merged on 2026-09-28. It
-updates automatically from tags.
-
-## Health check (2026-10-17)
-
-The project had sat untouched for six weeks before this check.
-
-| Step | Result |
+| Source | Where |
 | --- | --- |
-| `npx npm@10.9.2 ci` (clean) | ✓ |
-| `npm run typecheck` | ✓ |
-| `npx jest --ci` | ✓ 424/424 across 15 suites |
-| `./gradlew assembleRelease` (committed `android/`, arm64+armeabi) | see the "Release build" line at the bottom |
+| **S1** The drag-tree MR thread, every comment (linsui reviewing, MiggiV2 testing) | `glab api projects/fdroid%2Ffdroiddata/merge_requests/41671/discussions` |
+| **S2** drag-tree's merged recipe as it is upstream now | `upstream/master:metadata/com.flyboybyte.dragtree.yml` (fdroiddata fetched 2026-10-17) |
+| **S3** F-Droid's React Native template, which linsui required ("Every part.") | `upstream/master:templates/build-react-native.yml` |
+| **S4** The App Inclusion MR template | `upstream/master:.gitlab/merge_request_templates/App inclusion.md` |
+| **S5** The Quick Start Guide, "Setup ABI split" section | f-droid.org/en/docs/Submitting_to_F-Droid_Quick_Start_Guide/ |
+| **S6** Build Metadata Reference | f-droid.org/docs/Build_Metadata_Reference/ |
+| **S7** Anti-Features | f-droid.org/en/docs/Anti-Features/ |
+| **S8** Valid categories | `upstream/master:config/categories.yml` |
+| **S9** drag-tree's release flow and hard rules | `~/projects/drag-tree/fdroid/README.md` |
 
-**Never run `npm run prebuild` in the working tree.** `expo prebuild --clean` deletes all of
-`app/android/`, including the gitignored `local.properties` that holds the signing passwords.
-To reproduce F-Droid's prebuild, use a throwaway clone. (This was caught and stopped on
-2026-10-17 before it ran. There's a backup at `~/disc-tracker-local.properties.bak`.)
+## What the maintainers actually asked of drag-tree (S1)
 
-## Privacy positioning: findings and fixes
+Every item below comes from the thread. The right-hand column is where disc-tracker stands.
 
-The app's **behavior** is clean. There are three possible network calls, and all of them are
-user-initiated:
-- `catalogSync.ts`: the Try Discs download, or a custom URL. It only runs when the user taps
-  Download, including on the first-run prompt in `_layout.tsx`.
-- `msPic.ts`: Marshall Street images. Opt-in, off by default.
+| # | Requirement (who, when) | disc-tracker |
+| --- | --- | --- |
+| R1 | "Please follow the template at templates/build-react-native.yml" → "Every part." (linsui, 2026-06-30) | Recipe below = S3 + S2 |
+| R2 | Use the App Inclusion MR template and check the boxes (linsui) | Do this at MR time, per S4 |
+| R3 | Summary/description go in a fastlane tree in the repo, not the MR (linsui) | ✓ `fastlane/metadata/android/en-US/`. Changelog still to add (S4: "changelog should also be provided") |
+| R4 | Patch to JDK 21 as in the template; no package-level `scanignore` (linsui, 2026-07-01) | Recipe uses S3's JDK sed verbatim; `scanignore` is file-level only |
+| R5 | Plain `node_modules/...` scanignore paths (linsui, 2026-07-02) | Flat npm, so N/A |
+| R6 | Add `Binaries` **and** `AllowedAPKSigningKeys`; the keys alone don't enable reproducible builds (linsui, 2026-07-03/04) | Both in recipe. Key `ff739cf5…837a` verified on `v0.26` APK |
+| R7 | "Your apk is built from a different source code. You need to apply the same patch first." (linsui) | Reference APKs come only from F-Droid's own unsigned artifacts (S9) |
+| R8 | ABI split per the Quick Start Guide (linsui, 2026-07-19, after seeing 4 × ~24 MB) | 4 blocks, S5's `VercodeOperation` |
+| R9 | `sed -i 's/versionCode .*/versionCode $$VERCODE$$/'` in every ABI block (linsui inline suggestion, 2026-07-22/23) | In every block |
+| R10 | Tester: unused permissions merged in from Expo/RN must go (`READ/WRITE_EXTERNAL_STORAGE`, `SYSTEM_ALERT_WINDOW`, …) via `blockedPermissions` (MiggiV2, 2026-08-02) | **Open, see below**: storage perms are declared, and no code uses them |
+| R11 | Tester: `INTERNET` must actually be used; network connections checked with PCAPdroid; connections must be "described clearly in description"; "connects to web services on start" means NonFreeNet/TetheredNet "may apply" (S1 checklist) | INTERNET is used (opt-in features only); no connection on start (code-verified); described in `full_description.txt` |
+| R12 | Tester: the version shown in the app must match the release (MiggiV2 found a hardcoded footer) | ✓ Settings reads `Constants.expoConfig.version` |
 
-Nothing hits the network on launch.
+## Recipe — `metadata/com.disctracker.app.yml`
 
-What had drifted was the **text**. Everything below was fixed on 2026-10-17:
-
-- **`docs/privacy.html`** said "the one optional network feature" and "no servers of its own it
-  talks to". Both had been false since `v0.20`: the Try Discs catalog downloads from
-  `disc.flyboybyte.com`, which is Logan's own VPS. The page now lists all three network
-  features. For the catalog it states exactly what the server keeps: nginx's default access log
-  (IP address, time, path, user agent), rotated daily and deleted after 14 days. That was
-  verified on the VPS (`/etc/logrotate.d/nginx`) on 2026-10-17.
-- **Smaller fixes on the same page:**
-  - The Marshall Street link pointed at the shotshaper author's GitHub.
-  - It claimed the image lookup sends the manufacturer and mold. `msPic.ts` sends only the mold
-    name.
-  - The backup wording still described the share-sheet-only flow from before `v0.26`.
-- **`README.md`**'s privacy section had the same "only outside service" claim, which
-  contradicted its own Try Discs paragraph. Fixed.
-- **Settings copy** (`settings.tsx`, the Marshall Street hint) said "the app makes no network
-  connections" when images were off. Narrowed to "no image requests are made", since the
-  catalog download is separate. This ships with the next release.
-
-### Anti-features to declare
-
-- **`NonFreeNet`: declare it up front.** The two optional features talk to services whose data
-  isn't free: Try Discs' catalog (licensed to this app, not openly licensed) and DiscIt/Marshall
-  Street. Both are opt-in. Declaring it ourselves beats having the reviewer add it, and it
-  matches how the app already describes itself.
-
-## Open decisions (Logan's call)
-
-1. **`discs_master.json` provenance: identified 2026-10-17, attribution still open.**
-   - It comes from the Kaggle dataset `joej0e/disc-golf-disc-data`, labelled Apache 2.0. That
-     dataset was itself scraped from trydiscs.com. Full detail is in `risks.md`.
-   - For F-Droid: an Apache-2.0-labelled source is a defensible answer if a reviewer asks, so
-     `NonFreeAssets` isn't planned.
-   - The cleaner fix is crediting Try Discs (and the Kaggle dataset) for the bundled library in
-     the same places the downloaded catalog is already credited. Logan has a direct
-     relationship with Try Discs. That's Logan's call.
-2. ~~**The non-redistributable paper PDF in the public repo.**~~ **Done 2026-10-17.** The Kamaruddin
-   PDF is untracked, gitignored and kept locally. Its citation stays in
-   `app/references/README.md`.
-3. **Keep the package ID `com.disctracker.app`?** It's not a domain Logan owns. drag-tree uses
-   `com.flyboybyte.dragtree`.
-   - Changing it later is a new app, and every sideload/D2 user would have to reinstall. Changing
-     it now costs the same thing once.
-   - F-Droid doesn't require a domain you own. Recommendation: keep it.
-
-## Version plan
-
-Submit as **`v0.27.0`**. It carries the fixes above plus the new `fastlane/` listing, because
-F-Droid reads the listing from the commit it builds, and `v0.26`'s commit doesn't have one.
-
-- Base `versionCode` 27. With per-ABI splits, F-Droid's codes are `10 * 27 + 1..4` = **271–274**
-  (armeabi-v7a, arm64-v8a, x86, x86_64). This is drag-tree's `VercodeOperation` scheme.
-- Changelogs go in `fastlane/metadata/android/en-US/changelogs/271.txt` through `274.txt`.
-- **Decided 2026-10-17 (Logan): use the `10 * c` scheme everywhere.** The sideload/GitHub
-  `v0.27.0` APK gets `versionCode 270`. F-Droid's builds get 271–274. Release ordering stays
-  consistent across every channel, matching drag-tree's Play build (`10 * c + 0`).
-  - `checkupdates` reads `versionCode` from `app/android/app/build.gradle` at the tag. So with
-    `VercodeOperation: 10 * %c + n`, F-Droid needs the **base** code there (`27`), not `270`.
-  - The sideload `270` has to come from a build-time override instead, e.g. a
-    `-PversionCodeOverride` Gradle property. Not built yet.
-  - Alternatively, commit `270` to `build.gradle` and change the recipe to `%c + 1..4`. That's
-    simpler and keeps one number in the repo. **Preferred:** it needs no new build plumbing,
-    only a recipe that differs slightly from drag-tree's.
-
-## Listing (done 2026-10-17)
-
-`fastlane/metadata/android/en-US/` at the repo root:
-- `title.txt`
-- `short_description.txt` (77 characters; the limit is 80)
-- `full_description.txt`, which ends with an explicit "Network use (all optional)" section
-- `images/icon.png` (512×512)
-- `phoneScreenshots/1–5.png`, the `v0.26` screenshots from `docs/`
-
-Changelogs are pending the version decision.
-
-## Draft recipe — `metadata/com.disctracker.app.yml`
-
-This is drag-tree's merged recipe with three disc-tracker differences:
-- The app lives in `app/`, so `subdir` is `app/android/app`.
-- `scanignore` and `scandelete` are relative to the repo root, so the paths start `app/`.
-- Hermes is the `hermes-compiler` package in RN 0.86, not `react-native/sdks/hermesc`.
-
-One block is shown. The other three are identical apart from `versionCode` and the ABI in the
-splits sed (and `binary:`, in Run 2).
+This is **S2 line for line**. The only differences are the ones forced by disc-tracker's repo
+layout and package names. Each is listed after the YAML.
 
 ```yaml
 Categories:
-  - Sports & Health
+  - <DECISION D1>
 License: GPL-3.0-only
 AuthorName: flyboy-byte
-WebSite: https://github.com/flyboy-byte/disc-tracker
 SourceCode: https://github.com/flyboy-byte/disc-tracker
 IssueTracker: https://github.com/flyboy-byte/disc-tracker/issues
 
@@ -139,14 +59,10 @@ AutoName: Disc Tracker
 RepoType: git
 Repo: https://github.com/flyboy-byte/disc-tracker
 
-AntiFeatures:
-  NonFreeNet:
-    en-US: Optional, off-by-default downloads from Try Discs' disc catalog and the DiscIt (Marshall Street) image API.
-
 Builds:
   - versionName: 0.27.0
     versionCode: 271
-    commit: <full SHA of the v0.27.0 commit>
+    commit: <full SHA>
     subdir: app/android/app
     sudo:
       - apt-get update
@@ -156,6 +72,8 @@ Builds:
       - npm install --ignore-scripts
     gradle:
       - yes
+    binary: 
+      https://github.com/flyboy-byte/disc-tracker/releases/download/v%v/disc-tracker-v%v-armeabi-v7a.apk
     prebuild:
       - cd ../..
       - sed -i -e '1a "expo":{"autolinking":{"android":{"buildFromSource":[".*"]}}},'
@@ -163,10 +81,10 @@ Builds:
       - sed -i '/jvmToolchain\|JavaVersion/s/17/21/' node_modules/@react-native/gradle-plugin/*/build.gradle.kts
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/JdkConfiguratorUtils.kt
       - sed -i 's/\.filter { it is Inet4Address && !it.isLoopbackAddress }/.filter
-        { false }/'
+        { false }/' 
         node_modules/@react-native/gradle-plugin/react-native-gradle-plugin/src/main/kotlin/com/facebook/react/utils/AgpConfiguratorUtils.kt
       - npx expo prebuild -p android --clean
-      - sed -i
+      - sed -i 
         's/android.enablePngCrunchInReleaseBuilds=true/android.enablePngCrunchInReleaseBuilds=false/'
         android/gradle.properties
       - sed -i 's/org.gradle.jvmargs=.*/org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m/'
@@ -180,46 +98,130 @@ Builds:
       - app/node_modules/hermes-compiler/hermesc/linux64-bin/hermesc
       - app/node_modules/expo-modules-core/android/ExpoModulesCorePlugin.gradle
       - app/node_modules/expo-modules-autolinking/scripts/android/autolinking_implementation.gradle
+      - app/node_modules/react-native-safe-area-context/android/build.gradle
+      - app/node_modules/react-native-screens/android/build.gradle
     scandelete:
       - app/node_modules
     ndk: 27.1.12297006
+
+  # blocks 2–4: identical except versionCode 272/273/274, the ABI in the split sed
+  # (arm64-v8a / x86 / x86_64), and the ABI in binary:
 
 AllowedAPKSigningKeys: ff739cf565d8fe3af4ff97e641f6336fa69ebcf3eec222a7a7c5ab9f8e3d837a
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-VercodeOperation:   # build.gradle carries 270 (10 × base 27), see Version plan
-  - '%c + 1'
-  - '%c + 2'
-  - '%c + 3'
-  - '%c + 4'
+VercodeOperation:
+  - 10 * %c + 1
+  - 10 * %c + 2
+  - 10 * %c + 3
+  - 10 * %c + 4
 CurrentVersion: 0.27.0
 CurrentVersionCode: 274
 ```
 
-These are expected to need adjusting in Run 1:
-- **`scanignore`.** Start from drag-tree's list and let the CI scanner say what else it wants.
-  disc-tracker has more native deps than drag-tree: gesture-handler, reanimated, worklets, svg,
-  view-shot and sqlite.
-- **`expo-sqlite`'s prebuilt `libsql/` and `vec/` `.so` files.** They're unused by default (the
-  `useLibSQL` and `withSQLiteVecExtension` properties are off), so `scandelete` removing them
-  should be harmless.
-- **Build time.** drag-tree dropped reanimated, worklets and gesture-handler partly to cut CI
-  time per ABI. disc-tracker needs all three (the custom slider, swipe cards and the gesture
-  fix). Watch how long Run 1 takes.
-- **The signing key: verified 2026-10-17.** `apksigner verify --print-certs` on the published
-  `disc-tracker-v0.26.apk` gives `ff739cf565d8…837a`, the same key as drag-tree.
+Trailing spaces after `binary:`, `sed -i` and `{ false }/'` are deliberate. They're S2's
+rewritemeta-canonical form (S9: "copy the exact diff from the CI job log", never run rewritemeta
+locally).
 
-## Sequence
+### Differences from S2, and why each is forced
 
-1. Settle the open decisions above and the version-code question.
-2. Commit, tag nothing yet, and push `main`.
-3. **Run 1:** on a fresh fork branch off `upstream/master` in `flyboy-byte/fdroiddata`, add the
-   4 blocks without `binary:`. Push, then fix rewritemeta from the CI diff only. Never run
-   rewritemeta locally.
-4. Sign F-Droid's four unsigned artifacts with `--v1-signing-enabled false
-   --alignment-preserved true`, verify the cert, then
-   `gh release create v0.27.0 --target <sha>` with all four attached.
-5. **Run 2:** add `binary:` to each block and confirm all four byte comparisons pass.
-6. Open the MR using the **App Inclusion** template, with every checkbox addressed. Then leave
-   it to review.
+| Field | S2 (drag-tree) | Here | Forced by |
+| --- | --- | --- | --- |
+| `subdir` | `android/app` | `app/android/app` | The app lives in `app/`. S6: "Specifies to build from a subdirectory". `cd ../..` still lands on the folder holding `package.json` |
+| `scanignore`/`scandelete` paths | `node_modules/...` | `app/node_modules/...` | They're relative to the repo root. Upstream recipes with the app in a subdirectory use the same pattern (e.g. `mobile/node_modules/hermes-compiler/...`) |
+| Hermes path | `react-native/sdks/hermesc/...` | `hermes-compiler/hermesc/linux64-bin/hermesc` | RN 0.86 moved hermesc into the `hermes-compiler` package. 35 upstream recipes use this path; S3's path is out of date |
+| `async-storage` scanignore | present | dropped | disc-tracker doesn't depend on it, so the file doesn't exist |
+| `WebSite` | GitHub Pages site | omitted | disc-tracker has no homepage. `docs/` has only `privacy.html`, and the Pages root 404s. The field is optional in S6 |
+| `License` | `MIT` | `GPL-3.0-only` | S6: "short identifiers of the SPDX license list". GitHub's license API says `GPL-3.0`. SPDX deprecated `GPL-3.0` in favour of `GPL-3.0-only`, its equivalent. The repo has no "or later" notice |
+| `AntiFeatures` | none | **none** | My earlier draft pre-declared `NonFreeNet`. **Removed**: that was my judgment. S7 applies it to apps that "promote or depend entirely on" a proprietary service. S1's tester checklist ties it to connections "on start", and disc-tracker makes none. The connections are disclosed in the description (R11), and the decision is left to the reviewer |
+| `VercodeOperation` | `10 * %c + n` | `10 * %c + n` | My earlier `%c + n` variant is **removed**: S5 shows exactly `10 * %c + 1..4`. So `build.gradle` keeps base `versionCode 27` |
+
+**Retracted from my earlier draft:** the plan for a separate sideload build with
+`versionCode 270`. S9's flow is that the GitHub release *is* the four F-Droid reference APKs
+(`drag-tree-v1.7.4-arm64-v8a.apk`, …, codes 171–174). There's no separate sideload build. That
+also meets Logan's "10× scheme everywhere" choice (2026-10-17): the GitHub release carries
+271–274, the same as F-Droid.
+
+The rest of S2 is copied unchanged: `sudo`, `init`, `gradle`, every `prebuild` line,
+`scandelete`, `ndk`, `AllowedAPKSigningKeys`, `AutoUpdateMode`, `UpdateCheckMode`.
+
+`scanignore` is expected to change in Run 1. S3's own comment says "Add other build.gradle
+files here [if a] local maven repo for react-native is used", and drag-tree's list came from
+its CI scanner output. The final list comes from the Run 1 scanner report, not from
+guesswork. Expect extra entries for the native deps drag-tree doesn't have:
+- gesture-handler, reanimated, worklets, svg, view-shot, sqlite, crypto, document-picker,
+  file-system, sharing.
+- `expo-sqlite` also ships prebuilt `libsql/` and `vec/` `.so` files. `scandelete` removes them,
+  which is safe because they're used only when `expo.sqlite.useLibSQL` or
+  `withSQLiteVecExtension` is on (both off by default).
+
+## Decisions for Logan
+
+- **D1, Categories.** S8 has both **`Sports & Health`** and **`Sport Game`**. drag-tree went
+  from `Sports & Health` to `Sport Game` in its own commit `50751249`. The thread has no
+  reviewer comment on it, so it isn't a spec ruling. The only golf app upstream
+  (`me.mgerdes.open_golf`) is a game and uses `Sport Game`. There are no disc golf apps in
+  fdroiddata to copy.
+- **D2, Storage permissions (R10).** `READ_EXTERNAL_STORAGE`/`WRITE_EXTERNAL_STORAGE`
+  (maxSdk 32) are declared but unused: no `PermissionsAndroid`, no media library, and
+  backup/CSV go through SAF/document picker. drag-tree's precedent is to add them to
+  `blockedPermissions`. That's an app change, so it needs:
+  - an on-device check of backup save/restore and CSV import/export;
+  - edits to `privacy.html`, which wrongly claims they're used;
+  - removing them from the allowlist in `check-manifest-permissions.js`.
+- **D3, Bundled library credit.** `discs_master.json` is Try Discs-derived via Kaggle (see
+  `risks.md`). This isn't an F-Droid requirement, so it's listed for completeness only.
+
+## Release flow (S9, unchanged)
+
+1. Bump `version` in `app.json` and `package.json`, and `versionCode 27`/`versionName "0.27.0"`
+   in `app/android/app/build.gradle` (checkupdates reads this file). Add
+   `fastlane/metadata/android/en-US/changelogs/271.txt` through `274.txt`.
+2. Merge to `main` and push. **Do not tag.**
+3. **Run 1:** on a fresh branch of `flyboy-byte/fdroiddata` off `upstream/master`, add the 4
+   blocks with the full SHA and **no** `binary:`. Push. Fix rewritemeta from the CI diff only,
+   and fix `scanignore` from the scanner report. Download the 4 unsigned APKs, and check that each
+   holds only its own `lib/<abi>/`.
+   - Expected Run 1 failures: `schema validation` (`binary` required) and `checkupdates` (no
+     tag yet).
+4. Sign each with `apksigner sign --v1-signing-enabled false --alignment-preserved true`.
+   Verify the cert is `ff739cf5…`. Then `gh release create v0.27.0 --target <sha>` with
+   `disc-tracker-v0.27.0-<abi>.apk` ×4. This creates the tag.
+5. **Run 2:** add `binary:` to the 4 blocks and push. All 4 byte comparisons must pass.
+6. Open the MR titled **"New app: Disc Tracker"** using the App Inclusion template (S4).
+   - Tick only boxes that are true.
+   - Explain each `scanignore` entry (S6: scanignore "probably accompanied by a comment
+     explaining why it is necessary in the Merge Request").
+   - Then leave it. S1: "lots of MRs waiting for test so it may take a long time".
+
+**S9 hard rules:**
+- `expo prebuild --clean` stays.
+- No EAS or host-built APKs as `Binaries`.
+- Don't run local rewritemeta.
+- One variable class per attempt.
+- Verify the cert before uploading.
+
+## Health check (2026-10-17)
+
+| Step | Result |
+| --- | --- |
+| `npx npm@10.9.2 ci` (clean) | ✓ |
+| `npm run typecheck` | ✓ |
+| `npx jest --ci` | ✓ 424/424 across 15 suites |
+| `./gradlew assembleRelease` (committed `android/`) | in progress at time of writing; Reanimated's C++ build alone takes minutes per ABI, which matters for F-Droid's per-ABI CI time |
+
+**Never run `npm run prebuild` in the working tree.** `expo prebuild --clean` deletes all of
+`app/android/`, including the gitignored `local.properties` that holds the signing passwords. To
+reproduce F-Droid's prebuild, use a throwaway clone. (Caught and stopped on 2026-10-17 before it
+ran. There's a backup at `~/disc-tracker-local.properties.bak`.)
+
+## Privacy-text fixes already shipped (`db69a1f`)
+
+- `privacy.html`, `README.md` and the Settings copy no longer claim a single network feature.
+  They now cover the Try Discs download (`disc.flyboybyte.com`; nginx default log, 14-day
+  rotation, verified on the VPS), custom catalog URLs, and the DiscIt images.
+- `discs_master.json` provenance is recorded in `risks.md`.
+- The non-redistributable Kamaruddin PDF is untracked.
+- The package ID stays `com.disctracker.app`. S6 doesn't require an owned domain, and changing
+  it later would orphan existing installs.
