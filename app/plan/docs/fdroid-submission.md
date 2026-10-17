@@ -1,7 +1,9 @@
 # F-Droid submission (R7 / D3) — plan and recipe
 
-Status: **audit done, recipe written to spec, nothing submitted** (2026-10-17). Goal per Logan
-(2026-10-17): get disc-tracker into an fdroiddata MR and let it sit there through review.
+Status (2026-10-17, end of session): **Run 1 in progress, no MR open, nothing tagged.** Recipe
+is on the fork branch `com.disctracker.app` (head `1bb97e0b`); pipeline `2959067157` was running
+when this session paused. See "Run 1 attempt log" below for exactly where it stands and what to
+do next. Goal per Logan: get disc-tracker into an fdroiddata MR and let it sit through review.
 
 **Rule, from Logan (2026-10-17): "none of ur own judgement, its exactly to fdroid spec or not at
 all. from the dragtree experience with the fdroid mantainers."** Every recipe line and every
@@ -21,6 +23,70 @@ Logan's decision, not filled in.
 | **S7** Anti-Features | f-droid.org/en/docs/Anti-Features/ |
 | **S8** Valid categories | `upstream/master:config/categories.yml` |
 | **S9** drag-tree's release flow and hard rules | `~/projects/drag-tree/fdroid/README.md` |
+
+## Run 1 attempt log (fork branch `com.disctracker.app`, app commit `2ea1fad9…`)
+
+Where: `~/projects/drag-tree/fdroiddata` (Logan's fdroiddata fork clone; branch
+`com.disctracker.app` off `upstream/master`, tracks `origin`). Recipe file:
+`metadata/com.disctracker.app.yml`, 4 blocks (versionCode 271–274, no `binary:` yet).
+`glab` is already logged in as flyboy-byte (`glab api projects/flyboy-byte%2Ffdroiddata/...`).
+Format: attempt → what the CI log said → fix → source of the fix.
+
+| # | Pipeline | `fdroid build` result | Fix applied next | Source |
+| --- | --- | --- | --- | --- |
+| 1 | 2958956800 | scanner: `autolinking_implementation.gradle` non-existent + unused | delete that scanignore line (file gone in Expo 57); rewritemeta wanted extra blank lines removed | CI scanner + rewritemeta diff |
+| 2 | 2958961213 | Gradle config: `node` exit 1 inside Expo `ExpoAutolinkingPlugin` | Expo 57's generated `gradle.properties` has no trailing newline, so recipe's `echo 'org.gradle.caching=true' >>` glued onto `expo.inlineModules.watchedDirectories=[]` → JSON.parse fails. Now `echo -e '\norg.gradle.caching=true'` | reproduced in the buildserver container; 223 upstream recipes use the `echo -e "\n…"` form |
+| 3 | 2959040513 | deps: `react-native-view-shot` / `masked-view` "No variants exist" | scanner (scandelete) deleted their `build.gradle` (unknown local maven repo). Added `view-shot`, `masked-view`, `react-native-svg` `android/build.gradle` to `scanignore` | RN template comment: "Add other build.gradle files here if local maven repo for react-native is used" |
+| 4 | 2959054249 | real compile reached (447 tasks): `:react-native-worklets:compileReleaseKotlin` Java 21 vs Kotlin 17 | added `sed -i -e '/jvmToolchain/s/17/21/' -e 's/fromTarget("17")/fromTarget("21")/' node_modules/react-native-worklets/android/build.gradle.kts node_modules/react-native-reanimated/android/build.gradle.kts` before `npx expo prebuild` | 43 merged upstream recipes, incl. com.scalepractice (2026-10-06), jp.nonbili.nori (2026-10-13) |
+| 5 | **2959067157** | **running / unknown at pause** | read its log first | — |
+
+`checkupdates` fails in every run and **should**: no `v0.27.0` tag exists, so it sees `v0.26`
+(vercode 264 < 274). It clears after the tag is created in Run 2. All other jobs (lint, schema
+validation, rewritemeta, source scan, git redirect, tools check) pass as of attempt 4.
+
+### How to read a failed run (works, fast)
+
+```bash
+glab api "projects/flyboy-byte%2Ffdroiddata/pipelines?ref=com.disctracker.app&per_page=1"
+glab api "projects/flyboy-byte%2Ffdroiddata/pipelines/<ID>/jobs?per_page=50"      # find `fdroid build`
+glab api "projects/flyboy-byte%2Ffdroiddata/jobs/<JOB>/trace" | sed 's/\x1b\[[0-9;]*[mK]//g' > build.log
+grep -n "What went wrong" -A12 build.log          # Gradle's real error
+```
+
+### Next steps from here
+
+1. Read pipeline 2959067157's `fdroid build` job. If it failed, fix **one** thing from the real
+   log, preferring the line other merged recipes use (grep `upstream/master:metadata/`), push,
+   repeat. Expect more of the same kind (other libs hard-coding JVM 17, more local-maven
+   `build.gradle` files, binary-scan hits). Each CI cycle is ~7–10 min.
+2. When `fdroid build` passes for 271: download the unsigned APKs from the job artifacts
+   (`unsigned/`), check each contains only its own `lib/<abi>/`. Note the pipeline builds only
+   **one** versionCode per job (`com.disctracker.app:271`); the other three come from the
+   `find-changed-builds` list, so confirm all four got built.
+3. Sign each with `apksigner sign --v1-signing-enabled false --alignment-preserved true`
+   using `~/@flyboybyte__drag-tree.jks` (alias in `~/projects/drag-tree/fdroid/README.md`; the
+   passwords are NOT in any doc, ask Logan or read `app/android/local.properties`), verify the
+   cert is `ff739cf5…837a`, then `gh release create v0.27.0 --target 2ea1fad9fa15c46ddcc9c4a80d15517ca462bee1`
+   with `disc-tracker-v0.27.0-<abi>.apk` ×4. This creates the tag.
+4. Run 2: add `binary:` blocks (drag-tree's form, trailing space after `binary:`) to all 4
+   blocks, push, confirm 4 byte comparisons pass. Then the MR ("New app: Disc Tracker", App
+   Inclusion template, explain each scanignore entry), and leave it.
+5. If the app commit must change (any new commit to `main` that the build needs), update
+   `commit:` in all 4 blocks. Docs-only commits to `main` after `2ea1fad9` are fine.
+
+### Tooling gotchas learned this session
+
+- **Never `npm run prebuild` in `app/`**: it deletes `android/` including gitignored
+  `local.properties` (signing passwords). Backup: `~/disc-tracker-local.properties.bak`.
+- zsh aborts a `&&` chain on an unmatched glob (`rm -f dir/*` on an empty dir). That silently
+  skipped a script edit once and cost a 9-minute container run. Verify an edit landed before
+  launching anything slow.
+- Container repro (host untouched): `podman run --rm --network host --user root -v build.sh:/build.sh:ro -v out:/out registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie bash /build.sh`.
+  The image is already cached locally. Scripts used are in the session scratchpad only (not
+  kept); rebuild from the recipe if needed. It does NOT include fdroid's scanner step.
+- Debian trixie's node is 20.19.2 (RN 0.86 warns `^20.19.4`; warnings only so far).
+- No Android emulator/AVDs exist on this machine anymore (docs that mention
+  `verify_test`/`verify_std` are stale).
 
 ## What the maintainers actually asked of drag-tree (S1)
 

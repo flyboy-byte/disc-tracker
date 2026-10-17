@@ -6,8 +6,8 @@ fix the pointer, don't paste the detail back up here.
 
 **Status: UNPARKED 2026-10-17. Active work is R7, getting into the official F-Droid index.**
 The goal is an fdroiddata MR that sits through review. Read
-`app/plan/docs/fdroid-submission.md` first: it has the audit, the open decisions, the version
-plan and the draft recipe. Latest release is still `v0.26` (2026-09-01). The next planned
+`app/plan/docs/fdroid-submission.md` first, especially its **"Run 1 attempt log"**: it has the
+audit, the decisions, the live fork-branch state and the exact next steps. Latest release is still `v0.26` (2026-09-01). The next planned
 release is `v0.27.0`, carrying the F-Droid listing and the privacy-text fixes. R6 (Play Store)
 is still hard-paused. The other named candidate is **A4 (font scaling)**.
 
