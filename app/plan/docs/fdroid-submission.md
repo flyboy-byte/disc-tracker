@@ -338,3 +338,9 @@ Run 2 → MR comment noting the version change.
 - Backup/restore on Android ≤12 with storage permissions blocked is still untested.
 - Mid-session note: the shared fdroiddata clone's branch was switched away from
   `com.disctracker.app` once by something else; always `git checkout` first in the same command.
+
+### v0.28.0 Run 2 PASSED, MR updated (2026-10-18)
+
+Fork head `6b243d9e`, pipeline 2959585910 all green (4/4 `binary:` verified, checkupdates ok).
+`v0.28.0` released (public) with 4 signed APKs, cert ff739cf5…837a. Comment left on MR !52998.
+Now just waiting on maintainers. Known gaps (see the retarget section above) are unchanged.
