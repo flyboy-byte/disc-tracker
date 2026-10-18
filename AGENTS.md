@@ -4,7 +4,7 @@ Authoritative context for any coding agent (Claude Code, Codex). `CLAUDE.md` jus
 file — edit here, not there. If this file conflicts with the docs it points to, the docs win:
 fix the pointer, don't paste the detail back up here.
 
-**Status: UNPARKED 2026-10-17. Active work is R7, getting into the official F-Droid index.**
+**Status: UNPARKED 2026-10-17. R7: F-Droid MR !52998 OPEN since 2026-10-18, sitting in review.**
 The goal is an fdroiddata MR that sits through review. Read
 `app/plan/docs/fdroid-submission.md` first, especially its **"Run 1 attempt log"**: it has the
 audit, the decisions, the live fork-branch state and the exact next steps. Latest release is still `v0.26` (2026-09-01). The next planned

@@ -299,3 +299,11 @@ Pipeline 2959067157 (fork head 1bb97e0b), job 17258653222: all four blocks built
 holds `tmp/com.disctracker.app_27{1..4}.apk` (unsigned); each contains only its own ABI's libs
 (verified with `unzip -l`). `checkupdates` fails as expected until the tag exists.
 **Next: sign the 4 unsigned APKs (needs keystore passwords from Logan), release v0.27.0, Run 2.**
+
+### Run 2 PASSED and MR opened (2026-10-18)
+
+v0.27.0 released (tag on 2ea1fad9, 4 signed APKs, cert ff739cf5…837a). Fork head 9064bbf3 added
+`binary:` to all 4 blocks; pipeline 2959263731 fully green (fdroid build 4/4, check apk,
+checkupdates). **MR opened: https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52998
+("New app: Disc Tracker").** Now it just sits in review. Respond to maintainers only as asked;
+any app-commit change means updating `commit:` in all 4 blocks.
