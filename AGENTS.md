@@ -4,12 +4,13 @@ Authoritative context for any coding agent (Claude Code, Codex). `CLAUDE.md` jus
 file — edit here, not there. If this file conflicts with the docs it points to, the docs win:
 fix the pointer, don't paste the detail back up here.
 
-**Status: UNPARKED 2026-10-17. R7: F-Droid MR !52998 OPEN since 2026-10-18, sitting in review.**
-The goal is an fdroiddata MR that sits through review. Read
-`app/plan/docs/fdroid-submission.md` first, especially its **"Run 1 attempt log"**: it has the
-audit, the decisions, the live fork-branch state and the exact next steps. Latest release is still `v0.26` (2026-09-01). The next planned
-release is `v0.27.0`, carrying the F-Droid listing and the privacy-text fixes. R6 (Play Store)
-is still hard-paused. The other named candidate is **A4 (font scaling)**.
+**Status: R7 SUBMITTED 2026-10-18. F-Droid MR !52998 (https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52998)
+is open and green, sitting in review; nothing to do until maintainers comment.** Current release is
+`v0.28.0` (ships with NO bundled disc list; the optional Try Discs download or an import fills the
+catalog). Read `app/plan/docs/fdroid-submission.md` first, especially the v0.28.0 retarget section:
+it has the live fork state (`~/projects/drag-tree/fdroiddata`, branch `com.disctracker.app`), how to
+respond to reviewers, and the **known deferred gaps**. R6 (Play Store) is still hard-paused. The
+other named candidate is **A4 (font scaling)**.
 
 ## Where the real state lives (read these, not your memory of past sessions)
 
