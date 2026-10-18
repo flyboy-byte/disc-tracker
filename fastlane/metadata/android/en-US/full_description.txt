@@ -2,7 +2,7 @@ Disc Tracker is a disc golf bag tracker that keeps everything on your phone. No 
 
 <b>Bag</b>
 <ul>
-<li>Add discs from the built-in library of 1,660+ molds (flight numbers filled in), or enter your own</li>
+<li>Add discs by hand, or autofill flight numbers from an optional Try Discs catalog download (or your own catalog file)</li>
 <li>Plastic, weight, color, wear, notes, and a personal stability adjustment per disc</li>
 <li>Today's Bag vs. full Collection, filters, search, sorting, flight-arc thumbnails</li>
 <li>Shareable bag report: a clean image of your bag you can send anywhere</li>

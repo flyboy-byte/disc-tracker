@@ -19,9 +19,9 @@ Disc Tracker is two things that share one brain:
 - **A self-hosted web app** — the original, running on a small personal VPS. Still maintained, but
   secondary — a simpler surface that isn't required to mirror everything the app does.
 
-Both share the same 1,660-disc library, the same flight-arc math, and the same core idea: a fast,
+Both share the same flight-arc math, and the same core idea: a fast,
 private place to manage your bag, understand how your discs fly, and figure out what to throw.
-The mobile app also offers an optional, larger catalog as an in-app download — [disc data by
+The mobile app ships with no bundled disc list; it offers an optional catalog as an in-app download — [disc data by
 Try Discs](https://api.trydiscs.com), used only for on-device lookup/suggest/audit, never
 re-served or published as a standalone dataset. Try Discs lists 2,147 molds; the downloaded
 catalog includes 1,874 of them — the other 273 are left out because they're missing complete
@@ -75,7 +75,7 @@ This is the whole point, so it goes first.
                        └──────────────┬─────────────────────────┘
                                       │  shared foundation
                      ┌────────────────┴────────────────┐
-                     │  • 1,660+ disc library (bundled) │
+                     │  • disc catalog (optional)        │
                      │  • flight-arc physics model      │
                      │  • disc-suggestion scoring       │
                      └──────────────────────────────────┘
@@ -160,8 +160,8 @@ something.
   no signal: hole-by-hole, 1–8 players, running totals vs. par, saved rounds. No account, no course
   lookup, no GPS.
 - **Settings** — throw view, skill level, opt-in reference images, a **disc catalog picker**
-  (switch between the built-in library, the larger Try Discs catalog, or your own imported
-  catalog file/URL), and **full backup & restore** (one file: discs + today's bag + settings +
+  (download the Try Discs catalog, or import your own catalog file/URL — the app ships with no
+  disc list), and **full backup & restore** (one file: discs + today's bag + settings +
   scorecards — saved straight to a folder you pick, or sent to another app if you'd rather; move
   to a new phone, no server).
 

@@ -1,7 +1,7 @@
-// Bundled disc library — same source data as static/discs_master.json (byte-identical,
-// confirmed 2026-07). Loaded via require() so it's baked into the app bundle, no network call.
-import raw from '../../assets/discs_master.json';
-
+// The app ships with NO bundled disc data (removed 2026-10-18: the old bundle's provenance couldn't
+// be confirmed). The catalog is empty until the user downloads the Try Discs catalog or imports
+// their own file — see catalogLoader.ts. If a simple, genuinely open default dataset turns up,
+// load it here.
 export interface MasterDisc {
   name: string;
   mfr: string;
@@ -13,7 +13,7 @@ export interface MasterDisc {
   type: string;
 }
 
-export const masterDiscs: MasterDisc[] = raw as MasterDisc[];
+export const masterDiscs: MasterDisc[] = [];
 
 // A disc the user added to their personal library (custom_discs table) — same shape as a bundled
 // MasterDisc plus its row id and a flag so the UI can badge it. See migrations.ts / db.ts.

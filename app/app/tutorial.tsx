@@ -17,7 +17,7 @@ const SECTIONS: Section[] = [
   {
     title: 'Bag',
     body: [
-      'Add discs manually or search the 1,660+ disc library (Settings lets you switch to a bigger 1,874-disc Try Discs catalog, or import your own). Assign a color, sort or filter by stability/type, and check discs into "Today\'s Bag" for the set you\'re actually carrying.',
+      'Add discs manually, or download the optional Try Discs catalog in Settings (or import your own file) to search a full disc library and autofill flight numbers. Assign a color, sort or filter by stability/type, and check discs into "Today\'s Bag" for the set you\'re actually carrying.',
       'Share your bag as one image from the Bag screen\'s share icon — it renders your Today\'s Bag as a clean card and hands it to the Android share sheet. Bags past 12 discs automatically switch to a compact grid layout so a big bag still shares as one reasonably-shaped image.',
     ],
   },
@@ -48,7 +48,7 @@ const SECTIONS: Section[] = [
   {
     title: 'Settings',
     body: [
-      'Disc Catalog: switch between the built-in library, the larger Try Discs catalog, or your own imported file/URL — nothing downloads until you ask.',
+      'Disc Catalog: the app ships without a disc list. Download the Try Discs catalog or import your own file/URL — nothing downloads until you ask.',
       'Backup & Restore: one JSON file with every disc, setting, and scorecard (plus your Disc Suggest swipe history and Learning-engine state). Share it, or save straight to a folder on Android — this is the FOSS answer to cloud sync, and it moves your whole app, not just a disc list.',
       'CSV export/import handles just the disc list, for spreadsheets or other apps. Data audit flags discs missing weight, plastic, or a wear estimate.',
       'Reference images (opt-in) and this is worth repeating: it\'s the only feature in the whole app that ever touches the network, and only when you turn it on.',

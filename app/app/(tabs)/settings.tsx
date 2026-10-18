@@ -127,7 +127,7 @@ export default function SettingsScreen() {
     const ok = await switchToSource(source);
     if (ok) {
       await refreshCatalogState();
-      toast(source === 'bundled' ? 'Switched to the built-in catalog.' : 'Switched catalog.');
+      toast(source === 'bundled' ? 'Switched to no catalog.' : 'Switched catalog.');
     }
   };
 
@@ -563,7 +563,7 @@ export default function SettingsScreen() {
           doesn't require re-downloading. */}
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Disc catalog</Text>
-        <Text style={styles.sectionHint}>{getCatalog().length} discs in the active catalog. Switch sources anytime — nothing downloads until you ask.</Text>
+        <Text style={styles.sectionHint}>{getCatalog().length === 0 ? 'No catalog loaded — download Try Discs or import your own to search and autofill discs.' : `${getCatalog().length} discs in the active catalog.`} Switch sources anytime — nothing downloads until you ask.</Text>
 
         {/* Radio list, not action rows (UX_AUDIT.md F2, app/plan/docs/ui-audit-plan.md Tier 1
             #4): the row itself is a single-choice selector — tapping it only switches to a
@@ -579,14 +579,14 @@ export default function SettingsScreen() {
             hitSlop={8}
             accessibilityRole="radio"
             accessibilityState={{ selected: catalogSourceState === 'bundled' }}
-            accessibilityLabel="Use the built-in catalog"
+            accessibilityLabel="Use no catalog"
           >
             <View style={[styles.radio, catalogSourceState === 'bundled' && styles.radioSelected]}>
               {catalogSourceState === 'bundled' && <View style={styles.radioDot} />}
             </View>
             <View style={styles.msTextCol}>
-              <Text style={styles.rowText}>Built-in</Text>
-              <Text style={styles.sectionHint}>Bundled with the app, always available offline.</Text>
+              <Text style={styles.rowText}>None</Text>
+              <Text style={styles.sectionHint}>No catalog — only discs you add yourself. The app ships without a disc list.</Text>
             </View>
           </Pressable>
         </View>

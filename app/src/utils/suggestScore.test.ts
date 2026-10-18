@@ -2,13 +2,20 @@
 // Pure/offline, no device. Run with `npm test`.
 
 import { bandFor, learningPenalty, PROFILES, PRESETS, rankDiscs, score, type LearningState, type SkillPreset, type ThrowStyle } from './suggestScore';
-import { masterDiscs } from './masterLibrary';
 import type { ScenarioDisc } from './disc';
-import baseline from './__fixtures__/suggest-baseline.json';
 
-const LIBRARY: ScenarioDisc[] = masterDiscs.filter(
-  (d): d is ScenarioDisc => d.stability != null && !!d.type
-);
+// Synthetic grid of made-up discs spanning the flight-number space (no real disc data in the repo).
+const LIBRARY: ScenarioDisc[] = [];
+for (let speed = 2; speed <= 14; speed++) {
+  for (let turn = -5; turn <= 1; turn++) {
+    for (let fade = 0; fade <= 5; fade++) {
+      for (const glide of [3, 5, 6]) {
+      const type = speed <= 4 ? 'Putt & Approach' : speed <= 6 ? 'Mid Range' : speed <= 9 ? 'Control Driver' : 'Distance Driver';
+      LIBRARY.push({ name: `T${speed}/${glide}/${turn}/${fade}`, mfr: 'Test', type, stability: turn + fade, speed, glide, turn, fade });
+      }
+    }
+  }
+}
 
 function disc(partial: Partial<ScenarioDisc>): ScenarioDisc {
   return { name: 'X', mfr: 'Y', type: 'Distance Driver', stability: 0, speed: 9, glide: 5, turn: 0, fade: 2, ...partial };
@@ -152,8 +159,8 @@ describe('determinism', () => {
   });
 });
 
-// --- Step 6: validation against the frozen baseline (set-level, per audit finding #2) ---
-describe('validation vs. step-1 baseline', () => {
+// --- Step 6: sanity validation of the model against a synthetic library ---
+describe('model sanity', () => {
   const skills: SkillPreset[] = ['beginner', 'intermediate', 'advanced'];
 
   it('every scenario still yields recommendations across all skill levels', () => {
@@ -162,21 +169,6 @@ describe('validation vs. step-1 baseline', () => {
         expect(rankDiscs(LIBRARY, id, skill).length).toBeGreaterThan(0);
       }
     }
-  });
-
-  it('reports overlap with the baseline top-15 (informational, not asserted per-disc)', () => {
-    const rows: string[] = [];
-    for (const [id, entry] of Object.entries<any>((baseline as any).scenarios)) {
-      const baseNames = new Set(entry.top15.map((d: any) => `${d.name}|${d.mfr}`.toLowerCase()));
-      const now = rankDiscs(LIBRARY, id, 'intermediate').map((s) => `${s.disc.name}|${s.disc.mfr}`.toLowerCase());
-      const overlap = now.filter((n) => baseNames.has(n)).length;
-      rows.push(`  ${id.padEnd(13)} overlap ${overlap}/${now.length} vs baseline top-15`);
-    }
-    // Surfaced in test output for the human validation pass; no hard threshold — the rewrite
-    // is *meant* to change picks. We only assert the model is sane (below).
-    // eslint-disable-next-line no-console
-    console.log('[B1 validation] baseline overlap by scenario:\n' + rows.join('\n'));
-    expect(rows.length).toBe(13); // 12 original + the post-B1 Flex Shot addition
   });
 
   it('sanity: overstable scenarios recommend overstable discs (positive net), US scenarios negative', () => {

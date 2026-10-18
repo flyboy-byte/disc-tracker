@@ -107,7 +107,10 @@ describe('catalogLoader', () => {
     expect(getCatalogSource()).toBe('bundled');
   });
 
-  test('searchCatalog() searches whatever catalog is currently active', () => {
+  test('searchCatalog() searches whatever catalog is currently active', async () => {
+    mockFs.__setFile(`${catalogDir().uri}/${activeFileName('trydiscs')}`, JSON.stringify([{ ...DOWNLOADED[0], name: 'Destroyer' }]));
+    mockFs.__setFile(`${catalogDir().uri}/${metaFileName('trydiscs')}`, JSON.stringify({ recordCount: 1, label: 'Try Discs' }));
+    expect(await switchToSource('trydiscs')).toBe(true);
     const hits = searchCatalog('destroyer');
     expect(hits.length).toBeGreaterThan(0);
     expect(hits.every((d) => d.name.toLowerCase().includes('destroyer'))).toBe(true);
