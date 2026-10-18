@@ -307,3 +307,34 @@ v0.27.0 released (tag on 2ea1fad9, 4 signed APKs, cert ff739cf5…837a). Fork he
 checkupdates). **MR opened: https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52998
 ("New app: Disc Tracker").** Now it just sits in review. Respond to maintainers only as asked;
 any app-commit change means updating `commit:` in all 4 blocks.
+
+### Retarget to v0.28.0 — no bundled disc list (2026-10-18)
+
+Why: the bundled `discs_master.json` was the Kaggle `joej0e/disc-golf-disc-data` set, whose own
+description says it was scraped from trydiscs.com. Azeem's permission (RESEARCH.md §11.5,
+`catalog-v2-scope.md`) covers his API catalog, not that file, and he has never been told about
+it. Logan's call: ship with NO bundled data for now; if a simple, genuinely open default dataset
+turns up, load it in `src/utils/masterLibrary.ts`. `INTERNET` stays.
+
+Done: app commit `68ddcd5f` (v0.28.0, versionCode base 28 → 281–284; tests use a synthetic
+library; Settings/tutorial/README/store text updated). Fork head `3f649a6d`: 4 blocks re-pinned,
+`binary:` REMOVED (Run 1 again). MR !52998 follows the branch.
+
+**Remaining steps (same flow as before):** Run 1 pipeline 2959504253 → download unsigned APKs →
+sign (key props in `~/projects/drag-tree/android/local.properties`, Logan OK'd reading them) →
+`gh release create v0.28.0 --target 68ddcd5f…` ×4 apks → add `binary:` back (see v0.27 form) →
+Run 2 → MR comment noting the version change.
+
+**Known gaps, deliberately deferred (Logan: "document the gaps and we'll address it later"):**
+- `v0.27.0` release/tag still exists and its APKs contain the Kaggle data. Not deleted; ask first.
+- `static/discs_master.json` (live website) is the same Kaggle data; same provenance question.
+- Disc Suggest's library picks need a loaded catalog; with none, only bag-based picks work.
+  Needs an empty-state message there (not done).
+- Autofill and the Disc library modal are empty until the Try Discs download/import; no first-run
+  prompt pointing to Settings (not done).
+- Azeem has not been told about the Kaggle lineage; the pre-submission check-in he asked for
+  (final format/attribution/update flow) is still due now the MR is open.
+- No simple open default dataset chosen yet.
+- Backup/restore on Android ≤12 with storage permissions blocked is still untested.
+- Mid-session note: the shared fdroiddata clone's branch was switched away from
+  `com.disctracker.app` once by something else; always `git checkout` first in the same command.
