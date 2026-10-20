@@ -344,3 +344,22 @@ Run 2 → MR comment noting the version change.
 Fork head `6b243d9e`, pipeline 2959585910 all green (4/4 `binary:` verified, checkupdates ok).
 `v0.28.0` released (public) with 4 signed APKs, cert ff739cf5…837a. Comment left on MR !52998.
 Now just waiting on maintainers. Known gaps (see the retarget section above) are unchanged.
+
+## v0.28.1 — R8 enabled, x86 dropped (2026-10-20)
+
+Reviewer seekme-seekyou (2026-10-19): "enable R8". Cause: `expo prebuild --clean` regenerates
+`android/gradle.properties`, so the flags committed there never reached F-Droid's build. Fix:
+`app/plugins/withR8Release.js` (config plugin, `withGradleProperties`) sets
+`android.enableMinifyInReleaseBuilds` / `enableShrinkResourcesInReleaseBuilds`; verified in a
+throwaway prebuild. Not smoke-tested on a device or emulator (Logan: no emulator); backup/CSV on a
+minified build is still unverified on hardware.
+
+- Released as v0.28.1, app commit `625fd4f04c5207424668f7955cbbb55a26f2d27c`. Only armeabi-v7a (291) and
+  arm64-v8a (292): Logan doesn't support x86, so the x86/x86_64 blocks and `VercodeOperation`
+  entries 3–4 were dropped. APKs are about 29 / 36 MB (were 38 / 45).
+- Run 1 (no `binary:`) passed, F-Droid's unsigned APKs were signed with the shared key (cert
+  ff739cf5…837a) and released, Run 2 (`binary:` added, fork head `6ac46098`) passed:
+  pipeline 2965581963, all jobs green, "Verifies" for both reference APKs.
+- MR comment 4046810422 posted as the author. Style rule from Logan: comments on the MR are written
+  as him, no mention of Claude and no attribution lines.
+- Old v0.28.0 release still exists with the four-ABI APKs (superseded, harmless).
