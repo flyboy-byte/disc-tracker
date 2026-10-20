@@ -3,7 +3,7 @@
     "name": "Disc Tracker",
     "slug": "disc-tracker",
     "scheme": "disctracker",
-    "version": "0.28.0",
+    "version": "0.28.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -26,7 +26,8 @@
       "expo-sqlite",
       "expo-router",
       "expo-sharing",
-      "./plugins/withAllowBackupDisabled"
+      "./plugins/withAllowBackupDisabled",
+      "./plugins/withR8Release"
     ]
   }
 }

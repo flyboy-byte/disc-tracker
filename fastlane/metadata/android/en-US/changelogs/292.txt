@@ -1,4 +1,3 @@
+- Release builds are now minified with R8 (smaller, as F-Droid review requested)
 - The app no longer bundles a disc list: download the optional Try Discs catalog or import your own in Settings
 - No more storage permissions: backups and CSV already use Android's own file pickers
-- Settings and privacy policy now describe the optional network features accurately
-- Store listing added for F-Droid
