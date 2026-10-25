@@ -363,3 +363,25 @@ minified build is still unverified on hardware.
 - MR comment 4046810422 posted as the author. Style rule from Logan: comments on the MR are written
   as him, no mention of Claude and no attribution lines.
 - Old v0.28.0 release still exists with the four-ABI APKs (superseded, harmless).
+
+## OPEN: foojay sed (2026-10-25) — not applied, wait and see
+
+An outside review flagged that our recipe lacks drag-tree's foojay line. Facts checked 2026-10-25:
+- Upstream commit `e3d332b139` ("dragtree - remove foojay", Licaon_Kter, 2026-10-20, empty message) added
+  `sed -i -e '/foojay/d' node_modules/@react-native/gradle-plugin/settings.gradle.kts` to all 4 drag-tree
+  blocks, right before `npx expo prebuild -p android --clean`. It came a day after the bot update to 184.
+- Our `node_modules/@react-native/gradle-plugin/settings.gradle.kts` line 16 has the same plugin
+  (`org.gradle.toolchains.foojay-resolver-convention` 1.0.0). The upstream `build-react-native.yml`
+  template does not have the sed (drag-tree-specific).
+- NOT confirmed: that F-Droid's real (offline) build server fails on it. The fork pipeline has internet, so
+  it can't show it, and no real build log was found (monitor.f-droid.org 404; dragtree not in
+  status/build.json). drag-tree's earlier versions built without it, so the trigger is unknown.
+- What it does: removes Gradle's JDK auto-download resolver, so the build can only use the installed JDK 21.
+  Believed to have no effect on APK contents or the `binary:` check (same JDK either way); unverified.
+
+Decision (Logan, 2026-10-25): don't add it now, don't nudge the MR. If a maintainer asks, or the real build
+fails on toolchain/foojay/network, add it as a recipe-only change (no app commit, no new release) to both
+blocks before the prebuild line, citing `e3d332b139`, one change per push.
+
+Also checked: no rebase needed. Branch is 1069 behind upstream master but GitLab reports no conflicts and
+the MR only adds a new file. Leave it unless a maintainer asks.
