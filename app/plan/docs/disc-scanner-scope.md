@@ -1,7 +1,7 @@
 # Disc scanner: scope (2026-11-26)
 
 Status (2026-11-26): **no scanner code yet.** Beta pipeline built; `v0.29.0-beta.1` published, **not yet tried on a phone.**
-Next: the beta phone check, and Logan's disc photos for S0. Lives on branch `dev`. Option research and sources:
+Next: the beta phone check, and Logan's disc photos for S0. Lives on branch `dev`. Resume notes: `HANDOFF.md`. Option research and sources:
 `../research/scanner-options-2026-11-26.md`. "Proposed" marks a default Logan hasn't confirmed.
 
 ## Decided (Logan, 2026-11-26; don't re-ask)
@@ -73,6 +73,12 @@ photo (document picker) -> circle crop -> color
 | S6 | Live camera (`CAMERA`) | separate decision | yes |
 
 S1 and S2 don't depend on S0 and ship even if the scanner is dropped. S0 failing drops S3 to S6.
+
+## Rejected (don't re-raise)
+
+- A separate repository for test builds (Logan, 2026-11-26: "not making a new repo just fo rhtat").
+- A separate app ID for test builds, and an fdroiddata tag pattern as a precondition for betas: neither is needed with
+  the method under "Test builds".
 
 ## Branch and release rules
 
