@@ -17,7 +17,11 @@
 
 ---
 
-## ⚡ CURRENT STATUS (2026-08-18) — read this first
+## ⚡ CURRENT STATUS — R7 done: merged into official F-Droid 2026-11-25
+
+See `plan/docs/post-merge-assessment-2026-11-26.md`. The 2026-08-18 block below is history.
+
+## Status as of 2026-08-18
 
 **Catalog-v2 (TryDiscs) is LIVE and past the picker rework** — read
 `plan/docs/catalog-v2-scope.md` before touching `src/catalog/` or `tools/trydiscs-sync.js`. The

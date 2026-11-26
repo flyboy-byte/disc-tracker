@@ -623,7 +623,7 @@ the reasoning**, this is just the surviving short list:
 - **C4/F4 · P1** — explainer text in control panels (Flight Shaper, Disc Suggest). Logan: *"good
   explaining is good, just not too much bc audience dont have attention span."* Trim, don't
   strip.
-- **D1 · P1** — Disc Suggest still uses emoji as icons, inconsistent with the `Icon.tsx` SVG set
+- ~~**D1 · P1**~~ — (closed 2026-11-26: already shipped 2026-08-31, `14def75`) Disc Suggest still uses emoji as icons, inconsistent with the `Icon.tsx` SVG set
   the rest of the app adopted in `v0.26`.
 - **F6 · P2** — Settings has uppercase micro-label styling that reads dated next to T2-3's
   flattened section headings.

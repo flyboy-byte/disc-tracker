@@ -4,13 +4,11 @@ Authoritative context for any coding agent (Claude Code, Codex). `CLAUDE.md` jus
 file — edit here, not there. If this file conflicts with the docs it points to, the docs win:
 fix the pointer, don't paste the detail back up here.
 
-**Status: R7 SUBMITTED 2026-10-18; updated to v0.28.1 (R8) 2026-10-20. F-Droid MR !52998 (https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52998)
-is open and green, sitting in review; nothing to do until maintainers comment.** Current release is
-`v0.28.1` (R8 on, arm64+armeabi only; ships with NO bundled disc list; the optional Try Discs download or an import fills the
-catalog). Read `app/plan/docs/fdroid-submission.md` first, especially the v0.28.0 retarget section:
-it has the live fork state (`~/projects/drag-tree/fdroiddata`, branch `com.disctracker.app`), how to
-respond to reviewers, and the **known deferred gaps**. R6 (Play Store) is still hard-paused. The
-other named candidate is **A4 (font scaling)**.
+**Status: MERGED into official F-Droid 2026-11-25** ([MR !52998](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52998),
+upstream `17f713b5b6`). Listing not yet live as of 2026-11-26. Current release `v0.28.1` (R8 on, arm64+armeabi, no
+bundled disc list). **Next work and all parked ideas: `app/plan/docs/post-merge-assessment-2026-11-26.md`** (first
+item: a false first-run prompt in `app/app/_layout.tsx`). Releasing: `app/plan/docs/fdroid-submission.md`, "Releasing
+after the merge". R6 (Play Store) is still hard-paused.
 
 ## Where the real state lives (read these, not your memory of past sessions)
 
@@ -33,11 +31,10 @@ other named candidate is **A4 (font scaling)**.
 - **R6 Play Store** — hard-paused 2026-08-21, a values call not a timing one ("not interested in
   play store very much honestly. google just sucks. but keep it in docs"). Reversible; don't push it.
 - **UI-audit leftovers** — culled 2026-09-02 ("i dont want to keep so much open"). Seven survive,
-  none urgent: **A4** font scaling (RN's `allowFontScaling` defaults on, so text grows with the
+  none urgent (**D1** was already shipped, see the assessment): **A4** font scaling (RN's `allowFontScaling` defaults on, so text grows with the
   system setting while fixed-height rows, 34px hole chips and 34px score-grid cells don't — never
   tested at raised scale), **F5** Delete-all isolation, **B2** Clear-bag styling, **B4**
-  multiselect discoverability, **C4/F4** trim explainer text (trim, don't cut), **D1** emoji icons
-  in Disc Suggest, **F6** Settings uppercase micro-labels. The rest are closed.
+  multiselect discoverability, **C4/F4** trim explainer text (trim, don't cut), **F6** Settings uppercase micro-labels. The rest are closed.
 
 ## What this project is
 
@@ -71,7 +68,8 @@ npx jest -t "fragment of test name"        # one test
 #   android/, including the gitignored local.properties that holds the signing passwords. To see
 #   what F-Droid's prebuild produces, use a throwaway clone (CI's manifest audit already does).
 cd android && JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew assembleRelease \
-  -PreactNativeArchitectures=arm64-v8a,armeabi-v7a   # release APK, then `gh release create`
+  -PreactNativeArchitectures=arm64-v8a,armeabi-v7a   # local test APK ONLY. Never upload it or tag by
+#   hand: tags drive F-Droid auto-updates (see fdroid-submission.md, "Releasing after the merge").
 ```
 
 ### Website (repo root)
@@ -108,8 +106,7 @@ against the allowlist in `app/scripts/check-manifest-permissions.js`), `website-
   `suggest_demotions`/`suggest_learning`.
 - **`src/utils/`** — pure logic with a Jest test beside each file; UI lives in `src/components/`.
   The heavy ones:
-  - `suggestScore.ts`: the single unified Disc Suggest scoring model, frozen against
-    `__fixtures__/suggest-baseline.json`.
+  - `suggestScore.ts`: the single unified Disc Suggest scoring model (tests use a synthetic library).
   - `legacyPhysics.ts`: port of the website's `static/physics.js`.
   - `roundMath.ts`: Score math.
   - `backup.ts`: full backup/restore. New `BackupData` fields must be additive and
@@ -117,7 +114,7 @@ against the allowlist in `app/scripts/check-manifest-permissions.js`), `website-
     it — this has happened before (`v0.24`).
 - **`src/physics/sim/`** — on-device TypeScript reimplementation of shotshaper (R4.5), parity-tested
   against the Python engine in `vendor/shotshaper/` (worst case 0.005 mm, `parity.test.ts`).
-- **`src/catalog/`** — Built-in / Try Discs / Custom catalog sources, each cached independently.
+- **`src/catalog/`** — None (`'bundled'` internally, empty) / Try Discs / Custom catalog sources, each cached independently.
   The Try Discs credit is keyed off the manifest's `provider` field, not the active UI slot.
 - **Cross-language contract** — `fixtures/flight-arc-vectors.json` is loaded by both
   `static/physics.fixture.test.js` and `app/src/utils/legacyPhysics.fixture.test.ts`. After a
@@ -202,7 +199,7 @@ sim panel. That would draw both curves in `#arcSVG` using the existing `arcPoint
   `sed -i '/signingConfig /d'`, which is expected.
 - **Distribution order:**
   - D2 (self-hosted F-Droid) is live.
-  - D3 / R7 (the official F-Droid index) is the natural next step and hasn't started.
+  - D3 / R7 (the official F-Droid index): merged 2026-11-25, auto-updates from `vX.Y.Z` tags.
   - D1 / R6 (Play) is hard-paused.
 - **Verifying a change in the app:**
   - Live code needs the **debug** APK (connected to Metro). A release APK embeds its bundle and

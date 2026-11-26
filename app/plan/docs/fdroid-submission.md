@@ -1,6 +1,10 @@
 # F-Droid submission (R7 / D3) — plan and recipe
 
-Status (2026-10-17, end of session): **Run 1 in progress, no MR open, nothing tagged.** Recipe
+**MERGED 2026-11-25** ([!52998](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52998), by linsui, upstream
+`17f713b5b6`). Listing not live on 2026-11-26. Everything below the next line is history; the live sections are
+"Releasing after the merge" at the end and `post-merge-assessment-2026-11-26.md`.
+
+Old status (2026-10-17, end of session): **Run 1 in progress, no MR open, nothing tagged.** Recipe
 is on the fork branch `com.disctracker.app` (head `1bb97e0b`); pipeline `2959067157` was running
 when this session paused. See "Run 1 attempt log" below for exactly where it stands and what to
 do next. Goal per Logan: get disc-tracker into an fdroiddata MR and let it sit through review.
@@ -385,3 +389,14 @@ blocks before the prebuild line, citing `e3d332b139`, one change per push.
 
 Also checked: no rebase needed. Branch is 1069 behind upstream master but GitLab reports no conflicts and
 the MR only adds a new file. Leave it unless a maintainer asks.
+
+## Releasing after the merge (written 2026-11-26, not yet exercised for this app)
+
+No MR per release: `checkupdates` sees a `vX.Y.Z` tag and copies the latest blocks upstream. General steps:
+toolbox `skills/fdroid/reference/process.md`, "Updates". For this app:
+1. Bump `app/app.json`, `app/package.json`, `app/android/app/build.gradle` (versionName, versionCode base +1).
+2. Changelogs `<base>1.txt` (armeabi-v7a) and `<base>2.txt` (arm64-v8a). Fresh-install check. Push. **Don't tag.**
+3. Fork Run 1 (branch from fresh `upstream/master`), sign F-Droid's unsigned APKs.
+4. `gh release create vX.Y.Z --target <sha>` with `disc-tracker-vX.Y.Z-<abi>.apk` for both ABIs (this makes the tag).
+5. Fork Run 2 to verify, then check `https://monitor.f-droid.org/builds/log/com.disctracker.app/<code>`.
+Keep old release assets for versions that are in the recipe.

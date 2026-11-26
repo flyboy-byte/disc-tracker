@@ -1,16 +1,17 @@
 # Release log — mobile app
 
-Last updated 2026-10-17. Newest first. Moved out of the root `AGENTS.md`/`CLAUDE.md`, where this
+Last updated 2026-11-26. Newest first. Moved out of the root `AGENTS.md`/`CLAUDE.md`, where this
 narrative had been repeated three or four times over; that file now only carries the current
 release. Per-feature detail lives in the scope doc each entry points at.
 
-Release naming moved from `mobile-preview-X` to bare `vX` at `v0.16` (2026-08-15). To cut a
-release: build the arm64/armeabi APK (`JAVA_HOME=/usr/lib/jvm/java-21-openjdk`,
-`./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a`), then
-`gh release create`.
+Release naming moved from `mobile-preview-X` to bare `vX` at `v0.16` (2026-08-15). Since the F-Droid merge
+(2026-11-25) a tag triggers an official update: follow `docs/fdroid-submission.md`, "Releasing after the merge".
 
 | Release | Date | What shipped | Detail |
 | --- | --- | --- | --- |
+| `v0.28.1` | 2026-10-20 | R8 minification and resource shrinking; arm64-v8a and armeabi-v7a only. Version in the official F-Droid recipe. | `docs/fdroid-submission.md` |
+| `v0.28.0` | 2026-10-18 | No bundled disc list. | `docs/fdroid-submission.md` |
+| `v0.27.0` | 2026-10-17 | First F-Droid-shaped release: storage permissions blocked, store listing, per-ABI APKs. | `docs/fdroid-submission.md` |
 | `v0.26` | 2026-09-01 | UI/UX audit pass, Tier 1 + Tier 2, all 10 items verified on a physical Pixel 9: shared `SegmentedControl`/`FilterPill`/`Icon` vocabulary replacing five hand-rolled control treatments and most text glyphs; 44dp touch targets; hardware Back mid-round; swipe-to-demote undo; catalog picker as a real radio list; Score tier colour dropped (accessibility + palette); bag actions behind an overflow sheet; Settings flattened from nine cards to a list; one-tap hole strip; Flight Shaper slider labelling. Real bug fix: "Back up everything" was wired to the share sheet, which on Android can't reach Files — now writes straight to a picked folder, sharing demoted to "Send a copy…". | `docs/ui-audit-plan.md` |
 | `v0.25` | 2026-08-20 | Disc Suggest swipe hint text + stronger Buy-mode brand-aversion weighting; compact bag-report grid for bags over 12 discs; Score tab 9/18/Custom hole presets, roster prefill, quick-pick score entry, color-coded scores; in-app "How to use Disc Tracker" tutorial linked from Settings; two F-Droid privacy/manifest fixes. Same session stood up D2 (self-hosted F-Droid repo, `~/projects/fdroid-repo`). | `docs/fdroid-privacy-audit-2026-08-20.md` |
 | `v0.24` | 2026-08-19 | Same-day follow-up to `v0.23`: full backup was silently dropping `suggest_demotions`/`suggest_learning` — fixed with additive, tolerant `BackupData` fields + `db.ts` bulk export/import, verified on-device with real accumulated data. "Best fit"/"Brand A-Z" sort toggle on Buy mode (hundreds of near-tied "great fit" discs make alphabetical a better browse order). Swipe/learning local-preference data disclosed in `docs/privacy.html` and `README.md`. | `docs/suggest-swipe-scope.md` |

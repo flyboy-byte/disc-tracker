@@ -125,8 +125,11 @@ Five tabs, all working offline. Confirmed on real hardware; preview APKs live on
 [**Releases page**](https://github.com/flyboy-byte/disc-tracker/releases) for sideloading, now
 signed with the production release key. Also installable via a
 [self-hosted F-Droid repo](https://fdroid.flyboybyte.com/fdroid/repo) — add that URL in
-an F-Droid client for update checks without the Play Store. The official F-Droid index
-and Play Store are still ahead.
+an F-Droid client for update checks without the Play Store.
+
+Disc Tracker was [accepted into the official F-Droid repository](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52998)
+on 2026-11-25. The [F-Droid listing](https://f-droid.org/packages/com.disctracker.app/) appears once F-Droid has built
+and published it.
 
 The whole UI went through a design-audit pass in `v0.26`: one shared set of controls and drawn
 icons instead of five look-alike variants, every tap target at Android's 44dp minimum, the

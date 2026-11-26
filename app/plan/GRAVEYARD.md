@@ -167,7 +167,7 @@ curate."* Went through them one by one instead of leaving a vague pile.
 - **C4/F4 · P1 — explainer text in control panels.** Logan's steer: *"good explaining is good,
   just not too much bc audience dont have attention span."* Not a cut-it-all mandate — trim
   length, don't remove the explanation.
-- **D1 · P1 — Disc Suggest still uses emoji as icons**, inconsistent with the SVG `Icon.tsx`
+- ~~D1~~ (already shipped 2026-08-31, `14def75`; noted 2026-11-26). Was: **D1 · P1 — Disc Suggest still uses emoji as icons**, inconsistent with the SVG `Icon.tsx`
   vocabulary the rest of the app adopted in `v0.26`.
 - **F6 · P2 — Settings has some uppercase micro-label styling** that reads as dated next to the
   T2-3 flattened section headings.
