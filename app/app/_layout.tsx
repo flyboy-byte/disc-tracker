@@ -13,10 +13,9 @@ import { getOrCreateDefaultUser, getMeta, setMeta } from '../src/db/db';
 
 export default function RootLayout() {
   // Swap in a previously-selected catalog if one exists (catalog-v2-scope.md). Never blocks
-  // render — the bundled fallback is already active synchronously, this only upgrades it.
-  // Once restored, offer the first-run "want the bigger catalog?" prompt exactly once — only
-  // if the user is still on the bundled default, matching "explicit, never automatic" for
-  // anything that touches the network.
+  // render. Once restored, offer the first-run catalog download exactly once, only if no catalog
+  // is selected ('bundled' is the internal name for that; the app ships no disc data). Matches
+  // "explicit, never automatic" for anything that touches the network.
   useEffect(() => {
     (async () => {
       await initCatalog();
@@ -27,8 +26,8 @@ export default function RootLayout() {
       if (meta.catalogPromptShown) return;
 
       Alert.alert(
-        'Bigger disc catalog available',
-        'Try Discs offers an expanded catalog (1,874 discs vs. the built-in 1,660). Download and switch to it now? You can change this anytime in Settings → Disc Catalog.',
+        'No disc list yet',
+        "Disc Tracker doesn't come with a disc list. Download the Try Discs catalog to autofill flight numbers and get library suggestions? It's a one-time download. You can change this in Settings → Disc catalog.",
         [
           { text: 'Not now', style: 'cancel', onPress: () => setMeta(uid, { catalogPromptShown: true }) },
           {
@@ -44,8 +43,9 @@ export default function RootLayout() {
                   catalogHash: manifest.sha256,
                 });
               } catch {
-                // Stay on bundled — the user can retry from Settings anytime.
+                // No catalog stays selected. Alert, not toast: this effect sits outside ToastProvider.
                 await setMeta(uid, { catalogPromptShown: true });
+                Alert.alert('Download failed', 'You can try again in Settings → Disc catalog.');
               }
             },
           },

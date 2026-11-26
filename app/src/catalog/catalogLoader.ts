@@ -1,8 +1,7 @@
-// Runtime-swappable disc catalog. Defaults to the bundled fallback (masterLibrary.ts, baked
-// into the app bundle via require() — always buildable from public source, no network). Two
-// more sources can be cached on-device and switched between without re-downloading: 'trydiscs'
-// (the Try Discs pack) and 'custom' (a user-imported file or self-hosted manifest URL). Any
-// failure at any step here leaves the bundled fallback active — this module must never throw
+// Runtime-swappable disc catalog. Defaults to 'bundled', which is now empty (masterLibrary.ts):
+// the app ships no disc data. Two more sources can be cached on-device and switched between
+// without re-downloading: 'trydiscs' (the Try Discs pack) and 'custom' (a user-imported file or self-hosted manifest URL). Any
+// failure at any step here leaves that empty default active — this module must never throw
 // past initCatalog(), since a broken catalog file must never break the app. See
 // app/plan/docs/catalog-v2-scope.md for the full design.
 import { Directory, File, Paths } from 'expo-file-system';

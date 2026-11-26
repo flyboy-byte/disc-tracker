@@ -77,8 +77,8 @@ CREATE TABLE IF NOT EXISTS round_scores (
   PRIMARY KEY (round_id, player_id, hole)
 );
 -- App-only (no website counterpart): the user's personal disc library — discs they own that
--- aren't in the bundled 1,660-disc master list. These surface in the "Autofill from disc library"
--- search alongside the bundled discs (marked as custom), so a disc the library is missing only has
+-- aren't in the disc catalog. These surface in the "Autofill from disc library"
+-- search alongside the catalog discs (marked as custom), so a disc the library is missing only has
 -- to be entered once and is reusable across bag adds. This is the first concrete slice of the
 -- C-series "user-declared flight" layer (plan/docs/direction-2026-08-08.md, Decision 1): declared
 -- numbers, kept separate from the immutable factory catalog, never written back over it.

@@ -54,9 +54,8 @@ function applyManualOrder(scored: Scored[], demotedKeys: string[]): Scored[] {
 }
 
 // Same shape check the website applies to the raw master JSON before treating a row as a
-// valid ScenarioDisc — bundled discs_master.json already satisfies this, but stay defensive
-// since this is the app's own copy (or a downloaded catalog-v2 override, see src/catalog/) of
-// that file. Recomputed on every focus (not a module-level constant) so a catalog swap while
+// valid ScenarioDisc. Stay defensive: the rows come from a downloaded or imported catalog
+// (see src/catalog/). Recomputed on every focus (not a module-level constant) so a catalog swap while
 // Settings is open is reflected here without needing an app restart.
 function libraryDiscsFromCatalog(): ScenarioDisc[] {
   return getCatalog().filter((d): d is ScenarioDisc => d.stability != null && !!d.type);

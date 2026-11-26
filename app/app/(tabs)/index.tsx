@@ -117,7 +117,7 @@ export default function BagScreen() {
   const [formSession, setFormSession] = useState(0);
   const [libraryOpen, setLibraryOpen] = useState(false);
   // The user's personal custom disc library (custom_discs) — surfaced in the Autofill-from-library
-  // search alongside the bundled 1,660. Loaded with the bag; refreshed on focus (Settings restore).
+  // search alongside the downloaded catalog, if any. Loaded with the bag; refreshed on focus (Settings restore).
   const [customDiscs, setCustomDiscs] = useState<CustomMasterDisc[]>([]);
   const [exportOpen, setExportOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);

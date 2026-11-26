@@ -1,5 +1,5 @@
 // Ported from openLibrary()/renderLibrary()/addFromLibrary() in templates/index.html, then
-// extended (2026-08) with the user's personal custom library: search returns bundled discs AND
+// extended (2026-08) with the user's personal custom library: search returns catalog discs AND
 // the user's own custom_discs (badged ★), and a disc the library is missing can be added inline
 // once and reused. See masterLibrary.ts (searchLibrary / CustomMasterDisc) and db.ts.
 import { useMemo, useState } from 'react';
@@ -119,7 +119,7 @@ export default function DiscLibraryModal({ visible, customDiscs, onCancel, onPic
   );
 }
 
-// Inline form for a disc the bundled library is missing. Mfr + name + the four flight numbers;
+// Inline form for a disc the catalog is missing. Mfr + name + the four flight numbers;
 // stability/type are derived (db.ts). Kept minimal — plastic/weight/notes belong on the bag entry,
 // not the reusable library template.
 function AddCustomForm({
