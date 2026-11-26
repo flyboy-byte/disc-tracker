@@ -5,10 +5,12 @@ narrative had been repeated three or four times over; that file now only carries
 release. Per-feature detail lives in the scope doc each entry points at.
 
 Release naming moved from `mobile-preview-X` to bare `vX` at `v0.16` (2026-08-15). Since the F-Droid merge
-(2026-11-25) a tag triggers an official update: follow `docs/fdroid-submission.md`, "Releasing after the merge".
+(2026-11-25) a tag whose committed version is newer triggers an official update: follow `docs/fdroid-submission.md`,
+"Releasing after the merge". Betas keep the committed version unchanged (`docs/disc-scanner-scope.md`, "Test builds").
 
 | Release | Date | What shipped | Detail |
 | --- | --- | --- | --- |
+| `v0.29.0-beta.1` | 2026-11-26 | Pre-release, not official: first-run prompt fix. First build from `publish-beta.sh`. | `docs/disc-scanner-scope.md` |
 | `v0.28.1` | 2026-10-20 | R8 minification and resource shrinking; arm64-v8a and armeabi-v7a only. Version in the official F-Droid recipe. | `docs/fdroid-submission.md` |
 | `v0.28.0` | 2026-10-18 | No bundled disc list. | `docs/fdroid-submission.md` |
 | `v0.27.0` | 2026-10-17 | First F-Droid-shaped release: storage permissions blocked, store listing, per-ABI APKs. | `docs/fdroid-submission.md` |

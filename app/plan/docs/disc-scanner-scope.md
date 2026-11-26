@@ -1,6 +1,7 @@
 # Disc scanner: scope (2026-11-26)
 
-Status: **scoped, nothing built.** Lives on branch `dev`. Option research and sources:
+Status (2026-11-26): **no scanner code yet.** Beta pipeline built; `v0.29.0-beta.1` published, **not yet tried on a phone.**
+Next: the beta phone check, and Logan's disc photos for S0. Lives on branch `dev`. Option research and sources:
 `../research/scanner-options-2026-11-26.md`. "Proposed" marks a default Logan hasn't confirmed.
 
 ## Decided (Logan, 2026-11-26; don't re-ask)
@@ -76,20 +77,27 @@ S1 and S2 don't depend on S0 and ship even if the scanner is dropped. S0 failing
 ## Branch and release rules
 
 - **No official update is planned yet** (Logan, 2026-11-26). The false first-run prompt (`post-merge-scope.md`, 1.1)
-  stays in the published app until one ships; fix it on `dev` too.
+  stays in the published app until one ships; fixed on `dev` (`1d549ec`).
 - Tags are for betas only until an official release (see "Test builds").
 - Merge `main` into `dev` after any fix on `main`. Merge `dev` to `main` only with phase gates passed and Logan's OK.
 - CI runs on pushes to `main` and `dev`.
 
-## Test builds (decided 2026-11-26, drag-tree's method; script not written yet)
+## Test builds (decided 2026-11-26, drag-tree's method)
 
 GitHub **pre-releases in this repo**, tagged on `dev`, installed over the real app.
 
-**The one rule that keeps F-Droid out of it:** the committed version stays at the current official one (`0.28.1`,
-`versionCode 29` in `app.json`, `package.json`, `android/app/build.gradle`). The beta version is set **only in the build
-clone, never committed.** F-Droid's `checkupdates` then computes 292, equal to the current version, and does nothing
-(`checkupdates.py` read 2026-11-26; drag-tree ran five betas and a release candidate this way, per its `PLAN.md` and
-tags). Bump the committed version only for a real official release.
+**The one rule that keeps F-Droid out of it:** the committed version stays at the current official one (`0.28.1` in
+`app.json`, `package.json` and `android/app/build.gradle`; `versionCode 29` in `build.gradle`). The beta version is set
+**only in the build clone, never committed.** F-Droid's `checkupdates` then computes 292, equal to the current version,
+and does nothing. Bump the committed version only for a real official release.
+
+Checked 2026-11-26 by running `fdroid checkupdates` locally on the upstream recipe after the `v0.29.0-beta.1` tag
+existed: it read that tag, reported "up to date" and left the recipe unchanged.
+
+```bash
+app/scripts/publish-beta.sh 0.29.0 2             # build and sign origin/dev only
+app/scripts/publish-beta.sh 0.29.0 2 --publish   # also publish v0.29.0-beta.2 (about 15 min)
+```
 
 | Part | Choice |
 | --- | --- |
@@ -97,12 +105,32 @@ tags). Bump the committed version only for a real official release.
 | versionCode | 293 to 300: above the installed 292, below the next official 301. After 300, reuse it |
 | App ID and key | Same as official (`com.disctracker.app`, release key, cert `ff739cf5…837a`) |
 | Build | Release mode with R8, `arm64-v8a` only |
-| Script | `app/scripts/publish-beta.sh`: fresh clone of a pushed `dev` commit, **refuse unless its committed versionCode is the official one**, set the beta version in the clone, `npm ci`, prebuild, build, sign, verify cert, `gh release create --prerelease --target <sha>` |
+| Script | `app/scripts/publish-beta.sh`: fresh clone of `origin/dev` (push first), **refuse unless its committed versionCode is the official one**, set the beta version in the clone, `npm ci`, prebuild, build, sign, verify cert, `gh release create --prerelease --target <sha>` |
 
 - Signing values are read by the script and never printed (`~/projects/drag-tree/android/local.properties`).
 - **Back up in the app before the first beta.** It runs on your real data, and going back to an older version means
   uninstalling.
 - The next official release (301/302) installs over any beta.
+- If Android says "App not installed", **don't uninstall** (that erases the data). Find out why first.
+
+### Betas
+
+| Beta | Date | Code | `dev` commit | What changed | Phone check |
+| --- | --- | --- | --- | --- | --- |
+| [`v0.29.0-beta.1`](https://github.com/flyboy-byte/disc-tracker/releases/tag/v0.29.0-beta.1) | 2026-11-26 | 293 | `d8b664d` | First-run prompt wording and a download-failed alert | not done |
+
+beta.1 verified on the computer: certificate `ff739cf5…837a` (same as every release `v0.25` to `v0.28.1`),
+same permissions as `v0.28.1`, arm64 only, SHA-256 `5843c1df…02dd91`. Database code differs from `v0.28.1` only in two
+SQL comments. Jest 423/423 on the same code.
+
+### Phone check for beta.1
+
+1. In the installed app: Settings, back up. Keep the file somewhere off the app.
+2. Download the APK from the release and install it over the app.
+3. Discs, rounds and settings are all still there; the version shown is `0.29.0-beta.1`.
+4. Never tested on an R8 build: backup, restore, CSV export and import, bag report share, a Score round, Flight Shaper sim.
+5. Optional, for the new prompt (it shows only once, with no catalog selected): after a backup, clear the app's storage,
+   open it, read the prompt, decline or accept, then restore. In airplane mode, accepting should show "Download failed".
 
 ## Test photos (S0)
 

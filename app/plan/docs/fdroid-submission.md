@@ -400,3 +400,7 @@ toolbox `skills/fdroid/reference/process.md`, "Updates". For this app:
 4. `gh release create vX.Y.Z --target <sha>` with `disc-tracker-vX.Y.Z-<abi>.apk` for both ABIs (this makes the tag).
 5. Fork Run 2 to verify, then check `https://monitor.f-droid.org/builds/log/com.disctracker.app/<code>`.
 Keep old release assets for versions that are in the recipe.
+
+**Betas are different:** pre-releases from `dev` with the committed version left unchanged, built by
+`app/scripts/publish-beta.sh`. See `disc-scanner-scope.md`, "Test builds". For an official release, step 1's bump is
+what makes the tag count; never commit a version bump on a commit you tag as a beta.

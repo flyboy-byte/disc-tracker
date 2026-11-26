@@ -8,6 +8,8 @@ Build details for each item: `post-merge-scope.md`.
 
 ## 1. Fix first: the published app shows a false prompt
 
+*Update 2026-11-26: fixed on `dev` (`1d549ec`, in `v0.29.0-beta.1`). Still live in the official `v0.28.1`.*
+
 `app/app/_layout.tsx:31` still shows on first launch: "Try Discs offers an expanded catalog (1,874 discs vs. the
 built-in 1,660)". There has been no built-in catalog since v0.28.0, so every fresh F-Droid install sees a false
 claim. **[seen]** in the code, not run on a phone. The v0.28.0 change missed it, and the later "no first-run prompt exists" gap note was wrong.

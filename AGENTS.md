@@ -64,7 +64,7 @@ Expo code, read the versioned docs at https://docs.expo.dev/versions/v57.0.0/ (E
 ```bash
 npx npm@10.9.2 ci                          # install (pinned, F-Droid-reproducible)
 npm run typecheck                          # tsc --noEmit
-npx jest                                   # all tests (424 across 15 suites, 2026-10-17)
+npx jest                                   # all tests (423 across 15 suites, 2026-11-26)
 npx jest src/utils/suggestScore.test.ts    # one file
 npx jest -t "fragment of test name"        # one test
 # npm run prebuild — expo prebuild --clean. DON'T run it in the working tree: it deletes all of
@@ -73,6 +73,7 @@ npx jest -t "fragment of test name"        # one test
 cd android && JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew assembleRelease \
   -PreactNativeArchitectures=arm64-v8a,armeabi-v7a   # local test APK ONLY. Never upload it or tag by
 #   hand: tags drive F-Droid auto-updates (see fdroid-submission.md, "Releasing after the merge").
+#   Test builds for the phone go through scripts/publish-beta.sh (disc-scanner-scope.md, "Test builds").
 ```
 
 ### Website (repo root)

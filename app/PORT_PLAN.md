@@ -19,6 +19,9 @@
 
 ## ⚡ CURRENT STATUS — R7 done: merged into official F-Droid 2026-11-25
 
+**2026-11-26:** no official update planned. Work is on branch `dev`: `v0.29.0-beta.1` published (prompt fix), disc
+scanner scoped in `plan/docs/disc-scanner-scope.md`.
+
 See `plan/docs/post-merge-assessment-2026-11-26.md`. The 2026-08-18 block below is history.
 
 ## Status as of 2026-08-18

@@ -1,6 +1,7 @@
 # Post-merge work: scope (2026-11-26)
 
-Status: **scoped, nothing started.** Why each item exists: `post-merge-assessment-2026-11-26.md`.
+Status (2026-11-26): **1.1 done on `dev`** (in `v0.29.0-beta.1`); everything else not started. **No official release
+planned for now** (Logan). Why each item exists: `post-merge-assessment-2026-11-26.md`.
 Line numbers are as of `778b022`; re-check before editing. Baseline: `npx jest` 423/423 in 15 suites (2026-11-26).
 
 | Phase | What | Gate to start | Needs Logan |
