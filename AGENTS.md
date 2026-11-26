@@ -4,11 +4,10 @@ Authoritative context for any coding agent (Claude Code, Codex). `CLAUDE.md` jus
 file — edit here, not there. If this file conflicts with the docs it points to, the docs win:
 fix the pointer, don't paste the detail back up here.
 
-**Status: MERGED into official F-Droid 2026-11-25** ([MR !52998](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52998),
-upstream `17f713b5b6`). Listing not yet live as of 2026-11-26. Current release `v0.28.1` (R8 on, arm64+armeabi, no
-bundled disc list). **Next work: `app/plan/docs/post-merge-scope.md` (scoped, not started); parked ideas: `post-merge-assessment-2026-11-26.md`** (first
-item: a false first-run prompt in `app/app/_layout.tsx`). Releasing: `app/plan/docs/fdroid-submission.md`, "Releasing
-after the merge". R6 (Play Store) is still hard-paused.
+**Status (2026-11-26): MERGED into official F-Droid 2026-11-25** ([MR !52998](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52998),
+upstream `17f713b5b6`); listing not yet live. Official release `v0.28.1`. **No official update is planned for now.**
+Current work is on `dev`, tested through beta pre-releases (first: `v0.29.0-beta.1`). The false first-run prompt in
+`v0.28.1` is fixed there, not in any official release. R6 (Play Store) is still hard-paused.
 
 **Disc scanner work lives on the `dev` branch** (`app/plan/docs/disc-scanner-scope.md` there; you are on `dev` if that
 file exists). `main` stays releasable. **Beta tags:** F-Droid reads the latest tags from any branch, so a tagged commit
