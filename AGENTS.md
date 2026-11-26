@@ -10,8 +10,9 @@ bundled disc list). **Next work: `app/plan/docs/post-merge-scope.md` (scoped, no
 item: a false first-run prompt in `app/app/_layout.tsx`). Releasing: `app/plan/docs/fdroid-submission.md`, "Releasing
 after the merge". R6 (Play Store) is still hard-paused.
 
-**Disc scanner work lives on the `dev` branch** (`app/plan/docs/disc-scanner-scope.md` there). `main` stays
-releasable. **Don't push tags from `dev`:** F-Droid reads the latest tags from any branch.
+**Disc scanner work lives on the `dev` branch** (`app/plan/docs/disc-scanner-scope.md` there; you are on `dev` if that
+file exists). `main` stays releasable. **Beta tags:** F-Droid reads the latest tags from any branch, so a tagged commit
+must keep the committed version at the current official one (that file, "Test builds").
 
 ## Where the real state lives (read these, not your memory of past sessions)
 

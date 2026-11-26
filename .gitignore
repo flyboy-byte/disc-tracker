@@ -24,3 +24,6 @@ tools/.trydiscs-cache/
 
 # Accepted-manuscript paper — kept locally only, not redistributable (see app/references/README.md)
 app/references/kamaruddin-potts-crowther-2018-aerodynamic-performance-of-flying-discs.pdf
+
+# Disc photos for scanner tests (may show names, phone numbers, location data)
+scan-photos/
