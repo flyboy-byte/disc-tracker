@@ -75,16 +75,42 @@ S1 and S2 don't depend on S0 and ship even if the scanner is dropped. S0 failing
 
 ## Branch and release rules
 
-- **Don't push any tag from `dev`.** The recipe has `UpdateCheckMode: Tags` with no pattern, and `checkupdates.py`
-  takes the latest 5 tags from any branch and picks the highest versionCode (read 2026-11-26). A beta tag could
-  become an official release. Betas first need an fdroiddata MR adding a pattern such as `Tags ^v[\d.]+$`
-  (drag-tree has `^v[\d+.]+$`). Needs Logan.
-- `v0.29.0` (`post-merge-scope.md`) ships from `main`. Merge `main` into `dev` after each release or fix.
-- Merge `dev` to `main` only with phase gates passed and Logan's OK.
+- **No official update is planned yet** (Logan, 2026-11-26). The false first-run prompt (`post-merge-scope.md`, 1.1)
+  stays in the published app until one ships; fix it on `dev` too.
+- **No tags in this repo while testing.** The recipe has `UpdateCheckMode: Tags` with no pattern, and
+  `checkupdates.py` takes the latest 5 tags from any branch and picks the highest versionCode (read 2026-11-26).
+  GitHub releases create tags, so no releases or pre-releases here either.
+- Merge `main` into `dev` after any fix on `main`. Merge `dev` to `main` only with phase gates passed and Logan's OK.
 - CI runs on pushes to `main` and `dev`.
-- **Testing `dev` on the phone (proposed):** a debug build with its own application ID suffix, so it installs beside
-  the F-Droid app and leaves its data alone. A local build on the real ID can't be followed cleanly by official
-  updates.
+
+## Test builds (decided 2026-11-26; pipeline not built yet)
+
+Test builds are published from a **separate repository**, `flyboy-byte/disc-tracker-dev` (**does not exist yet**).
+F-Droid only reads this repository, so nothing there can reach it, and the recipe needs no change.
+
+| Part | Choice |
+| --- | --- |
+| App ID and name | `com.disctracker.app.dev`, "Disc Tracker Dev"; installs beside the F-Droid app |
+| Signing | A new dev-only key outside the repo. The release key is not used |
+| Build | Release mode with R8, `arm64-v8a` only |
+| Version | `<next>-dev.N`; versionCode counts up from 1 and is unrelated to official codes |
+| Script | `app/scripts/publish-dev-build.sh`: fresh clone of a pushed `dev` commit, `npm ci`, prebuild, change ID and name in the generated `android/`, build, sign, release |
+| App source | Unchanged. The ID exists only in the throwaway build |
+| Install and updates | GitHub release APK; [Obtainium](https://github.com/ImranR98/Obtainium) can watch the repo for updates. Publish as normal releases |
+| Source (GPL) | Each release names the `dev` commit it was built from |
+
+- The dev app starts empty. Export a backup from the real app and restore it into the dev app; the real app's data is
+  never touched.
+- This does not test updating over the official app. The runbook's signed Run 1 phone test still does, before any
+  official release.
+- Rejected: beta tags here (drag-tree's way) need an fdroiddata MR first, and a test build on the real ID with a
+  higher versionCode would block official updates on the phone.
+
+## Test photos (S0)
+
+Put them in `scan-photos/` at the repo root. It is gitignored: discs often carry a name and phone number, and photos
+can carry location data. About 30 discs, straight on, disc filling the frame, normal light, including worn, foil and
+custom stamps. Name each file after the disc, for example `innova-teebird.jpg`.
 
 ## Open decisions (default applies unless Logan says otherwise)
 
@@ -92,6 +118,5 @@ S1 and S2 don't depend on S0 and ship even if the scanner is dropped. S0 failing
 | --- | --- | --- |
 | 1 | Model host | The VPS |
 | 2 | Size budget | +10 MB arm64 |
-| 3 | Separate ID for dev builds | Yes |
-| 4 | First release from `dev` | S1 and S2 as `v0.30.0`; font scaling moves to `v0.31.0` |
-| 5 | Live camera | Later, asked separately |
+| 3 | Dev repository visibility | Public (Obtainium needs no token) |
+| 4 | Live camera | Later, asked separately |
