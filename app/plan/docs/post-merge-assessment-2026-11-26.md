@@ -4,6 +4,8 @@ F-Droid MR [!52998](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52998)
 2026-11-25 (upstream `17f713b5b6`). Checked 2026-11-26: recipe on upstream `master`; no build log yet for 291 or
 292; f-droid.org listing 404. Evidence marks: **[seen]** checked, **[inferred]** my reading.
 
+Build details for each item: `post-merge-scope.md`.
+
 ## 1. Fix first: the published app shows a false prompt
 
 `app/app/_layout.tsx:31` still shows on first launch: "Try Discs offers an expanded catalog (1,874 discs vs. the
@@ -61,7 +63,7 @@ Verdicts are recommendations; Logan decides.
 | Item | Note |
 | --- | --- |
 | A4 font scaling | Only P0 left; no `allowFontScaling`/`maxFontSizeMultiplier` in the code |
-| F5 Delete-all placement, B2 Clear-bag styling | Cheap; do together |
+| F5 Delete-all placement | Cheap |
 | Website `static/discs_master.json` (served by `app.py:530`) and the `v0.27.0` release assets | Same data you removed from the app; deleting needs Logan's OK |
 | Android ≤12 backup with storage permissions blocked | Needs an old device or emulator |
 
@@ -70,7 +72,6 @@ Verdicts are recommendations; Logan decides.
 | --- | --- |
 | B4 multiselect hint / exit | A user hits it |
 | C4/F4 trim explainer text | While editing those screens |
-| F6 Settings micro-labels | Same |
 | Open default dataset | A simple, clearly licensed one turns up; load in `masterLibrary.ts` |
 | Wind slider in Disc Suggest (what survives of C2) | A user asks |
 | foojay sed | Real build fails on it |
@@ -83,6 +84,8 @@ Verdicts are recommendations; Logan decides.
 | Item | Why |
 | --- | --- |
 | D1 emoji icons | Already shipped 2026-08-31 (`14def75`); the leftover list was wrong |
+| B2 Clear-bag styling | Already done: it is a `danger` row in the overflow sheet |
+| F6 Settings micro-labels | Already done: `sectionLabel` in `settings.tsx` is no longer uppercase |
 | Physics V2 | Obsolete since the on-device sim |
 | R5 sync and its pre-submission checklist | Dropped |
 | C1, C2, C3–C6 | Graveyarded; a fresh pitch would need a new reason |
@@ -93,7 +96,7 @@ Not re-verified on device: older "not yet verified" notes in `suggest-swipe-scop
 
 The app is in a public index, so the next risk is first impressions and update safety, not missing features.
 
-1. **v0.29, "first user":** prompt, empty states, F5/B2, backup test on a phone. Ship it as the first auto-update
+1. **v0.29, "first user":** prompt, empty states, F5, backup test on a phone. Ship it as the first auto-update
    and prove that path end to end.
 2. **Cleanup:** Azeem, self-hosted repo, website data, old release.
 3. **v0.30:** A4 font scaling.

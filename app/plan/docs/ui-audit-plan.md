@@ -614,7 +614,7 @@ the reasoning**, this is just the surviving short list:
   truncate, and then verifying at 130% and 200%. That last part is cheap to check on a connected
   device: `adb shell settings put system font_scale 1.3` (restore with `1.0`).
 - **F5 · P1** — `Delete all discs` sits mid-list rather than last and isolated.
-- **B2 · P1** — `Clear bag` is a neutral `ghostBtn` despite being destructive (confirm `Alert`
+- (already done, checked in code 2026-11-26) **B2 · P1** — `Clear bag` is a neutral `ghostBtn` despite being destructive (confirm `Alert`
   already exists — styling-only).
 - **B4 · P1** — long-press multiselect in Bag has no visual hint it exists, **and** — found
   during the cull, Logan on-device — Cancel is currently the *only* way out of multiselect once
@@ -625,7 +625,7 @@ the reasoning**, this is just the surviving short list:
   strip.
 - ~~**D1 · P1**~~ — (closed 2026-11-26: already shipped 2026-08-31, `14def75`) Disc Suggest still uses emoji as icons, inconsistent with the `Icon.tsx` SVG set
   the rest of the app adopted in `v0.26`.
-- **F6 · P2** — Settings has uppercase micro-label styling that reads dated next to T2-3's
+- (already done, checked in code 2026-11-26) **F6 · P2** — Settings has uppercase micro-label styling that reads dated next to T2-3's
   flattened section headings.
 
 Everything else audited this pass — D4, E2, B3, B5/D5, C3, F3, A6, E4, D2, E5, E6, and the

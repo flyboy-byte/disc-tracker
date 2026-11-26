@@ -158,7 +158,7 @@ curate."* Went through them one by one instead of leaving a vague pile.
   notes. Only remaining P0.
 - **F5 · P1 — "Delete all discs" sits mid-list in Settings** instead of isolated/last. Real
   mis-tap risk on a fast scroll, cheap fix (reorder one row).
-- **B2 · P1 — "Clear bag" is a neutral ghost button** despite being destructive. Confirm dialog
+- (already done, checked in code 2026-11-26) **B2 · P1 — "Clear bag" is a neutral ghost button** despite being destructive. Confirm dialog
   already exists, so this is styling-only, but kept since it's near-free to fix alongside F5.
 - **B4 · P1 — Bag's long-press multiselect has no visual hint it exists**, and — new finding
   from this cull, Logan on-device: **once you enter multiselect, Cancel is the only way out** —
@@ -169,7 +169,7 @@ curate."* Went through them one by one instead of leaving a vague pile.
   length, don't remove the explanation.
 - ~~D1~~ (already shipped 2026-08-31, `14def75`; noted 2026-11-26). Was: **D1 · P1 — Disc Suggest still uses emoji as icons**, inconsistent with the SVG `Icon.tsx`
   vocabulary the rest of the app adopted in `v0.26`.
-- **F6 · P2 — Settings has some uppercase micro-label styling** that reads as dated next to the
+- (already done, checked in code 2026-11-26) **F6 · P2 — Settings has some uppercase micro-label styling** that reads as dated next to the
   T2-3 flattened section headings.
 
 **Closed — reviewed and deliberately not pursuing, not just deferred:**

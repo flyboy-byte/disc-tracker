@@ -6,7 +6,7 @@ fix the pointer, don't paste the detail back up here.
 
 **Status: MERGED into official F-Droid 2026-11-25** ([MR !52998](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/52998),
 upstream `17f713b5b6`). Listing not yet live as of 2026-11-26. Current release `v0.28.1` (R8 on, arm64+armeabi, no
-bundled disc list). **Next work and all parked ideas: `app/plan/docs/post-merge-assessment-2026-11-26.md`** (first
+bundled disc list). **Next work: `app/plan/docs/post-merge-scope.md` (scoped, not started); parked ideas: `post-merge-assessment-2026-11-26.md`** (first
 item: a false first-run prompt in `app/app/_layout.tsx`). Releasing: `app/plan/docs/fdroid-submission.md`, "Releasing
 after the merge". R6 (Play Store) is still hard-paused.
 
@@ -30,11 +30,11 @@ after the merge". R6 (Play Store) is still hard-paused.
   C4/C5/C6 died with C3. Suggest-engine Phase 4 depended on C4, so it's dead too.
 - **R6 Play Store** — hard-paused 2026-08-21, a values call not a timing one ("not interested in
   play store very much honestly. google just sucks. but keep it in docs"). Reversible; don't push it.
-- **UI-audit leftovers** — culled 2026-09-02 ("i dont want to keep so much open"). Seven survive,
-  none urgent (**D1** was already shipped, see the assessment): **A4** font scaling (RN's `allowFontScaling` defaults on, so text grows with the
-  system setting while fixed-height rows, 34px hole chips and 34px score-grid cells don't — never
-  tested at raised scale), **F5** Delete-all isolation, **B2** Clear-bag styling, **B4**
-  multiselect discoverability, **C4/F4** trim explainer text (trim, don't cut), **F6** Settings uppercase micro-labels. The rest are closed.
+- **UI-audit leftovers** — culled 2026-09-02 ("i dont want to keep so much open"). Four are open
+  (code checked 2026-11-26; D1, B2 and F6 are done): **A4** font scaling (RN's `allowFontScaling`
+  defaults on, so text grows with the system setting while fixed-height rows, 34px hole chips and
+  34px score-grid cells don't — never tested at raised scale), **F5** Delete-all isolation, **B4**
+  multiselect discoverability, **C4/F4** trim explainer text (trim, don't cut). The rest are closed.
 
 ## What this project is
 
