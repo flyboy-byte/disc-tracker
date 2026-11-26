@@ -77,34 +77,32 @@ S1 and S2 don't depend on S0 and ship even if the scanner is dropped. S0 failing
 
 - **No official update is planned yet** (Logan, 2026-11-26). The false first-run prompt (`post-merge-scope.md`, 1.1)
   stays in the published app until one ships; fix it on `dev` too.
-- **No tags in this repo while testing.** The recipe has `UpdateCheckMode: Tags` with no pattern, and
-  `checkupdates.py` takes the latest 5 tags from any branch and picks the highest versionCode (read 2026-11-26).
-  GitHub releases create tags, so no releases or pre-releases here either.
+- Tags are for betas only until an official release (see "Test builds").
 - Merge `main` into `dev` after any fix on `main`. Merge `dev` to `main` only with phase gates passed and Logan's OK.
 - CI runs on pushes to `main` and `dev`.
 
-## Test builds (decided 2026-11-26; pipeline not built yet)
+## Test builds (decided 2026-11-26, drag-tree's method; script not written yet)
 
-Test builds are published from a **separate repository**, `flyboy-byte/disc-tracker-dev` (**does not exist yet**).
-F-Droid only reads this repository, so nothing there can reach it, and the recipe needs no change.
+GitHub **pre-releases in this repo**, tagged on `dev`, installed over the real app.
+
+**The one rule that keeps F-Droid out of it:** the committed version stays at the current official one (`0.28.1`,
+`versionCode 29` in `app.json`, `package.json`, `android/app/build.gradle`). The beta version is set **only in the build
+clone, never committed.** F-Droid's `checkupdates` then computes 292, equal to the current version, and does nothing
+(`checkupdates.py` read 2026-11-26; drag-tree ran five betas and a release candidate this way, per its `PLAN.md` and
+tags). Bump the committed version only for a real official release.
 
 | Part | Choice |
 | --- | --- |
-| App ID and name | `com.disctracker.app.dev`, "Disc Tracker Dev"; installs beside the F-Droid app |
-| Signing | A new dev-only key outside the repo. The release key is not used |
+| Tag and name | `v0.29.0-beta.N`, marked pre-release |
+| versionCode | 293 to 300: above the installed 292, below the next official 301. After 300, reuse it |
+| App ID and key | Same as official (`com.disctracker.app`, release key, cert `ff739cf5…837a`) |
 | Build | Release mode with R8, `arm64-v8a` only |
-| Version | `<next>-dev.N`; versionCode counts up from 1 and is unrelated to official codes |
-| Script | `app/scripts/publish-dev-build.sh`: fresh clone of a pushed `dev` commit, `npm ci`, prebuild, change ID and name in the generated `android/`, build, sign, release |
-| App source | Unchanged. The ID exists only in the throwaway build |
-| Install and updates | GitHub release APK; [Obtainium](https://github.com/ImranR98/Obtainium) can watch the repo for updates. Publish as normal releases |
-| Source (GPL) | Each release names the `dev` commit it was built from |
+| Script | `app/scripts/publish-beta.sh`: fresh clone of a pushed `dev` commit, **refuse unless its committed versionCode is the official one**, set the beta version in the clone, `npm ci`, prebuild, build, sign, verify cert, `gh release create --prerelease --target <sha>` |
 
-- The dev app starts empty. Export a backup from the real app and restore it into the dev app; the real app's data is
-  never touched.
-- This does not test updating over the official app. The runbook's signed Run 1 phone test still does, before any
-  official release.
-- Rejected: beta tags here (drag-tree's way) need an fdroiddata MR first, and a test build on the real ID with a
-  higher versionCode would block official updates on the phone.
+- Signing values are read by the script and never printed (`~/projects/drag-tree/android/local.properties`).
+- **Back up in the app before the first beta.** It runs on your real data, and going back to an older version means
+  uninstalling.
+- The next official release (301/302) installs over any beta.
 
 ## Test photos (S0)
 
@@ -118,5 +116,4 @@ custom stamps. Name each file after the disc, for example `innova-teebird.jpg`.
 | --- | --- | --- |
 | 1 | Model host | The VPS |
 | 2 | Size budget | +10 MB arm64 |
-| 3 | Dev repository visibility | Public (Obtainium needs no token) |
-| 4 | Live camera | Later, asked separately |
+| 3 | Live camera | Later, asked separately |
